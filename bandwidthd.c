@@ -644,7 +644,12 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
        		return;
 	        }
 
-		if (!PQntuples(res))
+		if (PQntuples(res))
+			{
+			strncpy(sensor_id, PQgetvalue(res, 0, 0), 50);
+			PQclear(res);
+			}
+		else
 			{
 			// Insert new sensor id
 			PQclear(res);
@@ -658,7 +663,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 
     		if (PQresultStatus(res) != PGRES_COMMAND_OK)
         		{
-	        	syslog(LOG_ERR, "Postresql UPDATE failed: %s", PQerrorMessage(conn));
+	        	syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
 	    	    PQclear(res);
     	    	PQfinish(conn);
 	    	    conn = NULL;
@@ -686,7 +691,26 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 			}	
 		}
 
+	// Begin transaction
+
 	// **** Perform inserts
+	res = PQexecParams(conn, "BEGIN;",
+			0,       /* zero param */
+    	    NULL,    /* let the backend deduce param type */
+   	    	NULL,
+	    	NULL,    /* don't need param lengths since text */
+			NULL,    /* default to all text params */
+       		0);      /* ask for binary results */
+
+ 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    	{
+	    syslog(LOG_ERR, "Postresql BEGIN failed: %s", PQerrorMessage(conn));
+	    PQclear(res);
+    	PQfinish(conn);
+	    conn = NULL;
+        return;
+		}							
+	PQclear(res);
 
 	strncpy(Values[0], sensor_id, 50);
 
@@ -787,6 +811,24 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 			PQclear(res);
 			}		
 		}
+	// Commit transaction
+	res = PQexecParams(conn, "COMMIT;",
+			0,       /* zero param */
+    	    NULL,    /* let the backend deduce param type */
+   	    	NULL,
+	    	NULL,    /* don't need param lengths since text */
+			NULL,    /* default to all text params */
+       		0);      /* ask for binary results */
+
+ 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    	{
+	    syslog(LOG_ERR, "Postresql COMMIT failed: %s", PQerrorMessage(conn));
+	    PQclear(res);
+    	PQfinish(conn);
+	    conn = NULL;
+        return;
+		}							
+	PQclear(res);
 #else
 	syslog(LOG_ERR, "Postgresql logging selected but postgresql support is not compiled into binary.  Please check the documentation in README, distributed with this software.");
 #endif

@@ -11,6 +11,7 @@ ftp int,
 http int,
 p2p int);
 create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp);
+create index bd_rx_log_sensor_id_timestamp_idx on bd_rx_log(sensor_id, timestamp);
 
 CREATE TABLE bd_tx_log
 (sensor_id int,
@@ -25,6 +26,7 @@ ftp int,
 http int,
 p2p int);
 create index bd_tx_log_sensor_id_ip_timestamp_idx on bd_tx_log (sensor_id, ip, timestamp);
+create index bd_tx_log_sensor_id_timestamp_idx on bd_tx_log(sensor_id, timestamp);
 
 CREATE TABLE bd_rx_total_log
 (sensor_id int,
