@@ -164,6 +164,24 @@ void setchildconfig (int level) {
 	}
 }
 
+void makepidfile(pid_t pid) {
+	FILE *pidfile;
+
+	pidfile = fopen("/var/run/bandwidthd.pid", "w");
+	if (pidfile) {
+		if (fprintf(pidfile, "%d\n", pid) >= 0) {
+			fclose(pidfile);
+			return; /* success! */
+		}
+	}
+
+	/* only reached if something has failed. */
+	fprintf(stderr, "Bandwidthd: failed to write '%d' to /var/run/bandwidthd.pid\n", pid);
+	fclose(pidfile);
+	unlink("/var/run/bandwidthd.pid");
+}
+
+
 int main(int argc, char **argv)
     {
     struct bpf_program fcode;
@@ -215,6 +233,8 @@ int main(int argc, char **argv)
 	/* detach from console. */
 	if (fork2())
 		exit(0);
+
+	makepidfile(getpid());
 
 	setchildconfig(0); /* initialize first (day graphing) process config */
 
