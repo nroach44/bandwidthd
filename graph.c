@@ -746,7 +746,7 @@ void PrepareYAxis(gdImagePtr im, long long int YMax)
         y = (YHEIGHT-YOFFSET)-((YTic*(YHEIGHT-YOFFSET))/YMax);        
 
         gdImageLine(im, XOFFSET, y, XWIDTH, y, black);        
-        snprintf(buffer, 20, "%4.0f %cbits/s", (8*YTic)/Divisor, YLegend);
+        snprintf(buffer, 20, "%4.1f %cbits/s", (8*YTic)/Divisor, YLegend);
         gdImageString(im, gdFontSmall, 3, y-7, buffer, black);        
 
         YTic += YStep;
