@@ -105,6 +105,6 @@ AC_HEADER_STDC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
-AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime])
+AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
 
 AC_OUTPUT(Makefile)

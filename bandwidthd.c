@@ -227,9 +227,15 @@ int main(int argc, char **argv)
     {
     struct bpf_program fcode;
     u_char *pcap_userdata = 0;
+#ifdef HAVE_PCAP_FINDALLDEVS
+	pcap_if_t *Devices;
+#endif
 	char Error[PCAP_ERRBUF_SIZE];
 	struct stat StatBuf;
 	int i;
+	int ForkBackground = TRUE;
+	int ListDevices = FALSE;
+	int Counter;
 
 	config.dev = NULL;
 	config.filter = "ip";
@@ -285,6 +291,46 @@ int main(int argc, char **argv)
 		exit(1);
 	*/
 
+	for(Counter = 1; Counter < argc; Counter++)
+		{
+		if (argv[Counter][0] == '-')
+			{
+			switch(argv[Counter][1])
+				{
+				case 'D':
+					ForkBackground = FALSE;
+					break;
+				case 'l':
+					ListDevices = TRUE; 
+			 		break;
+				default:
+					printf("Improper argument: %s\n", argv[Counter]);
+					exit(1);
+				}
+			}
+		}
+
+#ifdef HAVE_PCAP_FINDALLDEVS
+	pcap_findalldevs(&Devices, Error);
+	if (config.dev == NULL && Devices->name)
+		config.dev = strdup(Devices->name);
+	if (ListDevices)
+		{	
+		while(Devices)
+			{
+			printf("Description: %s\nName: \"%s\"\n\n", Devices->description, Devices->name);
+			Devices = Devices->next;
+			}
+		exit(0);
+		}
+#else
+	if (ListDevices)
+		{
+		printf("List devices is not supported by you version of libpcap\n");
+		exit(0);
+		}
+#endif	
+
 	if (config.graph)
 		{
 		bd_CollectingData("htdocs/index.html");
@@ -294,8 +340,9 @@ int main(int argc, char **argv)
 		}
 
 	/* detach from console. */
-	if (fork2())
-		exit(0);
+	if (ForkBackground)
+		if (fork2())
+			exit(0);
 
 	makepidfile(getpid());
 
@@ -384,10 +431,14 @@ int main(int argc, char **argv)
 			IP_Offset = 22;
 			break;
 		}
-                                           
-	fclose(stdin);
-	fclose(stdout);
-	fclose(stderr);
+
+	if (ForkBackground)
+		{                                           
+		fclose(stdin);
+		fclose(stdout);
+		fclose(stderr);
+		}
+
 	signal(SIGHUP, signal_handler);
 	signal(SIGTERM, signal_handler);
 
