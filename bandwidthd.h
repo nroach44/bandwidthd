@@ -1,3 +1,14 @@
+#include <unistd.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <signal.h>
+
 #include <net/if.h>
 
 #include <netinet/in.h>
@@ -14,21 +25,48 @@
 
 #include <sys/time.h>
 
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
 
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
+#if HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
+#ifdef TYPEDEF_UINT32
+typedef u_int32_t uint32_t;
+#endif
+
+#ifdef TYPEDEF_UINT16
+typedef u_int16_t uint16_t;
+#endif
+
+#ifdef HAVE_GD_H
 #include <gd.h>
+#else 
+#ifdef HAVE_GD_GD_H
+#include <gd/gd.h>
+#endif
+#endif
+
+#ifdef HAVE_GDFONTS_H
 #include <gdfonts.h>
+#else 
+#ifdef HAVE_GD_GDFONTS_H
+#include <gd/gdfonts.h>
+#endif
+#endif
 
 #include <netdb.h>
 
 #include <time.h>
 
 #include <syslog.h>
+
+
 
 #define IP_NUM 4000			// TODO: Do this dynamicly to save ram and/or scale bigger
 #define SUBNET_NUM 100
@@ -104,7 +142,7 @@ struct Statistics
 
 struct IPData
     {
-    long int timestamp;
+    time_t timestamp;
     uint32_t ip;	// Host byte order
     struct Statistics Send;
     struct Statistics Receive;
@@ -136,7 +174,7 @@ struct IPDataStore
 #define IPDATAALLOCCHUNKS 100
 struct DataStoreBlock
 	{
-	long int LatestTimestamp;
+	time_t LatestTimestamp;
 	int NumEntries;  // Is the index of the first unused entry in IPData
 	struct IPData *Data;  // These are allocated at creation, and thus always exist
 
@@ -169,13 +207,13 @@ inline void     Credit(struct Statistics *Stats, const struct ip *ip);
 inline struct IPData *FindIp(uint32_t ipaddr);
 
 // ************ Writes our IPTable to Disk or to the Ram cache
-void            CommitData(long int timestamp);
+void            CommitData(time_t timestamp);
 
 // ************ Creates our Graphs
-void            GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, long int timestamp);
-void            PrepareXAxis(gdImagePtr im, long int timestamp);
+void            GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, time_t timestamp);
+void            PrepareXAxis(gdImagePtr im, time_t timestamp);
 void            PrepareYAxis(gdImagePtr im, unsigned long long int YMax);
-unsigned long long GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp,  struct SummaryData *SummaryData);
+unsigned long long GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, time_t timestamp,  struct SummaryData *SummaryData);
 
 
 // ************ Misc

@@ -6,12 +6,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <signal.h>
-#ifdef BSD
-#include <sys/wait.h>
-#else
-#include <wait.h>
-#include <malloc.h>
-#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

@@ -362,7 +362,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	free(SummaryData);
 	}
 
-void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, long int timestamp)
+void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, time_t timestamp)
     {
     FILE *OutputFile;
     char outputfilename[50];
@@ -371,7 +371,7 @@ void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, lon
     unsigned long long int YMax;
 	char CharIp[20];
 
-    long int GraphBeginTime;
+    time_t GraphBeginTime;
 
 	// TODO: First determine if graph will be printed before creating image and drawing backround, etc
 
@@ -424,7 +424,7 @@ void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, lon
     }
 
 // Returns YMax
-unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp, struct SummaryData *SummaryData)
+unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, time_t timestamp, struct SummaryData *SummaryData)
     {
     unsigned long long int YMax=0;
 	
@@ -754,11 +754,11 @@ void PrepareYAxis(gdImagePtr im, unsigned long long int YMax)
         }
     } 
 
-void PrepareXAxis(gdImagePtr im, long int timestamp)
+void PrepareXAxis(gdImagePtr im, time_t timestamp)
     {
     char buffer[100];
     int black, red;
-    long int sample_begin, sample_end;    
+    time_t sample_begin, sample_end;    
     struct tm *timestruct;
     long int MarkTime;
 	long int MarkTimeStep;

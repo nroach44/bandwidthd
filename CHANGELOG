@@ -1,3 +1,15 @@
+2.0.0 beta cvs on Jan 9, 2005
+Implemented auto conf
+Ported to and compiles on:
+ix86 Fedora Core 2
+ix86 Solaris 9
+ix86 OpenBSD 3.4
+ix86 Debian 2.2
+ix86 FreeBSD 4.8
+AMD64 Fedora Core 3
+PPC MaxOsX 10.2
+
+2.0.0 beta cvs on Jan 8, 2005
 Makefile fixes for .BSD and .Solaris
 Fixed variouse bugs in php graphing system
 Decided to store data in database in kilobytes instead of bytes

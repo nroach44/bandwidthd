@@ -1,17 +1,8 @@
-#include <unistd.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#ifdef PGSQL
-#include "libpq-fe.h"
-#endif
 #include "bandwidthd.h"
 
+#ifdef HAVE_LIBPQ
+#include <libpq-fe.h>
+#endif
 
 // We must call regular exit to write out profile data, but child forks are supposed to usually
 // call _exit?
@@ -492,13 +483,8 @@ inline void Credit(struct Statistics *Stats, const struct ip *ip)
             tcp = (struct tcphdr *)(ip+1);
 			tcp = (struct tcphdr *) ( ((char *)tcp) + ((ip->ip_hl-5)*4) ); // Compensate for IP Options
             Stats->tcp += size;
-#if defined(SOLARIS) || defined (BSD)
-            sport = ntohs(tcp->th_sport);
-            dport = ntohs(tcp->th_dport);			
-#else
-            sport = ntohs(tcp->source);
-            dport = ntohs(tcp->dest);
-#endif
+            sport = ntohs(tcp->TCPHDR_SPORT);
+            dport = ntohs(tcp->TCPHDR_DPORT);			
             if (sport == 80 || dport == 80 || sport == 443 || dport == 443)
                 Stats->http += size;
 	
@@ -585,7 +571,7 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 
 void StoreIPDataInPostgresql(struct IPData IncData[])
 	{
-#ifdef PGSQL
+#ifdef HAVE_LIBPQ
 	struct IPData *IPData;
 	unsigned int counter;
 	struct Statistics *Stats;
@@ -959,7 +945,7 @@ void StoreIPDataInRam(struct IPData IncData[])
 		_StoreIPDataInRam(&IncData[counter]);
 	}
 
-void CommitData(long int timestamp)
+void CommitData(time_t timestamp)
     {
 	static int MayGraph = TRUE;
     unsigned int counter;
