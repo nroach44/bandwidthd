@@ -101,16 +101,6 @@ for each interval.  The line contains only data for the previouse interval.
 Fields:
 IP Address,Timestamp,Total Sent,Icmp Sent,Udp Sent,Tcp Sent,Ftp Sent,Http Sent, P2P Sent,Total Received,Icmp Received,Udp Received,Tcp Received,Ftp Received,Http Received, P2P Received
 
-# GRAPHING
-Also note that bandwidthd does not bother to graph an ip that has trasmited
-less than 1Mbit of data.  It does however, include that ip in the table of ip's
-at the top of the page, so it's traffic can still be viewed.  This cutoff can
-be changed by modifying graph_cutoff in bandwidthd.conf.  "graph_cutoff" is in 
-kilobytes.
-
-Graphing can be disabled by setting "graph" to false. This will still log, but
-will use almost no ram or cpu power.  
-
 # HOW TO KEEP YOUR GRAPHS BETWEEN REBOOTS #
 Following is the easy way to keep your graphs between reboots.  You can also opt
 to build and use bandwidthd with database support, as described in "DATABASE SUPPORT"
@@ -124,13 +114,28 @@ output_cdf will cause bandwidthd to log all of it's data to the log.cdf file
 in it's directory.  recover_cdf will cause bandwidthd to load that file when 
 it starts.   You will also want to make a crontab entry like so:
 
-0 0 * * * * /bin/killall -HUP bandwidthd
+0 0 * * * * /bin/kill -HUP `cat /var/run/bandwidthd.pid`
 
 This will send bandwidthd a HUP every night at midnight.  When bandwidthd 
-recieves a HUP it rotates it's log files.  Bandwidthd will also recover data
-from the rotated log files when it starts.  It will rotate each log file out
-5 times, then delete it.  Bandwidthd creates pretty big logs if it's tracking
-alot of ip addresses, so you will want to do this.
+recieves a HUP it schedules a rotation of it's log files during the next graphing
+run.  Daily log files rotate each HUP.  Weekly/Monthly/Yearly logfiles rotate every
+so many HUPs.  Log files get rotated out 5 times before deletion.
+
+Fyi, if you use killall instead of kill, each of the children will receive
+the HUP command twice, causing them to rotate their log files twice as often
+as they should.
+
+Also not that this does not seem to work on some versions of BSD.
+
+# GRAPHING
+Also note that bandwidthd does not bother to graph an ip that has trasmited
+less than 1Mbit of data.  It does however, include that ip in the table of ip's
+at the top of the page, so it's traffic can still be viewed.  This cutoff can
+be changed by modifying graph_cutoff in bandwidthd.conf.  "graph_cutoff" is in 
+kilobytes.
+
+Graphing can be disabled by setting "graph" to false. This will still log, but
+will use almost no ram or cpu power.
 
 # COLOR CODES #
 RED 	ICMP
@@ -231,6 +236,11 @@ done by graph.php,  all parameters are passed to it in it's url.  You can create
 urls to pull custom graphs from your own index pages, or use the canned reporting system.
 
 # KNOWN BUGS AND TROUBLESHOOTING #
+
+If you are running BSD and bandwidthd never finishes reloading your CDF logs you are 
+experiencing a known bug.  I don't know why bandwidthd can't load the logs on some versions
+of BSD, if you figure it out let me know so I can fix it.  If you experience this problem
+I would recommend logging to a database.
 
 If bandwidthd shows you nothing but a message saying "Bandwidthd has nothing to graph",
 that means it currently has recorded no data.  The cause is most likly one of these: 

@@ -49,10 +49,37 @@ extern FILE *bdconfig_in;
 
 struct config config;
 
+pid_t workerchildpids[NR_WORKER_CHILDS];
+
 void signal_handler(int sig)
 	{
-	signal(SIGHUP, signal_handler);
-	RotateLogs++; 	
+	switch (sig) 
+		{
+		case SIGHUP:
+			signal(SIGHUP, signal_handler);
+			RotateLogs++;
+			if (config.tag == '1') 
+				{
+				int i;
+
+				/* signal children */
+				for (i=0; i < NR_WORKER_CHILDS; i++) 
+					kill(workerchildpids[i], SIGHUP);
+				}
+			break;
+		case SIGTERM:
+			if (config.tag == '1') 
+				{
+				int i;
+
+				/* send term signal to children */
+				for (i=0; i < NR_WORKER_CHILDS; i++) 
+					kill(workerchildpids[i], SIGTERM);
+				}
+			// TODO: Might want to make sure we're not in the middle of wrighting out a log file
+			exit(0);
+			break;
+		}
 	}
 
 void bd_CollectingData(char *filename)
@@ -109,7 +136,7 @@ int WriteOutWebpages(long int timestamp)
 			monstartup((u_long) &_start, (u_long) &etext);
 #endif
           	signal(SIGHUP, SIG_IGN);
-
+			
     	    nice(4); // reduce priority so I don't choke out other tasks
 
 			// Count Number of IP's in datastore
@@ -286,23 +313,21 @@ int main(int argc, char **argv)
 	if (config.graph || config.output_cdf)
 		{
 		/* fork processes for week, month and year graphing. */
-		for (i=1; i<=NR_WORKER_CHILDS; i++) 
+		for (i=0; i<NR_WORKER_CHILDS; i++) 
 			{
-			pid_t pid;
-
-			pid = fork();
+			workerchildpids[i] = fork();
 
 			/* initialize children and let them start doing work,
 			 * while parent continues to fork children.
 			 */
 
-			if (pid == 0) 
+			if (workerchildpids[i] == 0) 
 				{ /* child */
-				setchildconfig(i);
+				setchildconfig(i+1);
 				break;
 				}
 
-			if (pid == -1) 
+			if (workerchildpids[i] == -1) 
 				{ /* fork failed */
 				syslog(LOG_ERR, "Failed to fork graphing child (%d)", i);
 				/* i--; ..to retry? -> possible infinite loop */
@@ -373,6 +398,7 @@ int main(int argc, char **argv)
 	fclose(stdout);
 	fclose(stderr);
 	signal(SIGHUP, signal_handler);
+	signal(SIGTERM, signal_handler);
 
 	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
 		{
