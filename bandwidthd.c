@@ -59,8 +59,6 @@ void signal_handler(int sig)
 int main(int argc, char **argv)
     {
     struct bpf_program fcode;
-    bpf_u_int32 localnet, netmask;    
-    //RETSIGTYPE (*oldhandler)(int);
     u_char *pcap_userdata = 0;
     struct shmid_ds shmstatus;
 	char Error[PCAP_ERRBUF_SIZE];
@@ -149,15 +147,8 @@ int main(int argc, char **argv)
 	printf("Opening %s\n", config.dev);	
 	pd = pcap_open_live(config.dev, 100, config.promisc, 1000, Error);
         if (pd == NULL) printf("%s\n", Error);
-                                                           
-    if (pcap_lookupnet(config.dev, &localnet, &netmask, NULL) < 0) {
-        localnet = 0;
-        netmask = 0;
-		printf("%s\n", Error);
-        pcap_perror(pd, "Error");
-        }
-              
-    if (pcap_compile(pd, &fcode, "ip", 1, netmask) < 0)
+
+    if (pcap_compile(pd, &fcode, "ip", 1, 0) < 0)
         pcap_perror(pd, "Error");
 
     if (pcap_setfilter(pd, &fcode) < 0)

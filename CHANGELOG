@@ -1,3 +1,7 @@
+1.1.8
+Fixed bandwidthd crashing when brought up on an ip addressless interface
+Fixed segfault in DropOldData discovered by Hannes Reich
+
 1.1.7
 Compiles clean on BSD - Colin Harford - Sheepkiller
 
