@@ -161,9 +161,7 @@ int main(int argc, char **argv)
 				printf("Unknown Datalink Type %d, defaulting to ethernet\nPlease forward this error message and a packet sample (captured with \"tcpdump -i %s -s 2000 -n -w capture.cap\") to hinkle@derbyworks.net\n", DataLink, config.dev);
 			else
 				printf("Unknown Datalink Type %d, defaulting to ethernet\nPlease forward this error message and a packet sample (captured with \"tcpdump -s 2000 -n -w capture.cap\") to hinkle@derbyworks.net\n", DataLink);
-#ifdef DLT_EN10MB
 		case DLT_EN10MB:
-#endif
 			printf("Packet Encoding:\n\tEthernet\n");
 			IP_Offset = sizeof(struct ether_header);
 			break;	
@@ -174,10 +172,16 @@ int main(int argc, char **argv)
 #endif
 #ifdef DLT_RAW
 		case DLT_RAW:
+			printf("Untested Datalink Type %d\nPlease report to hinkle@derbyworks.net if bandwidthd works for you\non this interface\n", DataLink);
 			printf("Packet Encoding:\n\tRaw\n");
 			IP_Offset = 0;
 			break;
 #endif
+		case DLT_IEEE802:
+			printf("Untested Datalink Type %d\nPlease report to hinkle@derbyworks.net if bandwidthd works for you\non this interface\n", DataLink);
+			printf("Packet Encoding:\nToken Ring\n");
+			IP_Offset = 22;
+			break;
 		}
                                            
 	signal(SIGHUP, signal_handler);
