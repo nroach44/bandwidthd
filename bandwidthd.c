@@ -205,22 +205,25 @@ void setchildconfig (int level) {
 	}
 }
 
-void makepidfile(pid_t pid) {
+void makepidfile(pid_t pid) 
+	{
 	FILE *pidfile;
 
 	pidfile = fopen("/var/run/bandwidthd.pid", "wt");
-	if (pidfile) {
-		if (fprintf(pidfile, "%d\n", pid) >= 0) {
+	if (pidfile) 
+		{
+		if (fprintf(pidfile, "%d\n", pid) == 0) 
+			{
+			syslog(LOG_ERR, "Bandwidthd: failed to write '%d' to /var/run/bandwidthd.pid", pid);
 			fclose(pidfile);
-			return; /* success! */
+			unlink("/var/run/bandwidthd.pid");
+			}
+		else
+			fclose(pidfile);		
 		}
+	else
+		syslog(LOG_ERR, "Could not open /var/run/bandwidthd.pid for write");
 	}
-
-	/* only reached if something has failed. */
-	syslog(LOG_ERR, "Bandwidthd: failed to write '%d' to /var/run/bandwidthd.pid", pid);
-	fclose(pidfile);
-	unlink("/var/run/bandwidthd.pid");
-}
 
 
 int main(int argc, char **argv)
