@@ -61,7 +61,7 @@ ip <<= '$ip'
 group by ip) as rx
                                                                                                                              
 where tx.ip = rx.ip;";
-//echo $sql;
+//echo "</center><pre>$sql</pre><center>";exit(0);
 $result = pg_query($sql);
 echo "<table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
 $r = pg_fetch_array($result);
