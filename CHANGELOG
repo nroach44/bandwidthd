@@ -2,6 +2,9 @@
 Wrapped DLT_EN10MB in an ifdef for platforms that don't supply it
 Fixed bandwidthd crashing when brought up on an ip addressless interface
 Fixed segfault in DropOldData discovered by Hannes Reich
+Fixed some errors in Makefile, preserved bandwidthd.conf - Bob Toxen
+Detected https as http - Bob Toxen
+Fixed bug that would cause "killall -HUP bandwidthd" to kill the graphing process
 
 1.1.7
 Compiles clean on BSD - Colin Harford - Sheepkiller

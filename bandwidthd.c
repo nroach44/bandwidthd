@@ -268,11 +268,10 @@ inline void Credit(struct Statistics *Stats, const struct ip *ip)
             sport = ntohs(tcp->source);
             dport = ntohs(tcp->dest);
 #endif
-            if (sport == 80 || dport == 80)
+            if (sport == 80 || dport == 80 || sport == 443 || dport == 443)
                 Stats->http += size;
 	
-			if (sport == 20 || dport == 20 || 
-				sport == 21 || dport == 21)
+			if (sport == 20 || dport == 20 || sport == 21 || dport == 21)
 				Stats->ftp += size;
 
             if (sport == 1044|| dport == 1044||		// Direct File Express
@@ -525,6 +524,8 @@ void CommitData(long int timestamp)
 				printf("Calling profiler startup...\n");
 				monstartup((u_long) &_start, (u_long) &etext);
 #endif
+                signal(SIGHUP, SIG_IGN);
+
      	        nice(4); // reduce priority so I don't choke out other tasks
 			
 				while (DataStore) // Is not null
