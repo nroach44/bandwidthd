@@ -1,4 +1,5 @@
 1.1.8
+Wrapped DLT_EN10MB in an ifdef for platforms that don't supply it
 Fixed bandwidthd crashing when brought up on an ip addressless interface
 Fixed segfault in DropOldData discovered by Hannes Reich
 
