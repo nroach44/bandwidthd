@@ -35,13 +35,15 @@
 #define YHEIGHT 256L
 #define XOFFSET 90L
 #define YOFFSET 45L
-#define RANGE1 172800.0        // 2 days
-#define RANGE2 604800.0        // 7 days
-#define RANGE3 2592000.0    // 30 days
+#define RANGE1 172800.0    	// 2 days
+#define RANGE2 604800.0    	// 7 days
+#define RANGE3 3024000.0    // 35 days
+#define RANGE4 35640000.0	// 412.5ish days 
 
-#define INTERVAL1 150L         // 150 -60 (210 is the perfect interval?)
-#define INTERVAL2 600L		
-#define INTERVAL3 3600L	
+#define INTERVAL1 150L     	// 150 -60 (210 is the perfect interval?)
+#define INTERVAL2 600L		// 10 minutes
+#define INTERVAL3 3600L		// 1 hour
+#define INTERVAL4 43200L	// 12 hours 
 #define CONFIG_GRAPHINTERVALS 1    // 2 -5 Number of Intervals to wait before redrawing the graphs
 
 #define CONFIG_GRAPHCUTOFF 1024*1024    // If total data transfered doesn't reach at least this number we don't graph the ip

@@ -56,13 +56,72 @@ void signal_handler(int sig)
 	RotateLogs = TRUE; 	
 	}
 
+void bd_CollectingData(char *filename)
+	{
+	char CurrentDirWarning[] = "bandwidthd always works out of the current directory, cd to some place with a ./etc/bandwidthd.conf and a ./htdocs/ then run it";
+	FILE *index;
+
+	index = fopen(filename, "w");	
+	if (index)
+		{
+		fprintf(index, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
+		fprintf(index, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
+		fprintf(index, "</HEAD><BODY><center><img src=\"logo.gif\"><BR>\n");
+		fprintf(index, "<BR>\nRange: <a href=index.html>Daily</a> <a href=index2.html>Weekly</a> ");
+		fprintf(index, "<a href=index3.html>Monthly</a> <a href=index4.html>Yearly</a><BR>\n");
+		fprintf(index, "<BR>bandwidthd is collecting data...\n");		
+		fprintf(index, "</BODY></HTML>\n");
+		fclose(index);
+		}
+	else
+		{
+		printf("Cannot open %s: %s\n", filename, CurrentDirWarning);
+		exit(1);
+		}
+	}
+
+void WriteOutWebpages(long int timestamp)
+	{
+    struct IPDataStore *DataStore;
+	int NumGraphs = 0;
+
+	// break off from the main line so we don't miss any packets while we graph
+	DataStore = IPDataStore;
+	if (DataStore)
+		{
+		if (!fork()) // if there is a datastore to graph fork, and if we're the child, graph it.
+			{
+#ifdef PROFILE
+			// Got this incantation from a message board.  Don't forget to set
+			// GMON_OUT_PREFIX in the shell
+			extern void _start(void), etext(void);
+			printf("Calling profiler startup...\n");
+			monstartup((u_long) &_start, (u_long) &etext);
+#endif
+          	signal(SIGHUP, SIG_IGN);
+
+     	    nice(4); // reduce priority so I don't choke out other tasks
+			
+			while (DataStore) // Is not null
+				{
+				if (DataStore->FirstBlock->NumEntries > 0)
+					GraphIp(DataStore, &IPCSharedData[NumGraphs++], timestamp+LEAD*config.range);
+			    DataStore = DataStore->Next;
+				}
+
+			MakeIndexPages(NumGraphs);
+	
+			_exit(0);
+			}
+		}	
+	}
+
 int main(int argc, char **argv)
     {
     struct bpf_program fcode;
     u_char *pcap_userdata = 0;
     struct shmid_ds shmstatus;
 	char Error[PCAP_ERRBUF_SIZE];
-	FILE *index;
 	char CurrentDirWarning[] = "bandwidthd always works out of the current directory, cd to some place with a ./etc/bandwidthd.conf and a ./htdocs/ then run it";
 
 	config.dev = NULL;
@@ -85,21 +144,10 @@ int main(int argc, char **argv)
 	// Scary
 	//printf("Max ram utilization is %dMBytes.\n", (int)((sizeof(struct IPData)*(config.range/180)*IP_NUM)/1024)/1024);
 
-	index = fopen("htdocs/index.html", "w");
-	if (index)
-		{
-		fprintf(index, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
-		fprintf(index, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
-		fprintf(index, "</HEAD><BODY><center><img src=\"logo.gif\"><BR><BR>\n");
-		fprintf(index, "bandwidthd is collecting data...\n");		
-		fprintf(index, "</BODY></HTML>\n");
-		fclose(index);
-		}
-	else
-		{
-		printf("Cannot open ./htdocs/index.html: %s\n", CurrentDirWarning);
-		exit(1);
-		}
+	bd_CollectingData("htdocs/index.html");
+	bd_CollectingData("htdocs/index2.html");
+	bd_CollectingData("htdocs/index3.html");
+	bd_CollectingData("htdocs/index4.html");
 
 	if (fork2())
 		exit(0);
@@ -110,6 +158,7 @@ int main(int argc, char **argv)
 
 	if (fork2())  // Fork into seperate process for day, week, and month
 		{
+		config.skip_intervals = CONFIG_GRAPHINTERVALS; // Overide skip_intervals for children
 		config.range = RANGE2;
 		config.interval = INTERVAL2;
 		config.tag = '2';
@@ -119,7 +168,13 @@ int main(int argc, char **argv)
 			config.interval = INTERVAL3;
 			config.tag = '3';
 			if (fork2())
-				exit(0);
+				{
+	            config.range = RANGE4;
+    	        config.interval = INTERVAL4;
+        	    config.tag = '4';
+            	if (fork2())
+                	exit(0);
+				}
 			}
 		}
 	
@@ -207,6 +262,12 @@ int main(int argc, char **argv)
                                            
 	signal(SIGHUP, signal_handler);
 
+	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
+		{
+		printf("Drawing initial graphs...\n");
+		WriteOutWebpages(IntervalStart+config.interval);
+		}
+
     if (pcap_loop(pd, -1, PacketCallback, pcap_userdata) < 0) {
         (void)fprintf(stderr, "Bandwidthd: pcap_loop: %s\n",  pcap_geterr(pd));
         exit(1);
@@ -215,8 +276,6 @@ int main(int argc, char **argv)
     pcap_close(pd);
     exit(0);        
     }
-
-
    
 void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
     {
@@ -508,13 +567,12 @@ void StoreIPDataInRam(struct IPData IncData[])
 		_StoreIPDataInRam(&IncData[counter]);
 	}
 
+
 void CommitData(long int timestamp)
     {
     unsigned int counter;
-	int NumGraphs = 0;
-	struct stat StatBuf;
 
-	struct IPDataStore *DataStore;
+	struct stat StatBuf;
 
 	// Set the timestamps
 	for (counter=0; counter < IpCount; counter++)
@@ -549,40 +607,11 @@ void CommitData(long int timestamp)
 	waitpid(-1, NULL, WNOHANG);
 
 	if (GraphIntervalCount%config.skip_intervals == 0)
-		{
-		// break off from the main line so we don't miss any packets while we graph
-		DataStore = IPDataStore;
-		if (DataStore)
-			{
-			if (!fork()) // if there is a datastore to graph fork, and if we're the child, graph it.
-				{
-#ifdef PROFILE
-				// Got this incantation from a message board.  Don't forget to set
-				// GMON_OUT_PREFIX in the shell
-				extern void _start(void), etext(void);
-				printf("Calling profiler startup...\n");
-				monstartup((u_long) &_start, (u_long) &etext);
-#endif
-                signal(SIGHUP, SIG_IGN);
+		WriteOutWebpages(timestamp);
 
-     	        nice(4); // reduce priority so I don't choke out other tasks
-			
-				while (DataStore) // Is not null
-					{
-					if (DataStore->FirstBlock->NumEntries > 0)
-						GraphIp(DataStore, &IPCSharedData[NumGraphs++], timestamp+LEAD*config.range);
-			        DataStore = DataStore->Next;
-					}
-
-				MakeIndexPages(NumGraphs);
-	
-				_exit(0);
-				}
-			else	// drop the old data in the main thread
-				DropOldData(timestamp);
-			}	
-		}
+	DropOldData(timestamp);
     }
+
 
 int RCDF_Test(char *filename)
 	{
