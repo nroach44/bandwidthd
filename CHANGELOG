@@ -1,6 +1,8 @@
-bandwidthd now skips starting a new graphing run if the last run is still going
-bandwidthd now exits on a configuration error
-Print out line number of error in bandwidthd.conf
+1.2.1
+Skips starting a new graphing run if the last run is still going to prevent
+	fork bomb style box crashes
+Exits on a configuration error
+Print out line number of errors in bandwidthd.conf
 Caused graph_cutoff to be scaled with time range to reduce load induced by
 	weekly/monthly/yearly graphs
 Fixed bad documentation

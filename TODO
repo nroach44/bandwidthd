@@ -5,8 +5,7 @@ Make graphing section multi-threadable, or remove un-needed sysVipc
 # Features requested by people, I make a note of them here in case myself
 # or someone else wants to come along and implement them.
 Stoilis:
-List of IP's to exclude from the page (I bet he wants to exclude his
-	workstation :P)
+List of IP's to exclude from the page
 Switch to put name reverses at the top of the page in the table
 Switch to hide all ip addresses
 
