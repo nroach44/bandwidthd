@@ -33,10 +33,20 @@ CPPFLAGS="$CPPFLAGS -I/usr/local/include"
 AC_CHECK_FILE(/sw/lib, LDFLAGS="$LDFLAGS -L/sw/lib")
 AC_CHECK_FILE(/sw/include, CPPFLAGS="$CPPFLAGS -I/sw/include")
 
+#Check for NetBSD usr/pkg directory
+AC_CHECK_FILE(/usr/pkg/lib, LDFLAGS="$LDFLAGS -L/usr/pkg/lib")
+AC_CHECK_FILE(/usr/pkg/include, CPPFLAGS="$CPPFLAGS -I/usr/pkg/include")
+
 # Required for solaris
 AC_CHECK_LIB(socket, connect)
 AC_CHECK_LIB(nsl, gethostbyname)
 AC_CHECK_LIB(resolv, inet_aton)
+
+# Required for openbsd png library
+AC_CHECK_LIB(m, pow)
+
+# Required for gd under netbsd
+AC_CHECK_LIB(iconv, libiconv_open)
 
 # Required Libraries
 AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd requires but cannot libpng])])
@@ -69,10 +79,10 @@ AC_CHECK_HEADERS([arpa/inet.h errno.h netdb.h netinet/in.h stddef.h stdlib.h str
 
 
 #Headers missing on cygwin
-AC_CHECK_HEADERS([arpa/nameserver.h])
+AC_CHECK_HEADERS([arpa/nameser.h])
 AC_CHECK_HEADERS([resolv.h],,,
 	[#include <netinet/in.h>
-	#include <arpa/nameserver.h>])
+	#include <arpa/nameser.h>])
 
 
 # Checks for typedefs, structures, and compiler characteristics.

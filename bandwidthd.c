@@ -254,14 +254,11 @@ int main(int argc, char **argv)
 
 	if (stat("./etc/bandwidthd.conf", &StatBuf))
 		{
-		if(!stat("/usr/local/bandwidthd/etc/bandwidthd.conf", &StatBuf))
+		chdir(INSTALL_DIR);
+		if (stat("./etc/bandwidthd.conf", &StatBuf))
 			{
-			chdir("/usr/local/bandwidthd");
-			}
-		else
-			{
-			printf("Cannot find ./etc/bandwidthd.conf or /usr/local/bandwidthd/etc/bandwidthd.conf\n");
-			syslog(LOG_ERR, "Cannot find ./etc/bandwidthd.conf or /usr/local/bandwidthd/etc/bandwidthd.conf");
+			printf("Cannot find ./etc/bandwidthd.conf or %s/etc/bandwidthd.conf\n", INSTALL_DIR);
+			syslog(LOG_ERR, "Cannot find ./etc/bandwidthd.conf or %s/etc/bandwidthd.conf", INSTALL_DIR);
 			exit(1);
 			}
 		}

@@ -11,7 +11,7 @@
 #include <time.h>
 #include "bandwidthd.h"
 
-#ifdef HAVE_ARPA_NAMESERVER_H
+#ifdef HAVE_ARPA_NAMESER_H
 #include <arpa/nameser.h>
 #endif
 #ifdef HAVE_RESOLV_H
