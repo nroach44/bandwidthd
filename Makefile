@@ -36,7 +36,7 @@ conf.l.c: conf.l
 	lex -s -i -t -I conf.l > conf.l.c
 
 clean:
-	rm -f *.o bandwidthd *~ DEADJOE
+	rm -f *.o bandwidthd *~ DEADJOE core
 
 # This clean deletes the flex and bison output files.  You'll need flex and 
 # bison to remake them if you use it.

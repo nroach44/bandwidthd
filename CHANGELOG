@@ -2,7 +2,7 @@
 10,000 downloads edition! :)
 Added Weekly, Monthly, and yearly graphs!
 Bandwidthd will now do a graph run immediatly after loading it's data
-New 10 Minute, 1 hour, and 12 hour interval log files
+New 10 Minute (log2.cdf), 1 hour (log3.cdf), and 12 hour (log4.cdf) interval log files
 Graphing code now scales better with different custom intervals and periods
 
 1.1.8b
