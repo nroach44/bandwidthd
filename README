@@ -113,6 +113,14 @@ BLUE 	HTTP (Port 80 TCP, actually)
 PURPLE	Peer2Peer (Lots of TCP ports generally used by P2P software)
 GREEN	TCP
 
+# SPECIFYING THE LIBPCAP FILTER #
+if you'd like more control over what traffic is counted, you can specify a
+manuel filter to be passed to libpcap.  You can use this to remove certain 
+ip's or only graph certain ip's, or limit the graphs to certain kinds of 
+traffic.  You should always specify "ip" in the filter.  For example:
+
+filter "ip and host 64.215.40.1"
+
 # HOW TO IMPROVE PERFORANCE #
 Bandwidthd's primary bottleneck is the drawing of graphs for ip addresses.  To
 improve bandwidthd's performance, therefore, the only thing you can really do 

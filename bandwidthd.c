@@ -316,9 +316,12 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 
     ip = (const struct ip *)p; // Point ip at the ip header
 
+	if (ip->ip_v != 4) // then not an ip packet so skip it
+		return;
+
     srcip = ntohl(*(uint32_t *) (&ip->ip_src));
     dstip = ntohl(*(uint32_t *) (&ip->ip_dst));
-
+	
     for (counter = 0; counter < SubnetCount; counter++)
         {	 
 		// Packets from a monitored subnet to a monitored subnet will be
