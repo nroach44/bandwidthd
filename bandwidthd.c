@@ -260,7 +260,10 @@ int main(int argc, char **argv)
 			break;
 		}
                                            
-	signal(SIGHUP, signal_handler);
+	if (config.tag == '1') // We only rotate the first stage logs right now
+		signal(SIGHUP, signal_handler);
+	else
+		signal(SIGHUP, SIG_IGN);
 
 	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
 		{
