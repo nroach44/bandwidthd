@@ -666,7 +666,6 @@ void RCDF_PositionStream(FILE *cdf)
 		// What happenes if we seek past the beginning of the file?
 		if (fseek(cdf, -IP_NUM*75*(config.range/config.interval)/20,SEEK_CUR))
 			{ // fseek returned error, just seek to beginning
-			printf("Seeked past beginning of file, loading from beginning...\n");
 			fseek(cdf, 0, SEEK_SET);
 			return;
 			}
