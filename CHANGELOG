@@ -1,3 +1,4 @@
+bandwidthd now skips starting a new graphing run if the last run is still going
 bandwidthd now exits on a configuration error
 Print out line number of error in bandwidthd.conf
 Caused graph_cutoff to be scaled with time range to reduce load induced by
