@@ -72,7 +72,8 @@ Bandwidthd can be made to log to CDF by setting "output_cdf" to true.
 them into a database and use a tool like access to create your own graphs,
 or implement 95 percentile billing, for example.  Sending bandwidthd a HUP
 will cause it to rotate it's logs.  It will rotate out 5 times before deleting
-the oldest log file.
+the oldest log file.  The fields in the cdf output file are in the same order
+they are in on the web page.
 
 Graphing can be disabled by setting "graph" to false. This will still log, and
 still build the table of ip's, but the graph section will be omited.
