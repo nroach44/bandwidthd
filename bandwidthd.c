@@ -88,16 +88,20 @@ void bd_CollectingData(char *filename)
 		}
 	}
 
-void WriteOutWebpages(long int timestamp)
-	{
-    struct IPDataStore *DataStore;
+int WriteOutWebpages(long int timestamp)
+{
+	struct IPDataStore *DataStore = IPDataStore;
 	int NumGraphs = 0;
+	pid_t graphpid;
+
+	/* Did we catch any packets since last time? */
+	if (!DataStore) return -1;
 
 	// break off from the main line so we don't miss any packets while we graph
-	DataStore = IPDataStore;
-	if (DataStore)
-		{
-		if (!fork()) // if there is a datastore to graph fork, and if we're the child, graph it.
+	graphpid = fork();
+
+	switch (graphpid) {
+		case 0: /* we're the child, graph. */
 			{
 #ifdef PROFILE
 			// Got this incantation from a message board.  Don't forget to set
@@ -121,8 +125,18 @@ void WriteOutWebpages(long int timestamp)
 	
 			_exit(0);
 			}
-		}	
+		break;
+
+		case -1:
+			printf("Bandwidthd: forking grapher child failed!\n");
+			return -2;
+		break;
+
+		default: /* parent + successful fork, assume graph success */
+			return 0;
+		break;
 	}
+}
 
 void setchildconfig (int level) {
 	static unsigned long long graph_cutoff;
@@ -704,7 +718,11 @@ void CommitData(long int timestamp)
 	if (GraphIntervalCount%config.skip_intervals == 0 && MayGraph)
 		{
 		MayGraph = FALSE;
-		WriteOutWebpages(timestamp);
+		/* If WriteOutWebpages fails, reenable graphing since there won't
+		 * be any children to reap.
+		 */
+		if (WriteOutWebpages(timestamp))
+			MayGraph = TRUE;
 		}
 	else if (GraphIntervalCount%config.skip_intervals == 0)
 		printf("Previouse graphing run not complete... Skipping current run\n");
