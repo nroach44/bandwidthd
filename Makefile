@@ -44,12 +44,12 @@ dist-clean:
 	rm -f *.o bandwidthd *~ conf.tab.c conf.tab.h conf.l.c DEADJOE
 
 install: all
-	mkdir -p /usr/local/bandwidthd/etc
-	mkdir -p /usr/local/bandwidthd/htdocs
-	cp bandwidthd /usr/local/bandwidthd	
-	cp etc/bandwidthd.conf /usr/local/bandwidthd/etc/
-	cp htdocs/legend.gif /usr/local/bandwidthd/htdocs/
-	cp htdocs/logo.gif /usr/local/bandwidthd/htdocs/
+	mkdir -p $(DESTDIR)/usr/local/bandwidthd/etc
+	mkdir -p $(DESTDIR)/usr/local/bandwidthd/htdocs
+	cp bandwidthd $(DESTDIR)/usr/local/bandwidthd	
+	cp etc/bandwidthd.conf $(DESTDIR)/usr/local/bandwidthd/etc/
+	cp htdocs/legend.gif $(DESTDIR)/usr/local/bandwidthd/htdocs/
+	cp htdocs/logo.gif $(DESTDIR)/usr/local/bandwidthd/htdocs/
 
 #**** Stuff where -WALL is turned off to reduce the noise in a compile so I can see my own errors *******************
 conf.l.o: conf.l.c
