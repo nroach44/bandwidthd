@@ -1,3 +1,5 @@
+bandwidthd now exits on a configuration error
+Print out line number of error in bandwidthd.conf
 Caused graph_cutoff to be scaled with time range to reduce load induced by
 	weekly/monthly/yearly graphs
 Fixed bad documentation
