@@ -63,24 +63,31 @@ minutes.  Only the daily graph obeys the skip_intervals parameters.  The
 weekly graph updates every 10 minutes, monthly every hour, and yearly every
 12 hours.
 
-Also note that bandwidthd does not bother to graph an ip that has trasmited
-less than 1Mbit of data.  It does however, include that ip in the table of ip's
-at the top of the page, so it's traffic can still be viewed.  This cutoff can
-be changed by modifying graph_cutoff in bandwidthd.conf.  "graph_cutoff" is in 
-kilobytes.
-
-Bandwidthd can be made to log to CDF by setting "output_cdf" to true.
-(As of V1.1.4) This will now log out each intervals traffic, so you can import
-them into a database and use a tool like access to create your own graphs,
-or implement 95 percentile billing, for example.  Sending bandwidthd a HUP
-will cause it to rotate it's logs.  It will rotate out 5 times before deleting
-the oldest log file.  The fields in the cdf output file are in the same order
-they are in on the web page.
+# CDF LOGGING #
+Bandwidthd can be made to log to CDF by setting "output_cdf" to true. This will 
+now log out each intervals traffic, so you can import them into a database and 
+use a tool like access to create your own graphs, or implement 95 percentile 
+billing, for example.  Sending bandwidthd a HUP will cause it to rotate it's 
+logs. It will rotate out 5 times before deleting the oldest log file. 
 
 Only the 2.5 minute interval logs rotate at this time.  These logs are log.cdf,
 log.cdf.1, log.cdf.2 etc...  log2.cdf is the same data with a 10 minute 
 interval for the weekly graph, log3.cdf is an hourly interval for the monthly
 graph, and log4.cdf is a 12 hour interval for the yearly graph.
+
+The log format is best documented in the "StoreIPDataInCDF" function in 
+bandwidthd.c.  As of this writing, it consists of one line for each ip address
+for each interval.  The line contains only data for the previouse interval.
+
+Fields:
+IP Address,Timestamp,Total Sent,Icmp Sent,Udp Sent,Tcp Sent,Ftp Sent,Http Sent, P2P Sent,Total Received,Icmp Received,Udp Received,Tcp Received,Ftp Received,Http Received, P2P Received
+
+# GRAPHING
+Also note that bandwidthd does not bother to graph an ip that has trasmited
+less than 1Mbit of data.  It does however, include that ip in the table of ip's
+at the top of the page, so it's traffic can still be viewed.  This cutoff can
+be changed by modifying graph_cutoff in bandwidthd.conf.  "graph_cutoff" is in 
+kilobytes.
 
 Graphing can be disabled by setting "graph" to false. This will still log, and
 still build the table of ip's, but the graph section will be omited.
