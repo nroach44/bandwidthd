@@ -159,8 +159,9 @@ void PrintTableLine(FILE *stream, struct IPCData *Data, int Counter)
 		fprintf(stream, "<TR bgcolor=lightblue>");
 
 	if (Data->Graph)
-		fprintf(stream, "<TD><a href=\"#%s\">%s</a></TD>%s%s%s%s%s%s%s%s%s</TR>\n",
+		fprintf(stream, "<TD><a href=\"#%s-%c\">%s</a></TD>%s%s%s%s%s%s%s%s%s</TR>\n",
 			Buffer1, // Ip
+			config.tag,
 			Buffer1, // Ip
 			Buffer2, // Total
 			Buffer3, // TotalSent
@@ -190,6 +191,8 @@ void MakeIndexPages(int NumIps)
 	int SubnetCounter;
 	int Counter, tCounter;
 	time_t WriteTime;
+	char filename[] = "./htdocs/index2.html";
+	char str_tag[] = "-1";
 		
 	FILE *file;
 	struct IPCData **IPCData;
@@ -215,12 +218,24 @@ void MakeIndexPages(int NumIps)
 	////////////////////////////////////////////////
 	// Print main index page
 	
-	if ((file = fopen("./htdocs/index.html", "w")) == NULL)
+	if (config.tag == '1')
 		{
-		printf("Failed to open ./htdocs/index.html\n");
-		exit(1);
+		if ((file = fopen("./htdocs/index.html", "w")) == NULL)
+			{
+			printf("Failed to open ./htdocs/index.html\n");
+			exit(1);
+			}
 		}
-
+	else
+		{
+		filename[14] = config.tag;
+		if ((file = fopen(filename, "w")) == NULL)
+			{
+			printf("Failed to open %s\n", filename);
+			exit(1);
+			}
+		}
+	
 	fprintf(file, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 	fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
 	fprintf(file, "</HEAD><BODY vlink=blue>\n%s<br>\n<center><img src=\"logo.gif\"><BR><BR>\nPick a Subnet:<BR>\n", ctime(&WriteTime));
@@ -229,7 +244,7 @@ void MakeIndexPages(int NumIps)
 	for (Counter = 0; Counter < SubnetCount; Counter++)            
 		{
 		HostIp2CharIp(SubnetTable[Counter].ip, Buffer1);
-		fprintf(file, "- <a href=Subnet-%s.html>%s</a> -", Buffer1, Buffer1);
+		fprintf(file, "- <a href=Subnet-%c-%s.html>%s</a> -", config.tag, Buffer1, Buffer1);
 		}
 
 	/////  TOP 20
@@ -258,7 +273,7 @@ void MakeIndexPages(int NumIps)
 				HostIp2CharIp(IPCData[Counter]->IP, Buffer1);
 				rdns(HostName, IPCData[Counter]->IP);
 				}
-			fprintf(file, "<a name=\"%s\"><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-S.png><BR>\n<img src=legend.gif><br>\nReceived:<br>\n<img src=%s-R.png><BR>\n<img src=legend.gif><br>\n<BR>\n", Buffer1, Buffer1, HostName, Buffer1, Buffer1);					
+			fprintf(file, "<a name=\"%s-%c\"><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png><BR>\n<img src=legend.gif><br>\nReceived:<br>\n<img src=%s-%c-R.png><BR>\n<img src=legend.gif><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, config.tag);					
 			}
 
 	fprintf(file, "</BODY></HTML>\n");
@@ -271,7 +286,7 @@ void MakeIndexPages(int NumIps)
 	for (SubnetCounter = 0; SubnetCounter < SubnetCount; SubnetCounter++)
 		{
 		HostIp2CharIp(SubnetTable[SubnetCounter].ip, Buffer1);
-		sprintf(Buffer2, "./htdocs/Subnet-%s.html", Buffer1);
+		sprintf(Buffer2, "./htdocs/Subnet-%c-%s.html", config.tag, Buffer1);
 		file = fopen(Buffer2, "w");
 		fprintf(file, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 		fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n</HEAD>\n<BODY vlink=blue>\n%s<br>\n<CENTER><a name=\"Top\">", ctime(&WriteTime));
@@ -281,7 +296,7 @@ void MakeIndexPages(int NumIps)
 		for (Counter = 0; Counter < SubnetCount; Counter++)
 			{
 			HostIp2CharIp(SubnetTable[Counter].ip, Buffer2);
-			fprintf(file, "- <a href=Subnet-%s.html>%s</a> -", Buffer2, Buffer2);
+			fprintf(file, "- <a href=Subnet-%c-%s.html>%s</a> -", config.tag, Buffer2, Buffer2);
 			}
 
 		fprintf(file, "<H1>%s</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR></center>\n<table width=100%% border=1 cellspacing=0>\n", Buffer1);
@@ -308,6 +323,7 @@ void MakeIndexPages(int NumIps)
 				if (IPCData[Counter]->Graph)
 					{
 					HostIp2CharIp(IPCData[Counter]->IP, Buffer1);
+					strcat(Buffer1, str_tag);
 					rdns(HostName, IPCData[Counter]->IP);
 					fprintf(file, "<a name=\"%s\"><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-S.png><BR>\n<img src=legend.gif><br>\nReceived:<br>\n<img src=%s-R.png><BR>\n<img src=legend.gif><br>\n<BR>\n", Buffer1, Buffer1, HostName, Buffer1, Buffer1);					
 					}
@@ -339,7 +355,7 @@ void GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int ti
 	else
 		HostIp2CharIp(DataStore->ip, CharIp);
 
-    GraphBeginTime = timestamp - RANGE1;
+    GraphBeginTime = timestamp - config.range;
 
     im = gdImageCreate(XWIDTH, YHEIGHT);
     white = gdImageColorAllocate(im, 255, 255, 255);
@@ -359,12 +375,12 @@ void GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int ti
         PrepareXAxis(im2, timestamp);
         PrepareYAxis(im2, YMax);
 
-        sprintf(outputfilename, "./htdocs/%s-S.png", CharIp);
+        sprintf(outputfilename, "./htdocs/%s-%c-S.png", CharIp, config.tag);
         OutputFile = fopen(outputfilename, "w");    
         gdImagePng(im, OutputFile);
         fclose(OutputFile);
 
-        sprintf(outputfilename, "./htdocs/%s-R.png", CharIp);
+        sprintf(outputfilename, "./htdocs/%s-%c-R.png", CharIp, config.tag);
         OutputFile = fopen(outputfilename, "w");
         gdImagePng(im2, OutputFile);
         fclose(OutputFile);
@@ -372,9 +388,9 @@ void GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int ti
     else
         {
         // The graph isn't worth clutering up the web pages with
-        sprintf(outputfilename, "./htdocs/%s-R.png", CharIp);
+        sprintf(outputfilename, "./htdocs/%s-%c-R.png", CharIp, config.tag);
         unlink(outputfilename);
-        sprintf(outputfilename, "./htdocs/%s-S.png", CharIp);
+        sprintf(outputfilename, "./htdocs/%s-%c-S.png", CharIp, config.tag);
         unlink(outputfilename);
         }
 
@@ -477,7 +493,7 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
         {
         for (Counter = 0; Counter < DataPoints; Counter++)  // Graph it all
             {
-            x = (Data[Counter].timestamp-timestamp)*((XWIDTH-XOFFSET)/RANGE1)+XOFFSET;        
+            x = (Data[Counter].timestamp-timestamp)*((XWIDTH-XOFFSET)/config.range)+XOFFSET;        
             xint = x;
 
             if (xint >= 0 && xint < XWIDTH)
@@ -518,7 +534,7 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
         }
 
 	// Convert SentPeak and ReceivedPeak from bytes to bytes/second
-	SentPeak /= INTERVAL; ReceivedPeak /= INTERVAL;
+	SentPeak /= config.interval; ReceivedPeak /= config.interval;
 
     // Preform the Average
     for(Counter=XOFFSET+1; Counter < XWIDTH; Counter++)
@@ -536,21 +552,21 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
 				IPCData->ICMP += icmp[Counter] + icmp2[Counter];
 
                 // Preform the average
-                total[Counter] /= (Count[Counter]*INTERVAL);
-                tcp[Counter] /= (Count[Counter]*INTERVAL);
-                ftp[Counter] /= (Count[Counter]*INTERVAL);
-                http[Counter] /= (Count[Counter]*INTERVAL);
-				p2p[Counter] /= (Count[Counter]*INTERVAL);
-                udp[Counter] /= (Count[Counter]*INTERVAL);
-                icmp[Counter] /= (Count[Counter]*INTERVAL);
+                total[Counter] /= (Count[Counter]*config.interval);
+                tcp[Counter] /= (Count[Counter]*config.interval);
+                ftp[Counter] /= (Count[Counter]*config.interval);
+                http[Counter] /= (Count[Counter]*config.interval);
+				p2p[Counter] /= (Count[Counter]*config.interval);
+                udp[Counter] /= (Count[Counter]*config.interval);
+                icmp[Counter] /= (Count[Counter]*config.interval);
 								
-                total2[Counter] /= (Count[Counter]*INTERVAL);
-                tcp2[Counter] /= (Count[Counter]*INTERVAL);
-				ftp2[Counter] /= (Count[Counter]*INTERVAL);
-                http2[Counter] /= (Count[Counter]*INTERVAL);
-				p2p2[Counter] /= (Count[Counter]*INTERVAL);
-                udp2[Counter] /= (Count[Counter]*INTERVAL);
-                icmp2[Counter] /= (Count[Counter]*INTERVAL);
+                total2[Counter] /= (Count[Counter]*config.interval);
+                tcp2[Counter] /= (Count[Counter]*config.interval);
+				ftp2[Counter] /= (Count[Counter]*config.interval);
+                http2[Counter] /= (Count[Counter]*config.interval);
+				p2p2[Counter] /= (Count[Counter]*config.interval);
+                udp2[Counter] /= (Count[Counter]*config.interval);
+                icmp2[Counter] /= (Count[Counter]*config.interval);
 
 
                 if (total[Counter] > YMax)
@@ -724,8 +740,8 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     long int MarkTime;
     double x;
     
-    sample_begin=timestamp-RANGE1;
-    sample_end=sample_begin+INTERVAL;
+    sample_begin=timestamp-config.range;
+    sample_end=sample_begin+config.interval;
 
     black = gdImageColorAllocate(im, 0, 0, 0);
     red   = gdImageColorAllocate(im, 255, 0, 0);
@@ -742,11 +758,11 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     timestruct->tm_hour = 0;
     MarkTime = mktime(timestruct);
             
-    x = (MarkTime-sample_begin)*( ((double)(XWIDTH-XOFFSET)) / RANGE1) + XOFFSET;
+    x = (MarkTime-sample_begin)*( ((double)(XWIDTH-XOFFSET)) / config.range) + XOFFSET;
     if (x < XOFFSET)
         {
         MarkTime += (24*60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/RANGE1) + XOFFSET;
+        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
         }
 
     while (x < (XWIDTH-10))
@@ -761,7 +777,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
 
         // Calculate Next x
         MarkTime += (24*60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/RANGE1) + XOFFSET;
+        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
         }
     
 
@@ -775,7 +791,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     timestruct->tm_hour = 0;
     MarkTime = mktime(timestruct)+(6*60*60);
 
-    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/RANGE1) + XOFFSET;
+    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
     while (x < (XWIDTH-10))
         {
         if (x > XOFFSET) {
@@ -783,7 +799,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
             gdImageLine(im, x+1, YHEIGHT-YOFFSET-5, x+1, YHEIGHT-YOFFSET+5, black);
             }
         MarkTime += (6*60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/RANGE1) + XOFFSET;
+        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
         }
 
     timestruct = localtime((time_t *)&sample_begin);
@@ -792,7 +808,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     timestruct->tm_hour = 0;
     MarkTime = mktime(timestruct)+(60*60);
 
-    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/RANGE1) + XOFFSET;
+    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
     while (x < (XWIDTH-10))
         {
         if (x > XOFFSET) {
@@ -800,7 +816,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
             gdImageLine(im, x+1, YHEIGHT-YOFFSET, x+1, YHEIGHT-YOFFSET+5, black);
             }
         MarkTime+=(60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/RANGE1) + XOFFSET;
+        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
         }
     }
 

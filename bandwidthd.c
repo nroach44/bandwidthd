@@ -72,6 +72,7 @@ int main(int argc, char **argv)
 	config.graph = TRUE;
 	config.output_cdf = FALSE;
 	config.recover_cdf = FALSE;
+
   
 	yyin = fopen("./etc/bandwidthd.conf", "r");
 	if (!yyin)
@@ -82,7 +83,7 @@ int main(int argc, char **argv)
 	yyparse();
 	
 	// Scary
-	//printf("Max ram utilization is %dMBytes.\n", (int)((sizeof(struct IPData)*(RANGE1/180)*IP_NUM)/1024)/1024);
+	//printf("Max ram utilization is %dMBytes.\n", (int)((sizeof(struct IPData)*(config.range/180)*IP_NUM)/1024)/1024);
 
 	index = fopen("htdocs/index.html", "w");
 	if (index)
@@ -100,13 +101,32 @@ int main(int argc, char **argv)
 		exit(1);
 		}
 
-    if(config.recover_cdf)
-	    RecoverDataFromCDF();
-
 	if (fork2())
 		exit(0);
+
+	config.range = RANGE1;
+	config.interval = INTERVAL1;
+	config.tag = '1';
+
+	if (fork2())  // Fork into seperate process for day, week, and month
+		{
+		config.range = RANGE2;
+		config.interval = INTERVAL2;
+		config.tag = '2';
+		if (fork2())
+			{
+			config.range = RANGE3;
+			config.interval = INTERVAL3;
+			config.tag = '3';
+			if (fork2())
+				exit(0);
+			}
+		}
 	
-	IPCKey = ftok(".", 'a');
+    if(config.recover_cdf)
+	    RecoverDataFromCDF();
+	
+	IPCKey = ftok(".", config.tag);
 	if ((shmid = shmget(IPCKey, sizeof(struct IPCData)*IP_NUM, IPC_CREAT | IPC_EXCL)) == -1)
 		{
 		if ((shmid = shmget(IPCKey, sizeof(struct IPCData)*IP_NUM, 0)) == -1)
@@ -211,10 +231,10 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 
     struct IPData *ptrIPData;
 
-    if (h->ts.tv_sec > IntervalStart + INTERVAL)  // Then write out this intervals data and possibly kick off the grapher
+    if (h->ts.tv_sec > IntervalStart + config.interval)  // Then write out this intervals data and possibly kick off the grapher
         {
         GraphIntervalCount++;
-        CommitData(IntervalStart+INTERVAL);
+        CommitData(IntervalStart+config.interval);
 		IpCount = 0;
         IntervalStart=h->ts.tv_sec;
         }
@@ -331,7 +351,7 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 		{
 		// If the First block is out of date, purge it, if it is the only block
 		// purge the node
-        while(DataStore->FirstBlock->LatestTimestamp < timestamp - RANGE1)
+        while(DataStore->FirstBlock->LatestTimestamp < timestamp - config.range)
 			{
             if ((!DataStore->FirstBlock->Next) && PrevDataStore) // There is no valid block of data for this ip, so unlink the whole ip
 				{ 												// Don't bother unlinking the ip if it's the first one, that's to much
@@ -370,8 +390,16 @@ void StoreIPDataInCDF(struct IPData IncData[])
 	FILE *cdf;
 	struct Statistics *Stats;
 	char IPBuffer[50];
+	char logfile[] = "log1.cdf";
+	
 
-    cdf = fopen("log.cdf", "a");
+	if (config.tag != '1')
+		{ 
+		logfile[3] = config.tag;
+    	cdf = fopen(logfile, "a");
+		}
+	else
+		cdf = fopen("log.cdf", "a");
 
 	for (counter=0; counter < IpCount; counter++)
 		{
@@ -542,7 +570,7 @@ void CommitData(long int timestamp)
 				while (DataStore) // Is not null
 					{
 					if (DataStore->FirstBlock->NumEntries > 0)
-						GraphIp(DataStore, &IPCSharedData[NumGraphs++], timestamp+LEAD*RANGE1);
+						GraphIp(DataStore, &IPCSharedData[NumGraphs++], timestamp+LEAD*config.range);
 			        DataStore = DataStore->Next;
 					}
 
@@ -566,7 +594,7 @@ int RCDF_Test(char *filename)
 
 	if (!(cdf = fopen(filename, "r"))) return FALSE;
 	if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2) return FALSE;
-	if (timestamp > time(NULL) - RANGE1)
+	if (timestamp > time(NULL) - config.range)
 		return FALSE; // Keep looking
 	else
 		return TRUE; // Start with this file
@@ -584,11 +612,11 @@ void RCDF_PositionStream(FILE *cdf)
 	printf("Seeking to end of data...\n");
 	fseek(cdf, 0, SEEK_END);
 	timestamp = current_timestamp;
-	while (timestamp > current_timestamp - RANGE1)
+	while (timestamp > current_timestamp - config.range)
 		{
 		printf("Seeking backwards...\n");
 		// What happenes if we seek past the beginning of the file?
-		if (fseek(cdf, -IP_NUM*75*(RANGE1/INTERVAL)/20,SEEK_CUR))
+		if (fseek(cdf, -IP_NUM*75*(config.range/config.interval)/20,SEEK_CUR))
 			{ // fseek returned error, just seek to beginning
 			printf("Seeked past beginning of file, loading from beginning...\n");
 			fseek(cdf, 0, SEEK_SET);
@@ -661,14 +689,28 @@ void RecoverDataFromCDF(void)
 	{
 	FILE *cdf;
     struct stat StatBuf;
+	char filename[] = "log2.cdf";
 
 	printf("Recovering logs...\n");
 
-	if (stat("log.cdf", &StatBuf))
+	if (config.tag != '1') // We don't rotate weekly and monthly logs right now
 		{
-		return;	
+		filename[3] = config.tag;
+		if (stat(filename, &StatBuf))
+			return;
+		
+        // Just recover the log2.cdf and return
+        if (!(cdf = fopen(filename, "r"))) return;
+        printf("Recovering from %s...\n", filename);
+        RCDF_PositionStream(cdf);
+        RCDF_Load(cdf);
+        return;						
 		}
-	else if (RCDF_Test("log.cdf") || stat("log.1.cdf", &StatBuf))  
+
+	if (stat("log.cdf", &StatBuf))
+		return;	
+
+	if (RCDF_Test("log.cdf") || stat("log.1.cdf", &StatBuf))  
 		{
 		// Simple case, just recover the log.cdf and return
 		if (!(cdf = fopen("log.cdf", "r"))) return;
@@ -758,99 +800,6 @@ void RecoverDataFromCDF(void)
 		RCDF_Load(cdf);
 		}
 	}
-
-
-/*	
-void RecoverDataFromCDF()
-	{
-    FILE *cdf;
-    time_t timestamp;
-	time_t current_timestamp;
-	struct in_addr ipaddr;
-	struct IPData *ip=NULL;
-	char ipaddrBuffer[16];
-	char *buffer;
-	unsigned long int Counter = 0;
-	unsigned long int IntervalsRead = 0;
-
-	if (!(buffer = malloc(250)))
-		{
-		printf("Could not allocate ram for recovering cdf....\n");
-		return;
-		}
-
-	cdf = fopen("log.cdf", "r");
-    if (!cdf)
-	    {
-		printf("Cannot open log.cdf (%s). Starting all counters from zero\n", 
-	    	   strerror(errno));
-		return;
-    	}
-
-	current_timestamp = time(NULL);
-
-	printf("Recovering log....\n");
-	printf("Seeking beginning of data...\n");
-	fseek(cdf, 0, SEEK_END);
-	timestamp = current_timestamp;
-	while (timestamp > current_timestamp - RANGE1)
-		{
-		printf("Seeking...\n");
-		fseek(cdf, -IP_NUM*75*(RANGE1/INTERVAL)/20,SEEK_CUR); // Seek backwards
-		while (fgetc(cdf) != '\n' && !feof(cdf)); // Read to next line
-		ungetc('\n', cdf);
-        if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2)
-            goto End_RecoverDataFromCdf;
-		}
-
-	current_timestamp = timestamp; // Now refers to the time interval we are loading
-	inet_aton(ipaddrBuffer, &ipaddr);
-	ip = FindIp(ntohl(ipaddr.s_addr));	
-	ip->timestamp = timestamp;
-	if (fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,", &ip->Send.total, &ip->Send.icmp, &ip->Send.udp, &ip->Send.tcp, &ip->Send.ftp, &ip->Send.http, &ip->Send.p2p) != 7)
-		goto End_RecoverDataFromCdf;
-	if (fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu", &ip->Receive.total, &ip->Receive.icmp, &ip->Receive.udp, &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.p2p) != 7)
-		goto End_RecoverDataFromCdf;
-
-	printf("Reading....\n");
-    for(Counter = 0; !feof(cdf) && !ferror(cdf); Counter++)
-	    {
-		if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2) 
-			goto End_RecoverDataFromCdf;
-		if (timestamp != current_timestamp)
-			{ // Dump to datastore
-			StoreIPDataInRam(IpTable);
-			IpCount = 0; // Reset Traffic Counters
-			current_timestamp = timestamp;
-			IntervalsRead++;
-			}    		
-		inet_aton(ipaddrBuffer, &ipaddr);
-		ip = FindIp(ntohl(ipaddr.s_addr));
-		ip->timestamp = timestamp;
-
-        if (fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,",
-            &ip->Send.total, &ip->Send.icmp, &ip->Send.udp,
-            &ip->Send.tcp, &ip->Send.ftp, &ip->Send.http, &ip->Send.p2p) != 7
-          || fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu",
-            &ip->Receive.total, &ip->Receive.icmp, &ip->Receive.udp,
-            &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.p2p) != 7)
-			goto End_RecoverDataFromCdf;		
-
-		if ((Counter%15000) == 0)
-			printf("%lu records read over %lu intervals...\n", Counter, IntervalsRead);
-		}
-End_RecoverDataFromCdf:
-		StoreIPDataInRam(IpTable);
-	printf("%lu records total...\n", Counter);	
-	DropOldData(time(NULL)); // Dump the extra data
-    if(!feof(cdf))
-       printf("Failed to parse part of log.cdf. Giving up on the file.\n");
-	IpCount = 0; // Reset traffic counters
-	free(buffer);    
-    fclose(cdf);
-	}
-*/
-
 
 // ****** FindIp **********
 // ****** Returns or allocates an Ip's data structure

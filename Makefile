@@ -1,12 +1,12 @@
 #Possible optimizations -fomit-frame-pointer -ffast-math
 OBS= bandwidthd.o graph.o conf.tab.o conf.l.o
 LIBS= -L/usr/local/lib -lgd -lpng -lpcap 
-CFLAGS= -I/usr/local/include -O3 -Wall
+#CFLAGS= -I/usr/local/include -O3 -Wall
 NONWALLCFLAGS= -O3 #-g -DDEBUG
 
 # Debugging stuff
 #CFLAGS= -O3 -Wall -pg -DPROFILE
-#CFLAGS= -O3 -Wall -g -DDEBUG
+CFLAGS= -Wall -g 
 
 OS=$(shell uname -s)
 ifeq ("$(OS)","Solaris")

@@ -28,7 +28,7 @@
 
 #include <time.h>
 
-#define IP_NUM 3000			// TODO: Do this dynamicly to save ram and/or scale bigger
+#define IP_NUM 4000			// TODO: Do this dynamicly to save ram and/or scale bigger
 #define SUBNET_NUM 100
 
 #define XWIDTH 900
@@ -39,7 +39,9 @@
 #define RANGE2 604800.0        // 7 days
 #define RANGE3 2592000.0    // 30 days
 
-#define INTERVAL 150L         // 150 -60 (210 is the perfect interval?)
+#define INTERVAL1 150L         // 150 -60 (210 is the perfect interval?)
+#define INTERVAL2 600L		
+#define INTERVAL3 3600L	
 #define CONFIG_GRAPHINTERVALS 1    // 2 -5 Number of Intervals to wait before redrawing the graphs
 
 #define CONFIG_GRAPHCUTOFF 1024*1024    // If total data transfered doesn't reach at least this number we don't graph the ip
@@ -60,6 +62,9 @@ struct config
 	int output_cdf;
 	int recover_cdf;
 	int graph;
+	double range;
+	unsigned long long interval;
+	char tag;
 	};
 
 struct SubnetData
