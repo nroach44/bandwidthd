@@ -39,16 +39,16 @@ AC_CHECK_LIB(nsl, gethostbyname)
 AC_CHECK_LIB(resolv, inet_aton)
 
 # Required Libraries
+AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd requires but cannot libpng])])
 AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libgd])])
 AC_CHECK_LIB(pcap, pcap_open_live, ,
-	AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])
-AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd requires but cannot libpng])]))
+	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])])
 
 # Optional Library
 AC_CHECK_FILE(/usr/local/pgsql/lib, LDFLAGS="$LDFLAGS -L/usr/local/pgsql/lib")
 AC_CHECK_FILE(/usr/local/pgsql/include, CPPFLAGS="$CPPFLAGS -I/usr/local/pgsql/include")
 AC_CHECK_LIB(pq, PQconnectdb,
-	AC_CHECK_LIB(pq,PQexecParams, ,AC_MSG_WARN([libpq exists but is too old... bandwidthd requires support for PQexecParams]) ) )
+	[AC_CHECK_LIB(pq,PQexecParams, ,AC_MSG_WARN([libpq exists but is too old... bandwidthd requires support for PQexecParams]))])
 
 # Checks for header files.
 AC_HEADER_DIRENT

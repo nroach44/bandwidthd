@@ -27,6 +27,7 @@ static void rdnslngjmp(int signal);
 
 void rdns(char *Buffer, unsigned long IP)  // This takes over sigalarm!
 	{
+#ifdef HAVE_RESOLV_H
 	char DNSError[] = "DNS Timeout: Correct to speed up graphing";
 	char None[] = "Configure DNS to reverse this IP";
 	char TooManyDNSTimeouts[] = "Too many dns timeouts, reverse lookups suspended";
@@ -36,10 +37,8 @@ void rdns(char *Buffer, unsigned long IP)  // This takes over sigalarm!
 	static int DNSTimeouts = 0;  // This is reset for each run because we're forked
 	unsigned long addr = htonl(IP);
 
-#ifdef HAVE_RESOLV_H
     _res.retrans = 1;
     _res.retry = 2;
-#endif
 
 	if (Init)
 		{
@@ -77,6 +76,9 @@ void rdns(char *Buffer, unsigned long IP)  // This takes over sigalarm!
         strncpy(Buffer, DNSError, 253);
 		Buffer[254] = '\0';
 		}
+#else
+	Buffer[0] = '\0';
+#endif
 	}
 
 static void rdnslngjmp(int signal)
