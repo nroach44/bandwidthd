@@ -366,10 +366,7 @@ int main(int argc, char **argv)
 	fclose(stdin);
 	fclose(stdout);
 	fclose(stderr);
-	if (config.tag == '1') // We only rotate the first stage logs right now
-		signal(SIGHUP, signal_handler);
-	else
-		signal(SIGHUP, SIG_IGN);
+	signal(SIGHUP, signal_handler);
 
 	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
 		{
@@ -795,7 +792,6 @@ void StoreIPDataInRam(struct IPData IncData[])
 		_StoreIPDataInRam(&IncData[counter]);
 	}
 
-
 void CommitData(long int timestamp)
     {
 	static int MayGraph = TRUE;
@@ -885,9 +881,19 @@ int RCDF_Test(char *filename)
 
 	if (!(cdf = fopen(filename, "r"))) 
 		return FALSE;
-	if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2) return FALSE;
+	fseek(cdf, 10, SEEK_END); // fseek to near end of file
+	while (fgetc(cdf) != '\n') // rewind to last newline
+		{
+		if (fseek(cdf, -2, SEEK_CUR) == -1)
+			break;
+		}
+	if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2)
+		{
+		syslog(LOG_ERR, "%s is corrupted, skipping", filename); 
+		return FALSE;
+		}
 	fclose(cdf);
-	if (timestamp > time(NULL) - config.range)
+	if (timestamp < time(NULL) - config.range)
 		return FALSE; // There is no data in this file from before cutoff
 	else
 		return TRUE; // This file has data from before cutoff
