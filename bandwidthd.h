@@ -91,7 +91,6 @@ struct Statistics
 
 struct IPData
     {
-    char Magick[4];
     long int timestamp;
     uint32_t ip;	// Host byte order
     struct Statistics Send;

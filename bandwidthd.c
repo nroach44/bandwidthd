@@ -142,10 +142,22 @@ int main(int argc, char **argv)
 		exit(1);
 		}
 	yyparse();
-	
+	/*
 	// Scary
-	//printf("Max ram utilization is %dMBytes.\n", (int)((sizeof(struct IPData)*(config.range/180)*IP_NUM)/1024)/1024);
-
+	printf("Estimated max ram utilization\nDataPoints = %.0f/%ld = %.0f\nIPData = %d * DataPoints = %.1f (%.2fKBytes) per IP\nIP_NUM = %d\nTotal = %.1fMBytes * 4 to 8 = %.1fMBytes to %.1fMBytes\n", 
+		RANGE1, INTERVAL1, RANGE1/INTERVAL1,		
+		sizeof(struct IPData), 
+		(float) sizeof(struct IPData)*(RANGE1/INTERVAL1), 
+		(float) (sizeof(struct IPData)*(RANGE1/INTERVAL1))/1024.0,
+		IP_NUM, 
+		(float)((sizeof(struct IPData)*(RANGE1/INTERVAL1)*IP_NUM)/1024.0)/1024.0,
+		(float)4*((sizeof(struct IPData)*(RANGE1/INTERVAL1)*IP_NUM)/1024.0)/1024.0,
+		(float)8*((sizeof(struct IPData)*(RANGE1/INTERVAL1)*IP_NUM)/1024.0)/1024.0);
+	printf("Sizeof unsigned long: %d, sizeof unsigned long long: %d\n%lu, %llu\n",
+		sizeof(unsigned long), sizeof (unsigned long long),
+		(unsigned long) (0-1), (unsigned long long) (0-1));
+		exit(1);
+	*/
 	bd_CollectingData("htdocs/index.html");
 	bd_CollectingData("htdocs/index2.html");
 	bd_CollectingData("htdocs/index3.html");
@@ -864,10 +876,6 @@ inline struct IPData *FindIp(uint32_t ipaddr)
         }
 	
     memset(&IpTable[IpCount], 0, sizeof(struct IPData));
-    IpTable[IpCount].Magick[0] = 'R';
-    IpTable[IpCount].Magick[1] = 'E';
-    IpTable[IpCount].Magick[2] = 'C';
-    IpTable[IpCount].Magick[3] = 'B';
 
     IpTable[IpCount].ip = ipaddr;
     return (&IpTable[IpCount++]);
