@@ -5,6 +5,7 @@ Fixed segfault in DropOldData discovered by Hannes Reich
 Fixed some errors in Makefile, preserved bandwidthd.conf - Bob Toxen
 Detected https as http - Bob Toxen
 Fixed bug that would cause "killall -HUP bandwidthd" to kill the graphing process
+Initial support for datalink type 12 DLT_RAW 
 
 1.1.7
 Compiles clean on BSD - Colin Harford - Sheepkiller

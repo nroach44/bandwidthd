@@ -172,6 +172,12 @@ int main(int argc, char **argv)
 			printf("Packet Encoding:\n\tLinux Cooked Socket\n");
 			IP_Offset = 16;
 #endif
+#ifdef DLT_RAW
+		case DLT_RAW:
+			printf("Packet Encoding:\n\tRaw\n");
+			IP_Offset = 0;
+			break;
+#endif
 		}
                                            
 	signal(SIGHUP, signal_handler);
