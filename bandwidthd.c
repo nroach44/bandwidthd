@@ -50,6 +50,8 @@ extern FILE *yyin;
 
 struct config config;
 
+pid_t workerchildpids[NR_WORKER_CHILDS];
+
 void signal_handler(int sig)
 	{
 	signal(SIGHUP, signal_handler);
@@ -122,6 +124,46 @@ void WriteOutWebpages(long int timestamp)
 		}	
 	}
 
+void setchildconfig (int level) {
+	static unsigned long long graph_cutoff;
+
+	switch (level) {
+		case 0:
+			config.range = RANGE1;
+			config.interval = INTERVAL1;
+			config.tag = '1';
+			graph_cutoff = config.graph_cutoff;
+		break;
+		case 1:
+			// Overide skip_intervals for children
+			config.skip_intervals = CONFIG_GRAPHINTERVALS;
+			config.range = RANGE2;
+			config.interval = INTERVAL2;
+			config.tag = '2';
+			config.graph_cutoff = graph_cutoff*(RANGE2/RANGE1);	
+		break;
+		case 2:
+			// Overide skip_intervals for children
+			config.skip_intervals = CONFIG_GRAPHINTERVALS;
+			config.range = RANGE3;
+			config.interval = INTERVAL3;
+			config.tag = '3';
+			config.graph_cutoff = graph_cutoff*(RANGE3/RANGE1);
+		break;
+		case 3:
+			// Overide skip_intervals for children
+			config.skip_intervals = CONFIG_GRAPHINTERVALS;
+			config.range = RANGE4;
+			config.interval = INTERVAL4;
+			config.tag = '4';
+			config.graph_cutoff = graph_cutoff*(RANGE4/RANGE1);
+		break;
+
+		default:
+			printf("Ugh! setchildconfig got an invalid level argument: %d\n", level);
+	}
+}
+
 int main(int argc, char **argv)
     {
     struct bpf_program fcode;
@@ -129,7 +171,7 @@ int main(int argc, char **argv)
     struct shmid_ds shmstatus;
 	char Error[PCAP_ERRBUF_SIZE];
 	char CurrentDirWarning[] = "bandwidthd always works out of the current directory, cd to some place with a ./etc/bandwidthd.conf and a ./htdocs/ then run it";
-	unsigned long long graph_cutoff;
+	int i;
 
 	config.dev = NULL;
 	config.filter = "ip";
@@ -170,39 +212,37 @@ int main(int argc, char **argv)
 	bd_CollectingData("htdocs/index3.html");
 	bd_CollectingData("htdocs/index4.html");
 
+	/* detach from console. */
 	if (fork2())
 		exit(0);
 
-	config.range = RANGE1;
-	config.interval = INTERVAL1;
-	config.tag = '1';
-	graph_cutoff = config.graph_cutoff;
+	setchildconfig(0); /* initialize first (day graphing) process config */
 
-	if (fork())  // Fork into seperate process for day, week, and month
-		{
-		config.skip_intervals = CONFIG_GRAPHINTERVALS; // Overide skip_intervals for children
-		config.range = RANGE2;
-		config.interval = INTERVAL2;
-		config.tag = '2';
-		config.graph_cutoff = graph_cutoff*(RANGE2/RANGE1);	
-		if (fork())
-			{
-			config.range = RANGE3;
-			config.interval = INTERVAL3;
-			config.tag = '3';
-			config.graph_cutoff = graph_cutoff*(RANGE3/RANGE1);
-			if (fork())
-				{
-	            config.range = RANGE4;
-    	        config.interval = INTERVAL4;
-        	    config.tag = '4';
-				config.graph_cutoff = graph_cutoff*(RANGE4/RANGE1);
-            	if (fork())
-                	exit(0);
-				}
-			}
+	/* fork processes for week, month and year graphing. */
+	for (i=1; i<=NR_WORKER_CHILDS; i++) {
+		pid_t pid;
+
+		pid = fork();
+
+		/* initialize children and let them start doing work,
+		 * while parent continues to fork children.
+		 */
+
+		if (pid == 0) { /* child */
+			setchildconfig(i);
+			break;
 		}
-	
+
+		if (pid == -1) { /* fork failed */
+			printf("Bandwidthd: failed to fork graphing child (%d).\n", i);
+			/* i--; ..to retry? -> possible infinite loop */
+			continue;
+		}
+
+		/* first process maintains a list of child pids */
+		workerchildpids[i] = pid;
+	}
+
     if(config.recover_cdf)
 	    RecoverDataFromCDF();
 	

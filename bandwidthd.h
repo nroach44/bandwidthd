@@ -35,6 +35,9 @@
 #define YHEIGHT 256L
 #define XOFFSET 90L
 #define YOFFSET 45L
+
+#define NR_WORKER_CHILDS 3
+
 #define RANGE1 172800.0    	// 2 days
 #define RANGE2 604800.0    	// 7 days
 #define RANGE3 3024000.0    // 35 days
