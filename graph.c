@@ -412,12 +412,12 @@ void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, tim
         PrepareYAxis(im2, YMax);
 
         sprintf(outputfilename, "./htdocs/%s-%c-S.png", CharIp, config.tag);
-        OutputFile = fopen(outputfilename, "w");    
+        OutputFile = fopen(outputfilename, "wb");    
         gdImagePng(im, OutputFile);
         fclose(OutputFile);
 
         sprintf(outputfilename, "./htdocs/%s-%c-R.png", CharIp, config.tag);
-        OutputFile = fopen(outputfilename, "w");
+        OutputFile = fopen(outputfilename, "wb");
         gdImagePng(im2, OutputFile);
         fclose(OutputFile);
         }
