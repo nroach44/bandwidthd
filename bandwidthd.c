@@ -323,8 +323,11 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 	PrevDataStore = NULL;
     DataStore = IPDataStore;
 
+	// Progress through the linked list until we reach the end
 	while(DataStore)  // we have data
 		{
+		// If the First block is out of date, purge it, if it is the only block
+		// purge the node
         while(DataStore->FirstBlock->LatestTimestamp < timestamp - RANGE1)
 			{
             if ((!DataStore->FirstBlock->Next) && PrevDataStore) // There is no valid block of data for this ip, so unlink the whole ip
@@ -334,13 +337,14 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 				free(DataStore->FirstBlock->Data);      // Free the memory
 				free(DataStore->FirstBlock);
 				free(DataStore);												
-				DataStore = PrevDataStore;				// Rewind back to the prev data store so the move next below doesn't skip a node		
+				DataStore = PrevDataStore->Next;	// Go to the next node
+				if (!DataStore) return; // We're done
 				}				
 			else if (!DataStore->FirstBlock->Next)
 				{
 				// There is no valid block of data for this ip, and we are 
-				// the first ip, so do nothing
-				break;
+				// the first ip, so do nothing 
+				break; // break out of this loop so the outside loop increments us
 				} 
 			else // Just unlink this block
 				{
