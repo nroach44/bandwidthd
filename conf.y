@@ -22,10 +22,12 @@ extern struct SubnetData SubnetTable[];
 extern struct config config;
 
 int yylex(void);
+int LineNo = 1;
 
 void yyerror(const char *str)
     {
-    fprintf(stderr, "Syntax Error: \"%s\"\n\n> ", str);
+    fprintf(stderr, "Syntax Error \"%s\" on line %d\n", str, LineNo);
+	exit(1);
     }
 
 int yywrap()
@@ -35,7 +37,7 @@ int yywrap()
 %}
 
 %token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF 
-%token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH
+%token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE
 %union
 {
     int number;
@@ -69,12 +71,21 @@ command:
 	recover_cdf
 	|
 	graph
+	|
+	newline
 	;
 
 subnet:
 	subneta
 	|
 	subnetb
+	;
+
+newline:
+	TOKNEWLINE
+	{
+	LineNo++;
+	}
 	;
 
 subneta:
@@ -90,6 +101,7 @@ subneta:
 	addr.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
 	printf("with netmask %s\n", inet_ntoa(addr));
 	}
+	;
 
 subnetb:
 	TOKSUBNET IPADDR TOKSLASH NUMBER
@@ -110,6 +122,7 @@ subnetb:
 	addr.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
 	printf("with netmask %s\n", inet_ntoa(addr));
 	}
+	;
 
 string:
     STRING

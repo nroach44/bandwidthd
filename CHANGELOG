@@ -1,3 +1,5 @@
+Caused graph_cutoff to be scaled with time range to reduce load induced by
+	weekly/monthly/yearly graphs
 Fixed bad documentation
 
 1.2.0

@@ -7,8 +7,9 @@
 %}
 
 %%
-[ \t\n]+      			/* Ignore */;
-#.*\n        			/* Ignore Comments */ ;
+[ \t]+      			/* Ignore */;
+\n						{ return TOKNEWLINE; }
+#.*\n        			{ return TOKNEWLINE; }
 ([0-9]{1,3}"."){3,3}([0-9]{1,3}) { yylval.string=strdup(yytext); return IPADDR; }
 [-0-9]+					{ yylval.number=atoi(yytext); return NUMBER; }
 \".*\"					{ yylval.string=strdup(yytext); return STRING; }
