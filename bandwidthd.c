@@ -90,6 +90,7 @@ int WriteOutWebpages(long int timestamp)
 	struct SummaryData **SummaryData;
 	int NumGraphs = 0;
 	pid_t graphpid;
+	int Counter;
 
 	/* Did we catch any packets since last time? */
 	if (!DataStore) return -1;
@@ -111,8 +112,13 @@ int WriteOutWebpages(long int timestamp)
 
     	    nice(4); // reduce priority so I don't choke out other tasks
 
-			SummaryData = malloc(sizeof(struct SummaryData *)*IP_NUM);
+			// Count Number of IP's in datastore
+			for (DataStore = IPDataStore, Counter = 0; DataStore; Counter++, DataStore = DataStore->Next);
 
+			// +1 because we don't want to accidently allocate 0
+			SummaryData = malloc(sizeof(struct SummaryData *)*Counter+1);
+
+			DataStore = IPDataStore;
 			while (DataStore) // Is not null
 				{
 				if (DataStore->FirstBlock->NumEntries > 0)
