@@ -204,7 +204,7 @@ int main(int argc, char **argv)
     struct bpf_program fcode;
     u_char *pcap_userdata = 0;
 	char Error[PCAP_ERRBUF_SIZE];
-	char CurrentDirWarning[] = "bandwidthd always works out of the current directory, cd to some place with a ./etc/bandwidthd.conf and a ./htdocs/ then run it";
+	struct stat StatBuf;
 	int i;
 
 	config.dev = NULL;
@@ -222,11 +222,25 @@ int main(int argc, char **argv)
 
 	openlog("bandwidthd", LOG_CONS, LOG_DAEMON);
 
+	if (stat("./etc/bandwidthd.conf", &StatBuf))
+		{
+		if(!stat("/usr/local/bandwidthd/etc/bandwidthd.conf", &StatBuf))
+			{
+			chdir("/usr/local/bandwidthd");
+			}
+		else
+			{
+			printf("Cannot find ./etc/bandwidthd.conf or /usr/local/bandwidthd/etc/bandwidthd.conf\n");
+			syslog(LOG_ERR, "Cannot find ./etc/bandwidthd.conf or /usr/local/bandwidthd/etc/bandwidthd.conf");
+			exit(1);
+			}
+		}
+
 	yyin = fopen("./etc/bandwidthd.conf", "r");
 	if (!yyin)
 		{
-		syslog(LOG_ERR, "Cannot open ./etc/bandwidthd.conf: %s", CurrentDirWarning);
-		printf("Cannot open ./etc/bandwidthd.conf: %s", CurrentDirWarning);
+		syslog(LOG_ERR, "Cannot open bandwidthd.conf");
+		printf("Cannot open ./etc/bandwidthd.conf\n");
 		exit(1);
 		}
 	yyparse();
