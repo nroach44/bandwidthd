@@ -1,69 +1,37 @@
-2.0.0 beta cvs on Jan 9, 2005
-Implemented auto conf
-Ported to and compiles on:
-ix86 Fedora Core 2
-ix86 Solaris 9
-ix86 OpenBSD 3.4
-ix86 Debian 2.2
-ix86 FreeBSD 4.8
-AMD64 Fedora Core 3
-PPC MaxOsX 10.2
-
-2.0.0 beta cvs on Jan 8, 2005
-Makefile fixes for .BSD and .Solaris
-Fixed variouse bugs in php graphing system
-Decided to store data in database in kilobytes instead of bytes
-Renamed report.php to index.php
-Keep navigation form settings between navigations
-Added config.conf for php application configuration
-
-2.0.0 beta cvs on Jan 8, 2005
-Added bd_pgsql_purge.sh to keep database from becomming unmanagable
-Bug fix geting sensor_id if sensor is already registered
-Wrapped inserts in a transaction so all now() times are the same
-Changed indexing scheme again
-
-2.0.0 beta cvs on Jan 7, 2005
-Changed default interval to save ram and cpu power
-Changed indexing scheme again
-Moved sensor names to a seperate table to improve performance
-
-2.0.0 beta cvs on Jan 2, 2005
-Changed Optimization of indexes
-Implemented Totals graph optimization for main sensor query
-Added Totals graphs for all subnet searchs
+2.0.1 
+Big Feature - Added optional postgresql database logging mode and php for dynamic graph creation from 
+	databases.  Great for big sites,  multiple sensors with very low overhead collect traffic statistics
+	and log them to database.  Graphs are created when a user visits the page instead of burning CPU
+	cycles night and day.  Logging/Multiple sensor support is completed.  
+Big Feature - Implemented auto conf
+	Ported to and compiles on:
+	ix86 Fedora Core 2
+	ix86 Solaris 9
+	ix86 OpenBSD 3.4
+	ix86 Debian 2.2
+	ix86 FreeBSD 4.8
+	AMD64 Fedora Core 3
+	PPC MaxOsX 10.2
+	ix86 Microsoft Windows
+Changed default interval to 200 seconds to save ram and cpu power
+Huge performance gain in graphing engine due to bug fix (Peak Send and Total Sent strings font
+	operations were being done to each graphic almost 1000 times instead of just 1)
+Removed need of Sys V IPC shared memeory
+log rotation on all logs implemented - secondary logs rotate every RANGE?/RANGE1 HUP's
+Added syslog support, removed all printf's except a few early errors, closed 
+	stdin, stdout, and stderr before beginning capture loop
 Bandwidthd collects the pids of it's children and distributes HUP and TERM signals when issued
 	to the first process
 Changed yy parser name to bdconfig_ to avoid a bug in BSD
 Added some semi-colons to conf.y to fix BSD flex/bison compatability bug
-
-2.0.0 beta cvs on Jan 1, 2005
 Fixed bug that caused memory corruption when ram datastore had data on more than IP_NUM ips.
 Fixed some longs that missed being converted to unsigned long long.
-Initial database mode documentation
-Added another index to schema
-All four logging processes now listen for log rotation hup
 Fixed bug in CDF recovery that would cause bandwidthd to ignore some CDF logs during recovery
 Bandwidthd now checks for ./etc/bandwidthd.conf, and if it doesn't exist it checks for 
 	/usr/local/bandwidthd/etc/bandwidthd.conf, if that exists it will chdir("/usr/local/bandwidthd")
-Fixed memory leak introduced in last revision
-Added syslog support, removed all printf's except a few early errors, closed 
-	stdin, stdout, and stderr before beginning capture loop
-
-2.0.0 beta cvs on Dec 31, 2004
 Fixed problem that caused bandwidthd to sit and never create graphs
-Huge performance gain in graphing engine due to bug fix (Peak Send and Total Sent strings font
-	operations were being done to each graphic almost 1000 times instead of just 1)
 if graph is set to false do not store data in ram, do not fork unless output_cdf is true
 log names changed to be consistent so all logs could be rotated with same function
-log rotation on all logs implemented - secondary logs rotate every RANGE?/RANGE1 HUP's
-Removed need of Sys V IPC shared memeory
-
-Big Feature - Added postgresql database logging mode and php for dynamic graph creation from 
-databases.  Great for big sites,  multiple sensors with very low overhead collect traffic statistics
-and log them to database.  Graphs are created when a user visits the page instead of burning CPU
-cycles night and day.  Logging/Multiple sensor support is completed.  Basic php pages also completed
-but still in development
 
 1.2.1b
 Reduced Loading spam
