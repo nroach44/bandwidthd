@@ -174,8 +174,8 @@ void            CommitData(long int timestamp);
 // ************ Creates our Graphs
 void            GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, long int timestamp);
 void            PrepareXAxis(gdImagePtr im, long int timestamp);
-void            PrepareYAxis(gdImagePtr im, long long int YMax);
-long int        GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp,  struct SummaryData *SummaryData);
+void            PrepareYAxis(gdImagePtr im, unsigned long long int YMax);
+unsigned long long GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp,  struct SummaryData *SummaryData);
 
 
 // ************ Misc

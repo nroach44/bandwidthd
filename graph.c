@@ -118,7 +118,7 @@ static void FormatNum(unsigned long long n, char *buf, int len) {
     f /= NumFactor; if (f<NumFactor) { snprintf(buf,len,"<td align=\"right\"><tt>%.1fK</tt></td>",f); return; }
     f /= NumFactor; if (f<NumFactor) { snprintf(buf,len,"<td align=\"right\"><tt>%.1fM</tt></td>",f); return; }
     f /= NumFactor; if (f<NumFactor) { snprintf(buf,len,"<td align=\"right\"><tt>%.1fG</tt></td>",f); return; }
-    f /= NumFactor; snprintf(buf,len,"<td align=\"right\"><tt>%.1fT</tt></td>",f);
+    f /= NumFactor; snprintf(buf,len,"<td align=\"right\"><tt>%.1fT</tt></td>\n",f);
 }
 
 void PrintTableLine(FILE *stream, struct SummaryData *Data, int Counter)
@@ -368,7 +368,7 @@ void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, lon
     char outputfilename[50];
     gdImagePtr im, im2;
     int white;
-    long long int YMax;
+    unsigned long long int YMax;
 	char CharIp[20];
 
     long int GraphBeginTime;
@@ -424,9 +424,9 @@ void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, lon
     }
 
 // Returns YMax
-long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp, struct SummaryData *SummaryData)
+unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp, struct SummaryData *SummaryData)
     {
-    long int YMax=0;
+    unsigned long long int YMax=0;
 	
 	struct DataStoreBlock *CurrentBlock;
     struct IPData *Data;
@@ -434,22 +434,22 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
 	// TODO: These should be a structure!!!!
 	// TODO: This is an awfull lot of data to be allocated on the stack
 
-    unsigned long total[XWIDTH];
-    unsigned long icmp[XWIDTH];
-    unsigned long udp[XWIDTH];
-    unsigned long tcp[XWIDTH];
-	unsigned long ftp[XWIDTH];
-    unsigned long http[XWIDTH];
-    unsigned long p2p[XWIDTH];
+    unsigned long long total[XWIDTH];
+    unsigned long long icmp[XWIDTH];
+    unsigned long long udp[XWIDTH];
+    unsigned long long tcp[XWIDTH];
+	unsigned long long ftp[XWIDTH];
+    unsigned long long http[XWIDTH];
+    unsigned long long p2p[XWIDTH];
     int Count[XWIDTH];
 
-    unsigned long total2[XWIDTH];
-    unsigned long icmp2[XWIDTH];
-    unsigned long udp2[XWIDTH];
-    unsigned long tcp2[XWIDTH];
-	unsigned long ftp2[XWIDTH];
-    unsigned long http2[XWIDTH];
-    unsigned long p2p2[XWIDTH];
+    unsigned long long total2[XWIDTH];
+    unsigned long long icmp2[XWIDTH];
+    unsigned long long udp2[XWIDTH];
+    unsigned long long tcp2[XWIDTH];
+	unsigned long long ftp2[XWIDTH];
+    unsigned long long http2[XWIDTH];
+    unsigned long long p2p2[XWIDTH];
 
     size_t DataPoints;
     double x;
@@ -461,8 +461,8 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
     int blue, lblue, red, yellow, purple, green, brown, black;
     int blue2, lblue2, red2, yellow2, purple2, green2, brown2, black2;
 
-	unsigned long int SentPeak = 0;
-	unsigned long int ReceivedPeak = 0;
+	unsigned long long int SentPeak = 0;
+	unsigned long long int ReceivedPeak = 0;
 
     yellow   = gdImageColorAllocate(im, 255, 255, 0);
     purple   = gdImageColorAllocate(im, 255, 0, 255);
@@ -672,31 +672,31 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
             }
 
 	if (SentPeak < 1024/8)
-		snprintf(Buffer2, 50, "Peak Send Rate: %.1f Bits/sec", (float)SentPeak*8);
+		snprintf(Buffer2, 50, "Peak Send Rate: %.1f Bits/sec", (double)SentPeak*8);
 	else if (SentPeak < (1024*1024)/8)
-		snprintf(Buffer2, 50, "Peak Send Rate: %.1f KBits/sec", ((float)SentPeak*8.0)/1024.0);
-	else snprintf(Buffer2, 50, "Peak Send Rate: %.1f MBits/sec", ((float)SentPeak*8.0)/(1024.0*1024.0));
+		snprintf(Buffer2, 50, "Peak Send Rate: %.1f KBits/sec", ((double)SentPeak*8.0)/1024.0);
+	else snprintf(Buffer2, 50, "Peak Send Rate: %.1f MBits/sec", ((double)SentPeak*8.0)/(1024.0*1024.0));
 								
 	if (SummaryData->TotalSent < 1024)
-		snprintf(Buffer, 30, "Sent %.1f Bytes", (float)SummaryData->TotalSent);					
+		snprintf(Buffer, 30, "Sent %.1f Bytes", (double)SummaryData->TotalSent);					
 	else if (SummaryData->TotalSent < 1024*1024)
-		snprintf(Buffer, 30, "Sent %.1f KBytes", (float)SummaryData->TotalSent/1024.0);
-	else snprintf(Buffer, 30, "Sent %.1f MBytes", (float)SummaryData->TotalSent/(1024.0*1024.0));
+		snprintf(Buffer, 30, "Sent %.1f KBytes", (double)SummaryData->TotalSent/1024.0);
+	else snprintf(Buffer, 30, "Sent %.1f MBytes", (double)SummaryData->TotalSent/(1024.0*1024.0));
 
 	gdImageString(im, gdFontSmall, XOFFSET+5,  YHEIGHT-20, Buffer, black);
 	gdImageString(im, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, Buffer2, black);				
 
 	if (ReceivedPeak < 1024/8)
-       	snprintf(Buffer2, 50, "Peak Receive Rate: %.1f Bits/sec", (float)ReceivedPeak*8);
+       	snprintf(Buffer2, 50, "Peak Receive Rate: %.1f Bits/sec", (double)ReceivedPeak*8);
     else if (ReceivedPeak < (1024*1024)/8)
-    	snprintf(Buffer2, 50, "Peak Receive Rate: %.1f KBits/sec", ((float)ReceivedPeak*8.0)/1024.0);               
-	else snprintf(Buffer2, 50, "Peak Receive Rate: %.1f MBits/sec", ((float)ReceivedPeak*8.0)/(1024.0*1024.0));
+    	snprintf(Buffer2, 50, "Peak Receive Rate: %.1f KBits/sec", ((double)ReceivedPeak*8.0)/1024.0);               
+	else snprintf(Buffer2, 50, "Peak Receive Rate: %.1f MBits/sec", ((double)ReceivedPeak*8.0)/(1024.0*1024.0));
 
     if (SummaryData->TotalReceived < 1024)
-        snprintf(Buffer, 30, "Received %.1f Bytes", (float)SummaryData->TotalReceived);
+        snprintf(Buffer, 30, "Received %.1f Bytes", (double)SummaryData->TotalReceived);
     else if (SummaryData->TotalReceived < 1024*1024)
-        snprintf(Buffer, 30, "Received %.1f KBytes", (float)SummaryData->TotalReceived/1024.0);
-    else snprintf(Buffer, 30, "Received %.1f MBytes", (float)SummaryData->TotalReceived/(1024.0*1024.0));
+        snprintf(Buffer, 30, "Received %.1f KBytes", (double)SummaryData->TotalReceived/1024.0);
+    else snprintf(Buffer, 30, "Received %.1f MBytes", (double)SummaryData->TotalReceived/(1024.0*1024.0));
                                                                                                               
     gdImageString(im2, gdFontSmall, XOFFSET+5,  YHEIGHT-20, Buffer, black2);                
     gdImageString(im2, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, Buffer2, black2);
@@ -704,7 +704,7 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
     return(YMax);
     }
 
-void PrepareYAxis(gdImagePtr im, long long int YMax)
+void PrepareYAxis(gdImagePtr im, unsigned long long int YMax)
     {
     char buffer[20];
 
