@@ -361,7 +361,7 @@ int main(int argc, char **argv)
 			syslog(LOG_INFO, "Unkown datalink type, defaulting to ethernet");
 		case DLT_EN10MB:
 			syslog(LOG_INFO, "Packet Encoding: Ethernet");
-			IP_Offset = sizeof(struct ether_header);
+			IP_Offset = 14; //IP_Offset = sizeof(struct ether_header);
 			break;	
 #ifdef DLT_LINUX_SLL 
 		case DLT_LINUX_SLL:

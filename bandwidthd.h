@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
@@ -12,7 +16,7 @@
 #include <net/if.h>
 
 #include <netinet/in.h>
-#include <netinet/if_ether.h>
+
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/udp.h>
@@ -27,10 +31,6 @@
 
 #include <sys/wait.h>
 #include <dirent.h>
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 #if HAVE_INTTYPES_H
 #include <inttypes.h>

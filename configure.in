@@ -40,8 +40,9 @@ AC_CHECK_LIB(resolv, inet_aton)
 
 # Required Libraries
 AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libgd])])
-AC_CHECK_LIB(pcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])
-AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd requires but cannot libpng])])
+AC_CHECK_LIB(pcap, pcap_open_live, ,
+	AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])
+AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd requires but cannot libpng])]))
 
 # Optional Library
 AC_CHECK_FILE(/usr/local/pgsql/lib, LDFLAGS="$LDFLAGS -L/usr/local/pgsql/lib")
@@ -52,19 +53,27 @@ AC_CHECK_LIB(pq, PQconnectdb,
 # Checks for header files.
 AC_HEADER_DIRENT
 
-AC_CHECK_HEADERS(gd.h,,
-	AC_CHECK_HEADERS(gd/gd.h,,
-		AC_MSG_ERROR([Bandwidthd cannot find gd.h])))
+AC_CHECK_HEADERS([gd.h],,
+	[AC_CHECK_HEADERS([gd/gd.h],,
+		AC_MSG_ERROR([Bandwidthd cannot find gd.h]))])
 
 AC_CHECK_HEADERS(gdfonts.h,,
-	AC_CHECK_HEADERS(gd/gdfonts.h,,
-		AC_MSG_ERROR([Bandwidthd cannot find gdfonts.h])))
+	[AC_CHECK_HEADERS(gd/gdfonts.h,,
+		AC_MSG_ERROR([Bandwidthd cannot find gdfonts.h]))])
 
 AC_CHECK_HEADERS([pcap.h],,
 	[AC_MSG_ERROR([Bandwidthd cannot find pcap.h])])
 
 AC_CHECK_HEADERS([arpa/inet.h errno.h netdb.h netinet/in.h stddef.h stdlib.h string.h sys/socket.h sys/time.h sys/wait.h syslog.h unistd.h],,
 	[AC_MSG_ERROR([Bandwidthd cannot find some header files])])
+
+
+#Headers missing on cygwin
+AC_CHECK_HEADERS([arpa/nameserver.h])
+AC_CHECK_HEADERS([resolv.h],,,
+	[#include <netinet/in.h>
+	#include <arpa/nameserver.h>])
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

@@ -15,10 +15,10 @@ bandwidthd: $(OBS) bandwidthd.h
 	$(CC) $(CFLAGS) $(OBS) -o bandwidthd $(LDFLAGS) 
 
 conf.tab.c: conf.y
-	bison -pbdconfig_ -d conf.y
+	@BISON@ -pbdconfig_ -d conf.y
 
 conf.l.c: conf.l
-	lex -Pbdconfig_ -s -i -t -I conf.l > conf.l.c
+	@LEX@ -Pbdconfig_ -s -i -t -I conf.l > conf.l.c
 
 clean:
 	rm -f *.o bandwidthd *~ DEADJOE core

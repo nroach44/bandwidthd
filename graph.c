@@ -4,12 +4,19 @@
 #include <string.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/nameser.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <resolv.h>
+
 #include <time.h>
 #include "bandwidthd.h"
+
+#ifdef HAVE_ARPA_NAMESERVER_H
+#include <arpa/nameser.h>
+#endif
+#ifdef HAVE_RESOLV_H
+#include <resolv.h>
+#endif
 
 extern unsigned int SubnetCount;
 extern struct config config;
@@ -29,8 +36,10 @@ void rdns(char *Buffer, unsigned long IP)  // This takes over sigalarm!
 	static int DNSTimeouts = 0;  // This is reset for each run because we're forked
 	unsigned long addr = htonl(IP);
 
+#ifdef HAVE_RESOLV_H
     _res.retrans = 1;
     _res.retry = 2;
+#endif
 
 	if (Init)
 		{
