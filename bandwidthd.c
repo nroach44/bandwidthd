@@ -44,8 +44,8 @@ int DataLink;
 int IP_Offset;
 
 struct IPDataStore *IPDataStore = NULL;
-extern int yyparse(void);
-extern FILE *yyin;
+extern int bdconfig_parse(void);
+extern FILE *bdconfig_in;
 
 struct config config;
 
@@ -242,14 +242,14 @@ int main(int argc, char **argv)
 			}
 		}
 
-	yyin = fopen("./etc/bandwidthd.conf", "r");
-	if (!yyin)
+	bdconfig_in = fopen("./etc/bandwidthd.conf", "r");
+	if (!bdconfig_in)
 		{
 		syslog(LOG_ERR, "Cannot open bandwidthd.conf");
 		printf("Cannot open ./etc/bandwidthd.conf\n");
 		exit(1);
 		}
-	yyparse();
+	bdconfig_parse();
 	/*
 	// Scary
 	printf("Estimated max ram utilization\nDataPoints = %.0f/%ld = %.0f\nIPData = %d * DataPoints = %.1f (%.2fKBytes) per IP\nIP_NUM = %d\nTotal = %.1fMBytes * 4 to 8 = %.1fMBytes to %.1fMBytes\n", 

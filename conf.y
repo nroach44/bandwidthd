@@ -21,17 +21,17 @@ extern unsigned int SubnetCount;
 extern struct SubnetData SubnetTable[];
 extern struct config config;
 
-int yylex(void);
+int bdconfig_lex(void);
 int LineNo = 1;
 
-void yyerror(const char *str)
+void bdconfig_error(const char *str)
     {
     fprintf(stderr, "Syntax Error \"%s\" on line %d\n", str, LineNo);
 	syslog(LOG_ERR, "Syntax Error \"%s\" on line %d", str, LineNo);
 	exit(1);
     }
 
-int yywrap()
+int bdconfig_wrap()
 	{
 	return(1);
 	}

@@ -1,4 +1,5 @@
 2.0.0 beta cvs on Jan 1, 2005
+Changed yy parser name to bdconfig_ to avoid a bug in BSD
 Added some semi-colons to conf.y to fix BSD flex/bison compatability bug
 Fixed bug that caused memory corruption when ram datastore had data on more than IP_NUM ips.
 Fixed some longs that missed being converted to unsigned long long.
