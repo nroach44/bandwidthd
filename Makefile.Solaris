@@ -1,11 +1,15 @@
-# You only need to use this file with sun make, gnu make
-# will compile bandwidthd just fine under solaris
-
+#Possible optimizations -fomit-frame-pointer -ffast-math
 OBS= bandwidthd.o graph.o conf.tab.o conf.l.o
-LIBS= -lgd -lpng -lpcap -lsocket -lnsl -lresolv -lm
-NONWALLCFLAGS= -O3 -DSOLARIS
-CFLAGS= $(NONWALLCFLAGS) -Wall
+LIBS= -L/usr/local/lib -lgd -lpng -lpcap 
+CFLAGS= -I/usr/local/include -O3 -Wall
+NONWALLCFLAGS= -O3 #-g -DDEBUG
 
+# Debugging stuff
+#CFLAGS= -O3 -Wall -pg -DPROFILE
+#CFLAGS= -O3 -Wall -g -DDEBUG
+
+CFLAGS += -DSOLARIS
+LIBS += -lsocket -lnsl -lresolv	-lm
 
 all: bandwidthd
 
@@ -27,13 +31,12 @@ dist-clean:
 	rm -f *.o bandwidthd *~ conf.tab.c conf.tab.h conf.l.c DEADJOE
 
 install: all
-	mkdir -p /usr/local/bandwidthd/etc
-	mkdir -p /usr/local/bandwidthd/htdocs
-	cp bandwidthd /usr/local/bandwidthd	
-	@mv /usr/local/bandwidthd/etc/bandwidthd.conf /usr/local/bandwidthd/etc/bandwidthd.conf~
-	cp etc/bandwidthd.conf /usr/local/bandwidthd/etc/
-	cp htdocs/legend.gif /usr/local/bandwidthd/htdocs/
-	cp htdocs/logo.gif /usr/local/bandwidthd/htdocs/
+	mkdir -p $(DESTDIR)/usr/local/bandwidthd/etc
+	mkdir -p $(DESTDIR)/usr/local/bandwidthd/htdocs
+	cp bandwidthd $(DESTDIR)/usr/local/bandwidthd	
+	cp etc/bandwidthd.conf $(DESTDIR)/usr/local/bandwidthd/etc/
+	cp htdocs/legend.gif $(DESTDIR)/usr/local/bandwidthd/htdocs/
+	cp htdocs/logo.gif $(DESTDIR)/usr/local/bandwidthd/htdocs/
 
 #**** Stuff where -WALL is turned off to reduce the noise in a compile so I can see my own errors *******************
 conf.l.o: conf.l.c
