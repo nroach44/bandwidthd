@@ -239,8 +239,8 @@ void MakeIndexPages(int NumIps)
 	fprintf(file, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 	fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
 	fprintf(file, "</HEAD><BODY vlink=blue>\n%s<br>\n<center><img src=\"logo.gif\"><BR>\n", ctime(&WriteTime));
-	fprintf(file, "<BR>\nRange: <a href=index.html>Daily</a> <a href=index2.html>Weekly</a> ");
-	fprintf(file, "<a href=index3.html>Monthly</a> <a href=index4.html>Yearly</a><BR>\n");
+	fprintf(file, "<BR>\n - <a href=index.html>Daily</a> -- <a href=index2.html>Weekly</a> -- ");
+	fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a><BR>\n");
 
 	fprintf(file, "<BR>\nPick a Subnet:<BR>\n");	
 	fprintf(file, "- <a href=\"index.html\">Top20</a> -");
@@ -295,8 +295,8 @@ void MakeIndexPages(int NumIps)
 		fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n</HEAD>\n<BODY vlink=blue>\n%s<br>\n<CENTER><a name=\"Top\">", ctime(&WriteTime));
 		fprintf(file, "<img src=\"logo.gif\"><BR>");
 
-		fprintf(file, "<BR>\nRange: <a href=index.html>Daily</a> <a href=index2.html>Weekly</a> ");
-		fprintf(file, "<a href=index3.html>Monthly</a> <a href=index4.html>Yearly</a><BR>\n");
+		fprintf(file, "<BR>\n - <a href=index.html>Daily</a> -- <a href=index2.html>Weekly</a> -- ");
+		fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a><BR>\n");
 
 		fprintf(file, "<BR>\nPick a Subnet:<BR>\n");
 		fprintf(file, "- <a href=\"index.html\">Top20</a> -");
@@ -745,6 +745,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     long int sample_begin, sample_end;    
     struct tm *timestruct;
     long int MarkTime;
+	long int MarkTimeStep;
     double x;
     
     sample_begin=timestamp-config.range;
@@ -756,37 +757,75 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     gdImageLine(im, 0, YHEIGHT-YOFFSET, XWIDTH, YHEIGHT-YOFFSET, black);
 
     // ********************************************************************
-    // ****  Write the red day seperator bars
+    // ****  Write the red day/month seperator bars
     // ********************************************************************
 
-    timestruct = localtime((time_t *)&sample_begin);
-    timestruct->tm_sec = 0;
-    timestruct->tm_min = 0;
-    timestruct->tm_hour = 0;
-    MarkTime = mktime(timestruct);
+	if ((24*60*60*(XWIDTH-XOFFSET))/config.range > (XWIDTH-XOFFSET)/10)
+		{
+		// Day bars
+	    timestruct = localtime((time_t *)&sample_begin);
+    	timestruct->tm_sec = 0;
+	    timestruct->tm_min = 0;
+    	timestruct->tm_hour = 0;
+	    MarkTime = mktime(timestruct);
             
-    x = (MarkTime-sample_begin)*( ((double)(XWIDTH-XOFFSET)) / config.range) + XOFFSET;
-    if (x < XOFFSET)
-        {
-        MarkTime += (24*60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
-        }
+    	x = (MarkTime-sample_begin)*( ((double)(XWIDTH-XOFFSET)) / config.range) + XOFFSET;
+	    if (x < XOFFSET)
+    	    {
+        	MarkTime += (24*60*60);
+	        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+    	    }
 
-    while (x < (XWIDTH-10))
-        {
-        // Day Lines
-        gdImageLine(im, x, 0, x, YHEIGHT-YOFFSET, red);
-        gdImageLine(im, x+1, 0, x+1, YHEIGHT-YOFFSET, red);
+	    while (x < (XWIDTH-10))
+    	    {
+        	// Day Lines
+	        gdImageLine(im, x, 0, x, YHEIGHT-YOFFSET, red);
+    	    gdImageLine(im, x+1, 0, x+1, YHEIGHT-YOFFSET, red);
+	
+    	    timestruct = localtime((time_t *)&MarkTime);
+	        strftime(buffer, 100, "%a, %b %d", timestruct);
+    	    gdImageString(im, gdFontSmall, x-30,  YHEIGHT-YOFFSET+10, buffer, black);        
 
-        timestruct = localtime((time_t *)&MarkTime);
-        strftime(buffer, 100, "%a, %b %d", timestruct);
-        gdImageString(im, gdFontSmall, x-30,  YHEIGHT-YOFFSET+10, buffer, black);        
+	        // Calculate Next x
+    	    MarkTime += (24*60*60);
+        	x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+	        }
+		}
+	else
+		{
+    	// Month Bars
+        timestruct = localtime((time_t *)&sample_begin);
+        timestruct->tm_sec = 0;
+        timestruct->tm_min = 0;
+        timestruct->tm_hour = 0;
+		timestruct->tm_mday = 1;
+		timestruct->tm_mon--; // Start the month before the sample
+        MarkTime = mktime(timestruct);
 
-        // Calculate Next x
-        MarkTime += (24*60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
-        }
-    
+    	x = (MarkTime-sample_begin)*( ((double)(XWIDTH-XOFFSET)) / config.range) + XOFFSET;
+	    if (x < XOFFSET)
+    	    {
+			timestruct->tm_mon++;
+        	MarkTime = mktime(timestruct);
+	        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+    	    }
+
+	    while (x < (XWIDTH-10))
+    	    {
+        	// Month Lines
+	        gdImageLine(im, x, 0, x, YHEIGHT-YOFFSET, red);
+    	    gdImageLine(im, x+1, 0, x+1, YHEIGHT-YOFFSET, red);
+	
+    	    timestruct = localtime((time_t *)&MarkTime);
+	        strftime(buffer, 100, "%b", timestruct);
+    	    gdImageString(im, gdFontSmall, x-30,  YHEIGHT-YOFFSET+10, buffer, black);        
+
+	        // Calculate Next x
+            timestruct->tm_mon++;
+            MarkTime = mktime(timestruct);
+        	x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+	        }				
+		}
 
     // ********************************************************************
     // ****  Write the tic marks
@@ -798,15 +837,20 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     timestruct->tm_hour = 0;
     MarkTime = mktime(timestruct)+(6*60*60);
 
-    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+	if ((6*60*60*(XWIDTH-XOFFSET))/config.range > 10) // pixels per 6 hours is more than 2
+		MarkTimeStep = 6*60*60; // Major ticks are 6 hours
+	else
+		MarkTimeStep = 24*60*60; // Major ticks are 24 hours;
+
+	x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
     while (x < (XWIDTH-10))
-        {
-        if (x > XOFFSET) {
-            gdImageLine(im, x, YHEIGHT-YOFFSET-5, x, YHEIGHT-YOFFSET+5, black);
-            gdImageLine(im, x+1, YHEIGHT-YOFFSET-5, x+1, YHEIGHT-YOFFSET+5, black);
-            }
-        MarkTime += (6*60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+    	{
+	    if (x > XOFFSET) {
+    		gdImageLine(im, x, YHEIGHT-YOFFSET-5, x, YHEIGHT-YOFFSET+5, black);
+	       	gdImageLine(im, x+1, YHEIGHT-YOFFSET-5, x+1, YHEIGHT-YOFFSET+5, black);
+        	}
+		MarkTime += MarkTimeStep;
+   		x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
         }
 
     timestruct = localtime((time_t *)&sample_begin);
@@ -815,15 +859,21 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     timestruct->tm_hour = 0;
     MarkTime = mktime(timestruct)+(60*60);
 
-    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+	if ((60*60*(XWIDTH-XOFFSET))/config.range > 2) // pixels per hour is more than 2
+		MarkTimeStep = 60*60;  // Minor ticks are 1 hour
+	else
+		MarkTimeStep = 6*60*60; // Minor ticks are 6 hours
+
+	// Draw Minor Tic Marks
+	x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
     while (x < (XWIDTH-10))
         {
-        if (x > XOFFSET) {
-            gdImageLine(im, x, YHEIGHT-YOFFSET, x, YHEIGHT-YOFFSET+5, black);
-            gdImageLine(im, x+1, YHEIGHT-YOFFSET, x+1, YHEIGHT-YOFFSET+5, black);
+	    if (x > XOFFSET) {
+    		gdImageLine(im, x, YHEIGHT-YOFFSET, x, YHEIGHT-YOFFSET+5, black);
+        	gdImageLine(im, x+1, YHEIGHT-YOFFSET, x+1, YHEIGHT-YOFFSET+5, black);
             }
-        MarkTime+=(60*60);
-        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+	    MarkTime+=MarkTimeStep;
+    	x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
         }
     }
 
