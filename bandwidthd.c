@@ -156,23 +156,23 @@ int main(int argc, char **argv)
 	config.interval = INTERVAL1;
 	config.tag = '1';
 
-	if (fork2())  // Fork into seperate process for day, week, and month
+	if (fork())  // Fork into seperate process for day, week, and month
 		{
 		config.skip_intervals = CONFIG_GRAPHINTERVALS; // Overide skip_intervals for children
 		config.range = RANGE2;
 		config.interval = INTERVAL2;
 		config.tag = '2';
-		if (fork2())
+		if (fork())
 			{
 			config.range = RANGE3;
 			config.interval = INTERVAL3;
 			config.tag = '3';
-			if (fork2())
+			if (fork())
 				{
 	            config.range = RANGE4;
     	        config.interval = INTERVAL4;
         	    config.tag = '4';
-            	if (fork2())
+            	if (fork())
                 	exit(0);
 				}
 			}
