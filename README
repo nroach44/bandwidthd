@@ -232,6 +232,16 @@ urls to pull custom graphs from your own index pages, or use the canned reportin
 
 # KNOWN BUGS AND TROUBLESHOOTING #
 
+If bandwidthd shows you nothing but a message saying "Bandwidthd has nothing to graph",
+that means it currently has recorded no data.  The cause is most likly one of these: 
+1. It's first interval hasn't expired yet (2.5 minutes).
+2. It is still chewing through large CDF logs.
+3. Bandwidthd's host machine is on a switch and therefor isn't seeing any traffic not destined to or from 
+   or going through it.
+4. You don't have a subnet line.
+5. You have a subnet line but it doesn't match any of the packets bandwidthd is seeing.
+6. You have a filter line that is filtering out all the traffic bandwidthd could be seeing.
+
 Bandwidthd doesn't do a very good job of tracking ftp.  This is because only
 some ftp server software follows the rfc standard of sourceing all ftp 
 transfers from port 20.  Surprisingly, Microsofts ftp deamon is compliant in
@@ -279,3 +289,4 @@ most ppp packet encapsulation.  If you get an "Unknown Datalink Type" error,
 bandwidthd has not been programed to handle the physical encapsulation of the 
 ip packets on that interface.  If you send me a sample capture and a copy paste 
 of the error message I'll see if I can make bandwidthd work for you.
+

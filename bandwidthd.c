@@ -73,8 +73,8 @@ void bd_CollectingData(char *filename)
 		fprintf(index, "</HEAD>\n<BODY><center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n");
 		fprintf(index, "<BR>\n - <a href=\"index.html\">Daily</a> -- <a href=\"index2.html\">Weekly</a> -- ");
 		fprintf(index, "<a href=\"index3.html\">Monthly</a> -- <a href=\"index4.html\">Yearly</a><BR>\n");
-		fprintf(index, "<BR>bandwidthd is collecting data...\n");		
-		fprintf(index, "</center></BODY></HTML>\n");
+		fprintf(index, "</CENTER><BR>bandwidthd has nothing to graph.  This message should be replaced by graphs in a few minutes.  If it's not, please see the section titled \"Known Bugs and Troubleshooting\" in the README");		
+		fprintf(index, "</BODY></HTML>\n");
 		fclose(index);
 		}
 	else
@@ -550,8 +550,6 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 		DataStore = DataStore->Next;
 		}
 	}
-
-
 
 void StoreIPDataInPostgresql(struct IPData IncData[])
 	{
