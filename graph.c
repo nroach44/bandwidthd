@@ -15,8 +15,6 @@ extern struct IPCData *IPCSharedData;
 extern unsigned int SubnetCount;
 extern struct config config;
 
-char YLegend;
-long int Divisor;
 jmp_buf dnsjump;
 
 static void rdnslngjmp(int signal);
@@ -365,7 +363,7 @@ void GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int ti
     char outputfilename[50];
     gdImagePtr im, im2;
     int white;
-    long int YMax;
+    long long int YMax;
 	char CharIp[20];
 
     long int GraphBeginTime;
@@ -705,10 +703,12 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
     return(YMax);
     }
 
-void PrepareYAxis(gdImagePtr im, long int YMax)
+void PrepareYAxis(gdImagePtr im, long long int YMax)
     {
     char buffer[20];
 
+	char YLegend;
+	long long int Divisor;
 
     int black;
     float YTic = 0;
@@ -720,19 +720,19 @@ void PrepareYAxis(gdImagePtr im, long int YMax)
 
     YLegend = ' ';
     Divisor = 1;
-    if (YMax > 1024)
+    if (YMax*8 > 1024*2)
         {
         Divisor = 1024;    // Display in K
         YLegend = 'k';
         }
-    if (YMax > 1048576)
+    if (YMax*8 > 1024*1024*2)
         {
-        Divisor = 1024; // Display in M
+        Divisor = 1024*1024; // Display in M
         YLegend = 'm';
         }
-    if (YMax > 1073741824)
+    if (YMax*8 > (long long)1024*1024*1024*2)
         {
-        Divisor = 1073741824; // Display in G
+        Divisor = 1024*1024*1024; // Display in G
         YLegend = 'g';
         }
 
