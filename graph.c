@@ -242,7 +242,11 @@ void MakeIndexPages(int NumIps)
 	fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a><BR>\n");
 
 	fprintf(file, "<BR>\nPick a Subnet:<BR>\n");	
-	fprintf(file, "- <a href=\"index.html\">Top20</a> -");
+	if (config.tag == '1')
+		fprintf(file, "- <a href=\"index.html\">Top20</a> -");
+	else
+		fprintf(file, "- <a href=\"index%c.html\">Top20</a> -", config.tag);
+
 	for (Counter = 0; Counter < SubnetCount; Counter++)            
 		{
 		HostIp2CharIp(SubnetTable[Counter].ip, Buffer1);
@@ -298,14 +302,18 @@ void MakeIndexPages(int NumIps)
 		fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a><BR>\n");
 
 		fprintf(file, "<BR>\nPick a Subnet:<BR>\n");
-		fprintf(file, "- <a href=\"index.html\">Top20</a> -");
+		if (config.tag == '1')
+			fprintf(file, "- <a href=\"index.html\">Top20</a> -");
+		else
+			fprintf(file, "- <a href=\"index%c.html\">Top20</a> -", config.tag);
+
 		for (Counter = 0; Counter < SubnetCount; Counter++)
 			{
 			HostIp2CharIp(SubnetTable[Counter].ip, Buffer2);
 			fprintf(file, "- <a href=Subnet-%c-%s.html>%s</a> -", config.tag, Buffer2, Buffer2);
 			}
 
-		fprintf(file, "<H1>%s-%c</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR></center>\n<table width=100%% border=1 cellspacing=0>\n", Buffer1, config.tag);
+		fprintf(file, "<H1>%s</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR></center>\n<table width=100%% border=1 cellspacing=0>\n", Buffer1);
 
         // PASS 1:  Write out the table
 
