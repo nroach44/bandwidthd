@@ -112,7 +112,7 @@ else
 
 // Sqlize the incomming variables
 if (isset($subnet))
-	$subnet = "and ip <<= '$subnet'";
+	$sql_subnet = "and ip <<= '$subnet'";
 
 if (isset($limit))
 	$limit = "limit $limit";
@@ -128,16 +128,16 @@ from
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
 from bd_tx_log
 where sensor_id = '$sensor_id'
-$subnet
-and extract(epoch from timestamp) > $timestamp and extract(epoch from timestamp) < ".($timestamp+$interval)."
+$sql_subnet
+and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime
 group by ip) as tx,
 
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
 from bd_rx_log
 where sensor_id = '$sensor_id'
-$subnet
-and extract(epoch from timestamp) > $timestamp and extract(epoch from timestamp) < ".($timestamp+$interval)."
+$sql_subnet
+and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime
 group by ip) as rx
 
 where tx.ip = rx.ip
@@ -147,8 +147,26 @@ order by total desc $limit;";
 
 $result = pg_query($sql);
 echo "<table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
-while ($r = pg_fetch_array($result))
+
+if (!isset($subnet)) // Set this now for total graphs
+	$subnet = "0.0.0.0/0";
+
+// Output Total Line
+echo "<TR><TD><a href=Total>Total</a><TD>$subnet";
+foreach (array("total", "sent", "received", "tcp", "udp", "icmp", "http", "p2p", "ftp") as $key)
 	{
+	for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
+		{
+		$r = pg_fetch_array($result, $Counter);
+		$Total += $r[$key];
+		}
+	echo fmtb($Total);
+	}
+
+// Output Other Lines
+for($Counter=0; $Counter < pg_num_rows($result); $Counter++)
+	{
+	$r = pg_fetch_array($result, $Counter);
 	echo "<tr><td><a href=#".$r['ip'].">";
 	if ($r['ip'] == "0.0.0.0")
 		echo "Total<td>Total Traffic";
@@ -161,6 +179,32 @@ while ($r = pg_fetch_array($result))
 	}
 echo "</table></center>";
 
+// Output Total Graph
+for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
+	{
+	$r = pg_fetch_array($result, $Counter);
+	$scale = max($r['txscale'], $scale);
+	$scale = max($r['rxscale'], $scale);
+	}
+
+if ($subnet == "0.0.0.0/0")
+	$total_table = "bd_tx_total_log";
+else
+	$total_table = "bd_tx_log";
+echo "<a name=Total><h3><a href=details.php?sensor_id=$sensor_id&ip=$subnet>";
+echo "Total - Total of $subnet</h3>";
+echo "</a>";
+echo "Send:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table&yscale=$scale><br>";
+echo "<img src=legend.gif><br>";
+if ($subnet == "0.0.0.0/0")
+	$total_table = "bd_tx_total_log";
+else
+	$total_table = "bd_tx_log";
+echo "Receive:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table&yscale=$scale><br>";
+echo "<img src=legend.gif><br>";
+
+
+// Output Other Graphs
 for($Counter=0; $Counter < pg_num_rows($result); $Counter++) 
 	{
 	$r = pg_fetch_array($result, $Counter);

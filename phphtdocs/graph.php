@@ -6,7 +6,51 @@ function ts2x($ts)
 	{
 	global $timestamp, $width, $interval;
 	return(($ts-$timestamp)*(($width-XOFFSET) / $interval) + XOFFSET);
-	} 
+	}
+
+// If we have multiple IP's in a result set we need to total the average of each IP's samples
+function AverageAndAccumulate()
+	{
+	global $Count, $total, $icmp, $udp, $tcp, $ftp, $http, $p2p, $YMax;
+	global $a_total, $a_icmp, $a_udp, $a_tcp, $a_ftp, $a_http, $a_p2p;
+	
+	foreach ($Count as $key => $number)
+    	{
+	    $total[$key] /= $number;
+    	$icmp[$key] /= $number;
+    	$udp[$key] /= $number;
+    	$tcp[$key] /= $number;
+    	$ftp[$key] /= $number;
+    	$http[$key] /= $number;
+    	$p2p[$key] /= $number;
+    	}
+
+	foreach ($Count as $key => $number) 
+		{
+		$a_total[$key] += $total[$key];
+		$a_icmp[$key] += $icmp[$key];
+		$a_udp[$key] += $udp[$key];
+		$a_tcp[$key] += $tcp[$key];
+		$a_ftp[$key] += $ftp[$key];
+		$a_http[$key] += $http[$key];
+		$a_p2p[$key] += $p2p[$key];
+
+		if ($a_total[$key] > $YMax)
+			$YMax = $a_total[$key];
+		}
+	
+	unset($GLOBALS['total'], $GLOBALS['icmp'], $GLOBALS['udp'], $GLOBALS['tcp'], $GLOBALS['ftp'], $GLOBALS['http'], $GLOBALS['p2p'], $GLOBALS['Count']);
+
+	$total = array();
+	$icmp = array();
+	$udp = array();
+	$tcp = array();
+	$ftp = array();
+	$http = array();
+	$p2p = array();
+	$Count = array();
+	}
+ 
 
 $db = ConnectDb();
 
@@ -50,7 +94,6 @@ else
 if (isset($_GET['yscale']))
     $yscale = $_GET['yscale'];
 
-// Get the data 
 $total = array();
 $icmp = array();
 $udp = array();
@@ -60,12 +103,31 @@ $http = array();
 $p2p = array();
 $Count = array();
 
-$sql = "select *, extract(epoch from timestamp) as ts from $table where ip = '$ip' and sensor_id = '$sensor_id' and extract(epoch from timestamp) > $timestamp and extract(epoch from timestamp) < ".($timestamp+$interval).";";
+// Accumulator
+$a_total = array();
+$a_icmp = array();
+$a_udp = array();
+$a_tcp = array();
+$a_ftp = array();
+$a_http = array();
+$a_p2p = array();
+
+$sql = "select *, extract(epoch from timestamp) as ts from $table where ip <<= '$ip' and sensor_id = '$sensor_id' and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime order by ip;";
 //echo $sql."<br>";
 $result = pg_query($sql);
 
+// The SQL statement pulls the data out of the database ordered by IP address, that way we can average each
+// datapoint for each IP address to provide smoothing and then toss the smoothed value into the accumulator
+// to provide accurate total traffic rate.
+
 while ($row = pg_fetch_array($result))
 	{
+	if ($row['ip'] != $last_ip)
+		{
+		AverageAndAccumulate();
+		$last_ip = $row['ip'];
+		}
+
 	$x = ($row['ts']-$timestamp)*(($width-XOFFSET)/$interval)+XOFFSET;
 	$xint = (int) $x;
 
@@ -84,21 +146,17 @@ while ($row = pg_fetch_array($result))
 	$p2p[$xint] += $row['p2p']/$row['sample_duration'];                                                                                                                             
 	}
 
-// Average the data
+// One more time for the last IP
+AverageAndAccumulate();
 
-foreach ($Count as $key => $number)
-	{
-	$total[$key] /= $number;
-    $icmp[$key] /= $number; 
-    $udp[$key] /= $number;
-    $tcp[$key] /= $number;
-    $ftp[$key] /= $number;
-    $http[$key] /= $number;
-    $p2p[$key] /= $number;
-
-	if ($total[$key] > $YMax)
-		$YMax = $total[$key];
-	}
+// Pull the data out of Accumulator
+$total = $a_total;
+$icmp = $a_icmp;
+$udp = $a_udp;
+$tcp = $a_tcp;
+$ftp = $a_ftp;
+$http = $a_http;
+$p2p = $a_p2p;
 
 $YMax += $YMax*0.05;    // Add an extra 5%
 
@@ -123,7 +181,7 @@ $black  = ImageColorAllocate($im, 0, 0, 0);
 
 for($Counter=XOFFSET+1; $Counter < $width; $Counter++)
 	{
-	if (isset($Count[$Counter]))
+	if (isset($total[$Counter]))
 		{
 		// Convert the bytes/sec to y coords
         $total[$Counter] = ($total[$Counter]*($height-YOFFSET))/$YMax;

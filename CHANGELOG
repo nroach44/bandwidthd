@@ -1,8 +1,13 @@
-2.0.0 beta cvs on Jan 1, 2005
+2.0.0 beta cvs on Jan 2, 2005
+Changed Optimization of indexes
+Implemented Totals graph optimization for main sensor query
+Added Totals graphs for all subnet searchs
 Bandwidthd collects the pids of it's children and distributes HUP and TERM signals when issued
 	to the first process
 Changed yy parser name to bdconfig_ to avoid a bug in BSD
 Added some semi-colons to conf.y to fix BSD flex/bison compatability bug
+
+2.0.0 beta cvs on Jan 1, 2005
 Fixed bug that caused memory corruption when ram datastore had data on more than IP_NUM ips.
 Fixed some longs that missed being converted to unsigned long long.
 Initial database mode documentation

@@ -20,12 +20,23 @@ else
     }
                                                                                                                              
 echo "<h3>";
-if ($ip == "0.0.0.0")
-	echo "Total - Total of all subnets</h3>";
-else
+if (strpos($ip, "/") === FALSE)
 	echo "$ip - ".gethostbyaddr($ip)."</h3>";
+else
+	echo "Total - $ip</h3>";
 
 $db = ConnectDb();
+
+if ($ip == "0.0.0.0/0")
+	{
+    $rxtable = "bd_rx_total_log";
+	$txtable = "bd_tx_total_log";
+	}
+else
+	{
+    $rxtable = "bd_rx_log";
+	$txtable = "bd_tx_log";
+	}
 
 $sql = "select rx.scale as rxscale, tx.scale as txscale, tx.total+rx.total as total, tx.total as sent,
 rx.total as received, tx.tcp+rx.tcp as tcp, tx.udp+rx.udp as udp,
@@ -35,16 +46,16 @@ from
                                                                                                                              
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from bd_tx_log
+from $txtable
 where sensor_id = '$sensor_id' and
-ip = '$ip'
+ip <<= '$ip'
 group by ip) as tx,
                                                                                                                              
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from bd_rx_log
+from $rxtable
 where sensor_id = '$sensor_id' and
-ip = '$ip'
+ip <<= '$ip'
 group by ip) as rx
                                                                                                                              
 where tx.ip = rx.ip;";
@@ -53,37 +64,35 @@ $result = pg_query($sql);
 echo "<table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
 $r = pg_fetch_array($result);
 echo "<tr><td>";
-if ($ip == "0.0.0.0")
-	echo "Total<td>Total Traffic";
-else
+if (strpos($ip, "/") === FALSE)
 	echo "$ip<td>".gethostbyaddr($ip);
+else
+	echo "Total<td>$ip";
 echo fmtb($r['total']).fmtb($r['sent']).fmtb($r['received']).
 	fmtb($r['tcp']).fmtb($r['udp']).fmtb($r['icmp']).fmtb($r['http']).
     fmtb($r['p2p']).fmtb($r['ftp']);
 echo "</table></center>";
 
-
-
 echo "<center><h4>Daily</h4></center>";
-echo "Send:<br><img src=graph.php?ip=$ip&sensor_id=".$sensor_id."&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?ip=$ip&sensor_id=".$sensor_id."&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?ip=$ip&sensor_id=".$sensor_id."&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?ip=$ip&sensor_id=".$sensor_id."&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
 
 echo "<center><h4>Weekly</h4></center>";
-echo "Send:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_id=$sensor_id&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_id=$sensor_id&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_id=$sensor_id&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_id=$sensor_id&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
 
 echo "<center><h4>Monthly</h4></center>";
-echo "Send:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_id=$sensor_id&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_id=$sensor_id&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_id=$sensor_id&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_id=$sensor_id&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
 
 echo "<center><h4>Yearly</h4></center>";
-echo "Send:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_id=$sensor_id&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_id=$sensor_id&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_id=$sensor_id&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_id=$sensor_id&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";

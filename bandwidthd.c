@@ -592,6 +592,8 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
     PGresult   *res;
 	static PGconn *conn = NULL;
 	const char *paramValues[10];
+	char *sql1; 
+	char *sql2;
 	char Values[10][50];
 
 	if (!config.output_database == DB_PGSQL)
@@ -632,6 +634,19 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 	for (counter=0; counter < IpCount; counter++)
 		{
         IPData = &IncData[counter];
+
+		if (IPData->ip == 0)
+			{
+			// This optimization allows us to quickly draw totals graphs for a sensor
+			sql1 = "INSERT INTO bd_tx_total_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);";
+			sql2 = "INSERT INTO bd_rx_total_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);";
+			}
+		else
+			{
+			sql1 = "INSERT INTO bd_tx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);";
+			sql2 = "INSERT INTO bd_rx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);"; 
+			}
+
         HostIp2CharIp(IPData->ip, Values[2]);
 
 		Stats = &(IPData->Send);
@@ -645,7 +660,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 			snprintf(Values[8], 50, "%llu", Stats->http);
 			snprintf(Values[9], 50, "%llu", Stats->p2p);
 
-			res = PQexecParams(conn, "INSERT INTO bd_tx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);",
+			res = PQexecParams(conn, sql1,
 				10,       /* nine param */
 	            NULL,    /* let the backend deduce param type */
     	        paramValues,
@@ -674,7 +689,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 			snprintf(Values[8], 50, "%llu", Stats->http);
 			snprintf(Values[9], 50, "%llu", Stats->p2p);
 
-			res = PQexecParams(conn, "INSERT INTO bd_rx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);",
+			res = PQexecParams(conn, sql2,
 				10,       /* seven param */
             	NULL,    /* let the backend deduce param type */
 	            paramValues,

@@ -10,7 +10,7 @@ LIBS += -L/usr/local/pgsql/lib -lpq
 
 # Debugging stuff
 #CFLAGS += -pg -DPROFILE
-CFLAGS += -g 
+#CFLAGS += -g 
 
 OS=$(shell uname -s)
 ifeq ("$(OS)","Solaris")
