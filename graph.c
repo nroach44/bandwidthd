@@ -220,7 +220,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 		snprintf(filename, MAX_FILENAME, "%s/index.html", config.htdocs_dir);
 		if ((file = fopen(filename, "wt")) == NULL)
 			{
-			syslog(LOG_ERR, "Failed to open ./htdocs/index.html");
+			syslog(LOG_ERR, "Failed to open %s", filename);
 			exit(1);
 			}
 		}
@@ -308,8 +308,12 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	for (SubnetCounter = 0; SubnetCounter < SubnetCount; SubnetCounter++)
 		{
 		HostIp2CharIp(SubnetTable[SubnetCounter].ip, Buffer1);
-		snprintf(filename, MAX_FILENAME, "%s/htdocs/Subnet-%c-%s.html", config.htdocs_dir, config.tag, Buffer1);
-		file = fopen(filename, "wt");
+		snprintf(filename, MAX_FILENAME, "%s/Subnet-%c-%s.html", config.htdocs_dir, config.tag, Buffer1);
+		if ((file = fopen(filename, "wt")) == NULL)
+			{
+			syslog(LOG_ERR, "Failed to open %s", filename);
+			exit(1);
+			}
 		fprintf(file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 		fprintf(file, "<HTML>\n<HEAD><TITLE>Bandwidthd - Subnet %s</TITLE>\n", Buffer1);
 
@@ -412,13 +416,21 @@ void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, tim
         PrepareXAxis(im2, timestamp);
         PrepareYAxis(im2, YMax);
 
-        snprintf(filename, MAX_FILENAME, "%s/htdocs/%s-%c-S.png", config.htdocs_dir, CharIp, config.tag);
-        OutputFile = fopen(filename, "wb");    
+        snprintf(filename, MAX_FILENAME, "%s/%s-%c-S.png", config.htdocs_dir, CharIp, config.tag);
+        if ((OutputFile = fopen(filename, "wb")) == NULL)
+			{
+			syslog(LOG_ERR, "Failed to open %s", filename);
+			exit(1);
+			}			    
         gdImagePng(im, OutputFile);
         fclose(OutputFile);
 
-        snprintf(filename, MAX_FILENAME, "%s/htdocs/%s-%c-R.png", config.htdocs_dir, CharIp, config.tag);
-        OutputFile = fopen(filename, "wb");
+        snprintf(filename, MAX_FILENAME, "%s/%s-%c-R.png", config.htdocs_dir, CharIp, config.tag);
+        if ((OutputFile = fopen(filename, "wb")) == NULL)
+			{
+			syslog(LOG_ERR, "Failed to open %s", filename);
+			exit(1);
+			}
         gdImagePng(im2, OutputFile);
         fclose(OutputFile);
         }
