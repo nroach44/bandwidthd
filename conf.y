@@ -38,6 +38,7 @@ int yywrap()
 
 %token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF 
 %token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE TOKFILTER
+%token TOKMETAREFRESH
 %union
 {
     int number;
@@ -75,6 +76,8 @@ command:
 	newline
 	|
 	filter
+	|
+	meta_refresh
 	;
 
 subnet:
@@ -144,6 +147,12 @@ filter:
 	TOKFILTER string
 	{
 	config.filter = $2;
+	}
+
+meta_refresh:
+	TOKMETAREFRESH NUMBER
+	{
+	config.meta_refresh = $2;
 	}
 
 skip_intervals:

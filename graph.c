@@ -246,7 +246,9 @@ void MakeIndexPages(int NumIps)
 	fprintf(file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	fprintf(file, "<HTML>\n<HEAD>\n<TITLE>Bandwidthd</TITLE>\n");
 
-	fprintf(file, "<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n");
+	if (config.meta_refresh)
+		fprintf(file, "<META HTTP-EQUIV=\"REFRESH\" content=\"%u\">\n",
+				config.meta_refresh);
 	fprintf(file, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 	fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
 	fprintf(file, "</HEAD>\n<BODY vlink=blue>\n%s<br>\n<center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n", ctime(&WriteTime));
@@ -310,7 +312,10 @@ void MakeIndexPages(int NumIps)
 		file = fopen(Buffer2, "w");
 		fprintf(file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 		fprintf(file, "<HTML>\n<HEAD><TITLE>Bandwidthd - Subnet %s</TITLE>\n", Buffer1);
-		fprintf(file, "<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n");
+
+		if (config.meta_refresh)
+			fprintf(file, "<META HTTP-EQUIV=\"REFRESH\" content=\"%u\">\n",
+					config.meta_refresh);
 		fprintf(file, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 		fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
 		fprintf(file, "</HEAD>\n<BODY vlink=blue>\n%s<br>\n<CENTER><a name=\"Top\"></a>", ctime(&WriteTime));

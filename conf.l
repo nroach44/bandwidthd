@@ -24,5 +24,6 @@ output_cdf				{ return TOKOUTPUTCDF; }
 recover_cdf				{ return TOKRECOVERCDF; }		
 graph					{ return TOKGRAPH; }
 filter					{ return TOKFILTER; }
+meta_refresh			{ return TOKMETAREFRESH; }
 .						{ return TOKJUNK; }
 %%

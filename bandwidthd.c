@@ -67,7 +67,9 @@ void bd_CollectingData(char *filename)
 		fprintf(index, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 		fprintf(index, "<HTML><HEAD><TITLE>Bandwidthd</TITLE>\n");
 
-		fprintf(index, "<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n");
+		if (config.meta_refresh)
+			fprintf(index, "<META HTTP-EQUIV=\"REFRESH\" content=\"%u\">\n",
+					config.meta_refresh);
 		fprintf(index, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 		fprintf(index, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
 		fprintf(index, "</HEAD>\n<BODY><center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n");
@@ -137,6 +139,7 @@ int main(int argc, char **argv)
 	config.graph = TRUE;
 	config.output_cdf = FALSE;
 	config.recover_cdf = FALSE;
+	config.meta_refresh = CONFIG_METAREFRESH;
 
   
 	yyin = fopen("./etc/bandwidthd.conf", "r");

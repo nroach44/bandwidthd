@@ -53,6 +53,8 @@
 #define TRUE 1
 #define FALSE 0
 
+#define CONFIG_METAREFRESH 150
+
 #define PERMIS 1
 
 struct config
@@ -68,6 +70,7 @@ struct config
 	double range;
 	unsigned long long interval;
 	char tag;
+	unsigned int meta_refresh;
 	};
 
 struct SubnetData
