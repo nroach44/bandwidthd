@@ -5,12 +5,12 @@ CFLAGS= -I/usr/local/include -O3 -Wall
 NONWALLCFLAGS= -O3 #-g -DDEBUG
 
 #Uncomment and edit below for postgresql support
-#CFLAGS += -DPGSQL -I/usr/local/pgsql/include 
-#LIBS += -L/usr/local/pgsql/lib -lpq
+CFLAGS += -DPGSQL -I/usr/local/pgsql/include 
+LIBS += -L/usr/local/pgsql/lib -lpq
 
 # Debugging stuff
 #CFLAGS += -pg -DPROFILE
-#CFLAGS += -g 
+CFLAGS += -g 
 
 OS=$(shell uname -s)
 ifeq ("$(OS)","Solaris")

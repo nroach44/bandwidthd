@@ -542,11 +542,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 	if (!config.output_database == DB_PGSQL)
 		return;
 
-	// We fork before we connect to the database, so this will unfortunatly never be 
-	// initialized prior to execution, but if we figure out a way to keep the connection constant
-	// this will be ready for it
 	// ************ Inititialize the db if it's not already
-
 	if (!conn)
 		{
 		/* Connect to the database */
@@ -610,6 +606,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 	    	    conn = NULL;
         		return;
 		        }
+			PQclear(res);
 			}
 		Stats = &(IPData->Receive);
 		if (Stats->total) // Don't log empty sets
@@ -638,6 +635,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 		        conn = NULL;
         		return;
 	        	}
+			PQclear(res);
 			}		
 		}
 #else
