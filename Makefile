@@ -44,10 +44,10 @@ dist-clean:
 	rm -f *.o bandwidthd *~ conf.tab.c conf.tab.h conf.l.c DEADJOE
 
 install: all
-	mkdir -p $(DESTDIR)/usr/local/bandwidthd/etc
-	mkdir -p $(DESTDIR)/usr/local/bandwidthd/htdocs
+	if [ ! -d $(DESTDIR)/usr/local/bandwidthd/etc ] ; then mkdir -p $(DESTDIR)/usr/local/bandwidthd/etc ; fi
+	if [ ! -d $(DESTDIR)/usr/local/bandwidthd/htdocs ] ; then mkdir -p $(DESTDIR)/usr/local/bandwidthd/htdocs ; fi
 	cp bandwidthd $(DESTDIR)/usr/local/bandwidthd	
-	cp etc/bandwidthd.conf $(DESTDIR)/usr/local/bandwidthd/etc/
+	if [ ! -f $(DESTDIR)/usr/local/bandwidthd/etc/bandwidthd.conf ] ; then cp etc/bandwidthd.conf $(DESTDIR)/usr/local/bandwidthd/etc/ ; fi
 	cp htdocs/legend.gif $(DESTDIR)/usr/local/bandwidthd/htdocs/
 	cp htdocs/logo.gif $(DESTDIR)/usr/local/bandwidthd/htdocs/
 
