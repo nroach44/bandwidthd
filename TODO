@@ -1,0 +1,16 @@
+Print error messages to syslog instead of console
+Move StoreIPDataInCDF to forked section
+Make graphing section multi-threadable
+Fix bug that causes bandwidthd to exit when brought up on an interface with no ip
+
+# Features requested by people, I make a note of them here in case myself
+# or someone else wants to come along and implement them.
+Stoilis:
+List of IP's to exclude from the page (I bet he wants to exclude his
+workstation :P)
+Switch to put name reverses at the top of the page in the table
+
+Me:
+Make the cdf logging period correspond with the skip intervals period, not 
+everybody needs 2.5 minute resolution.
+Add more pretty colors for more types of traffic.

@@ -1,0 +1,50 @@
+#Possible optimizations -fomit-frame-pointer -ffast-math
+OBS= bandwidthd.o graph.o conf.tab.o conf.l.o
+LIBS= -lgd -lpng -lpcap 
+CFLAGS= -O3 -Wall
+NONWALLCFLAGS= -O3 #-g -DDEBUG
+
+# Debugging stuff
+#CFLAGS= -O3 -Wall -pg -DPROFILE
+#CFLAGS= -O3 -Wall -g -DDEBUG
+
+OS=$(shell uname -s)
+ifeq ("$(OS)","Solaris")
+	CFLAGS += -DSOLARIS
+	LIBS += -lsocket -lnsl -lresolv	-lm
+endif
+
+ifeq ("$(OS)","FreeBSD")
+	CFLAGS += -DFREEBSD
+endif	
+
+all: bandwidthd
+
+bandwidthd: $(OBS) bandwidthd.h
+	$(CC) $(CFLAGS) $(OBS) -o bandwidthd $(LIBS) 
+
+conf.tab.c: conf.y
+	bison -d conf.y
+
+conf.l.c: conf.l
+	lex -s -i -t -I conf.l > conf.l.c
+
+clean:
+	rm -f *.o bandwidthd *~ DEADJOE
+
+# This clean deletes the flex and bison output files.  You'll need flex and 
+# bison to remake them if you use it.
+dist-clean:
+	rm -f *.o bandwidthd *~ conf.tab.c conf.tab.h conf.l.c DEADJOE
+
+install: all
+	mkdir -p /usr/local/bandwidthd/etc
+	mkdir -p /usr/local/bandwidthd/htdocs
+	cp bandwidthd /usr/local/bandwidthd	
+	cp etc/bandwidthd.conf /usr/local/bandwidthd/etc/
+	cp htdocs/legend.gif /usr/local/bandwidthd/htdocs/
+	cp htdocs/logo.gif /usr/local/bandwidthd/htdocs/
+
+#**** Stuff where -WALL is turned off to reduce the noise in a compile so I can see my own errors *******************
+conf.l.o: conf.l.c
+	$(CC) $(NONWALLCFLAGS) -c -o conf.l.o conf.l.c	
