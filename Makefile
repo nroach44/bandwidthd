@@ -1,7 +1,7 @@
 #Possible optimizations -fomit-frame-pointer -ffast-math
 OBS= bandwidthd.o graph.o conf.tab.o conf.l.o
-LIBS= -lgd -lpng -lpcap 
-CFLAGS= -O3 -Wall
+LIBS= -L/usr/local/lib -lgd -lpng -lpcap 
+CFLAGS= -I/usr/local/include -O3 -Wall
 NONWALLCFLAGS= -O3 #-g -DDEBUG
 
 # Debugging stuff
@@ -15,7 +15,13 @@ ifeq ("$(OS)","Solaris")
 endif
 
 ifeq ("$(OS)","FreeBSD")
-	CFLAGS += -DFREEBSD
+	CFLAGS += -DBSD
+	LIBS += -liconv
+endif
+
+ifeq ("$(OS)", "OpenBSD")
+	CFLAGS += -DBSD
+	LIBS += -liconv
 endif	
 
 all: bandwidthd

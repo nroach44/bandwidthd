@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <signal.h>
-#ifdef FREEBSD
+#ifdef BSD
 #include <sys/wait.h>
 #else
 #include <wait.h>

@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 			}
 		else
 			{
-#ifndef FREEBSD
+#ifndef BSD
 			printf("My shared memory segment %d is already in use (%ld locks), perhaps bandwidthd is already running in this directory?\n", shmid, shmstatus.shm_nattch);
 #else
 			printf("My shared memory segment %d is already in use (%hd locks), perhaps bandwidthd is already running in this directory?\n", shmid, shmstatus.shm_nattch);
@@ -268,7 +268,7 @@ inline void Credit(struct Statistics *Stats, const struct ip *ip)
             tcp = (struct tcphdr *)(ip+1);
 			tcp = (struct tcphdr *) ( ((char *)tcp) + ((ip->ip_hl-5)*4) ); // Compensate for IP Options
             Stats->tcp += size;
-#if defined(SOLARIS) || defined (FREEBSD)
+#if defined(SOLARIS) || defined (BSD)
             sport = ntohs(tcp->th_sport);
             dport = ntohs(tcp->th_dport);			
 #else
