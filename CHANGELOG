@@ -1,4 +1,6 @@
 2.0.0 beta cvs on Jan 1, 2005
+Initial database mode documentation
+Added another index to schema
 All four logging processes now listen for log rotation hup
 Fixed bug in CDF recovery that would cause bandwidthd to ignore some CDF logs during recovery
 Bandwidthd now checks for ./etc/bandwidthd.conf, and if it doesn't exist it checks for 

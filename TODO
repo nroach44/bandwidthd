@@ -4,7 +4,6 @@ Lots of ram could be saved by not storing empty send or receive structures in ra
 	happens alot due to ping scan traffic, broadcast traffic, etc, initial investigations indecate
 	this could cut ram usage in direct graphing mode in half)
 Config switches for sample intervals and graphing ranges
-Get HUP's to children
 
 # Features requested by people, I make a note of them here in case myself
 # or someone else wants to come along and implement them.
