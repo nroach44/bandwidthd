@@ -1,3 +1,8 @@
+2.0.0 beta cvs on Jan 1, 2005
+Fixed memory leak introduced in last revision
+Added syslog support, removed all printf's except a few early errors, closed 
+	stdin, stdout, and stderr before beginning capture loop
+
 2.0.0 beta cvs on Dec 31, 2004
 Fixed problem that caused bandwidthd to sit and never create graphs
 Huge performance gain in graphing engine due to bug fix (Peak Send and Total Sent strings font

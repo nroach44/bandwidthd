@@ -57,7 +57,6 @@ void signal_handler(int sig)
 
 void bd_CollectingData(char *filename)
 	{
-	char CurrentDirWarning[] = "bandwidthd always works out of the current directory, cd to some place with a ./etc/bandwidthd.conf and a ./htdocs/ then run it";
 	FILE *index;
 
 	index = fopen(filename, "w");	
@@ -80,7 +79,7 @@ void bd_CollectingData(char *filename)
 		}
 	else
 		{
-		printf("Cannot open %s: %s\n", filename, CurrentDirWarning);
+		syslog(LOG_ERR, "Cannot open %s for writing", filename);
 		exit(1);
 		}
 	}
@@ -105,7 +104,7 @@ int WriteOutWebpages(long int timestamp)
 			// Got this incantation from a message board.  Don't forget to set
 			// GMON_OUT_PREFIX in the shell
 			extern void _start(void), etext(void);
-			printf("Calling profiler startup...\n");
+			syslog(LOG_INFO, "Calling profiler startup...");
 			monstartup((u_long) &_start, (u_long) &etext);
 #endif
           	signal(SIGHUP, SIG_IGN);
@@ -131,7 +130,7 @@ int WriteOutWebpages(long int timestamp)
 		break;
 
 		case -1:
-			printf("Bandwidthd: forking grapher child failed!\n");
+			syslog(LOG_ERR, "Forking grapher child failed!");
 			return -2;
 		break;
 
@@ -177,7 +176,8 @@ void setchildconfig (int level) {
 		break;
 
 		default:
-			printf("Ugh! setchildconfig got an invalid level argument: %d\n", level);
+			syslog(LOG_ERR, "setchildconfig got an invalid level argument: %d", level);
+			_exit(1);
 	}
 }
 
@@ -193,7 +193,7 @@ void makepidfile(pid_t pid) {
 	}
 
 	/* only reached if something has failed. */
-	fprintf(stderr, "Bandwidthd: failed to write '%d' to /var/run/bandwidthd.pid\n", pid);
+	syslog(LOG_ERR, "Bandwidthd: failed to write '%d' to /var/run/bandwidthd.pid", pid);
 	fclose(pidfile);
 	unlink("/var/run/bandwidthd.pid");
 }
@@ -220,10 +220,13 @@ int main(int argc, char **argv)
 	config.db_connect_string = NULL;
 	config.sensor_id = "unset";  
 
+	openlog("bandwidthd", LOG_CONS, LOG_DAEMON);
+
 	yyin = fopen("./etc/bandwidthd.conf", "r");
 	if (!yyin)
 		{
-		printf("Cannot open ./etc/bandwidthd.conf: %s\n", CurrentDirWarning);
+		syslog(LOG_ERR, "Cannot open ./etc/bandwidthd.conf: %s", CurrentDirWarning);
+		printf("Cannot open ./etc/bandwidthd.conf: %s", CurrentDirWarning);
 		exit(1);
 		}
 	yyparse();
@@ -281,7 +284,7 @@ int main(int argc, char **argv)
 
 			if (pid == -1) 
 				{ /* fork failed */
-				printf("Bandwidthd: failed to fork graphing child (%d).\n", i);
+				syslog(LOG_ERR, "Failed to fork graphing child (%d)", i);
 				/* i--; ..to retry? -> possible infinite loop */
 				continue;
 				}
@@ -293,14 +296,19 @@ int main(int argc, char **argv)
 
     IntervalStart = time(NULL);
 
-	printf("Opening %s\n", config.dev);	
+	syslog(LOG_INFO, "Opening %s", config.dev);	
 	pd = pcap_open_live(config.dev, 100, config.promisc, 1000, Error);
-        if (pd == NULL) printf("%s\n", Error);
+        if (pd == NULL) 
+			{
+			syslog(LOG_ERR, "%s", Error);
+			exit(0);
+			}
 
     if (pcap_compile(pd, &fcode, config.filter, 1, 0) < 0)
 		{
         pcap_perror(pd, "Error");
-		printf("Exiting do to malformed filter string in bandwidthd.conf...\n");
+		printf("Malformed libpcap filter string in bandwidthd.conf\n");
+		syslog(LOG_ERR, "Malformed libpcap filter string in bandwidthd.conf");
 		exit(1);
 		}
 
@@ -311,16 +319,17 @@ int main(int argc, char **argv)
 		{
 		default:
 			if (config.dev)
-				printf("Unknown Datalink Type %d, defaulting to ethernet\nPlease forward this error message and a packet sample (captured with \"tcpdump -i %s -s 2000 -n -w capture.cap\") to hinkle@derbyworks.net\n", DataLink, config.dev);
+				printf("Unknown Datalink Type %d, defaulting to ethernet\nPlease forward this error message and a packet sample (captured with \"tcpdump -i %s -s 2000 -n -w capture.cap\") to hinkle@derbyworks.com\n", DataLink, config.dev);
 			else
-				printf("Unknown Datalink Type %d, defaulting to ethernet\nPlease forward this error message and a packet sample (captured with \"tcpdump -s 2000 -n -w capture.cap\") to hinkle@derbyworks.net\n", DataLink);
+				printf("Unknown Datalink Type %d, defaulting to ethernet\nPlease forward this error message and a packet sample (captured with \"tcpdump -s 2000 -n -w capture.cap\") to hinkle@derbyworks.com\n", DataLink);
+			syslog(LOG_INFO, "Unkown datalink type, defaulting to ethernet");
 		case DLT_EN10MB:
-			printf("Packet Encoding:\n\tEthernet\n");
+			syslog(LOG_INFO, "Packet Encoding: Ethernet");
 			IP_Offset = sizeof(struct ether_header);
 			break;	
 #ifdef DLT_LINUX_SLL 
 		case DLT_LINUX_SLL:
-			printf("Packet Encoding:\n\tLinux Cooked Socket\n");
+			syslog(LOG_INFO, "Packet Encoding: Linux Cooked Socket");
 			IP_Offset = 16;
 			break;
 #endif
@@ -328,16 +337,21 @@ int main(int argc, char **argv)
 		case DLT_RAW:
 			printf("Untested Datalink Type %d\nPlease report to hinkle@derbyworks.net if bandwidthd works for you\non this interface\n", DataLink);
 			printf("Packet Encoding:\n\tRaw\n");
+			syslog(LOG_INFO, "Untested packet encoding: Raw");
 			IP_Offset = 0;
 			break;
 #endif
 		case DLT_IEEE802:
 			printf("Untested Datalink Type %d\nPlease report to hinkle@derbyworks.net if bandwidthd works for you\non this interface\n", DataLink);
 			printf("Packet Encoding:\nToken Ring\n");
+			syslog(LOG_INFO, "Untested packet encoding: Token Ring");
 			IP_Offset = 22;
 			break;
 		}
                                            
+	fclose(stdin);
+	fclose(stdout);
+	fclose(stderr);
 	if (config.tag == '1') // We only rotate the first stage logs right now
 		signal(SIGHUP, signal_handler);
 	else
@@ -345,12 +359,12 @@ int main(int argc, char **argv)
 
 	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
 		{
-		printf("Drawing initial graphs...\n");
+		syslog(LOG_INFO, "Drawing initial graphs");
 		WriteOutWebpages(IntervalStart+config.interval);
 		}
 
     if (pcap_loop(pd, -1, PacketCallback, pcap_userdata) < 0) {
-        (void)fprintf(stderr, "Bandwidthd: pcap_loop: %s\n",  pcap_geterr(pd));
+        syslog(LOG_ERR, "Bandwidthd: pcap_loop: %s",  pcap_geterr(pd));
         exit(1);
         }
 
@@ -551,7 +565,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 	    /* Check to see that the backend connection was successfully made */
     	if (PQstatus(conn) != CONNECTION_OK)
         	{
-	        printf("Connection to database '%s' failed: %s\n", config.db_connect_string, PQerrorMessage(conn));
+	       	syslog(LOG_ERR, "Connection to database '%s' failed: %s", config.db_connect_string, PQerrorMessage(conn));
     	    PQfinish(conn);
         	conn = NULL;
 	        return;
@@ -600,7 +614,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 
     		if (PQresultStatus(res) != PGRES_COMMAND_OK)
         		{
-	        	printf("Postresql INSERT failed: %s\n", PQerrorMessage(conn));
+	        	syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
 	    	    PQclear(res);
     	    	PQfinish(conn);
 	    	    conn = NULL;
@@ -629,7 +643,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 
 	    	if (PQresultStatus(res) != PGRES_COMMAND_OK)
     	    	{
-	    	    printf("Postresql INSERT failed: %s\n", PQerrorMessage(conn));
+	    	    syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
     	    	PQclear(res);
 	        	PQfinish(conn);
 		        conn = NULL;
@@ -639,7 +653,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 			}		
 		}
 #else
-	printf("Postgresql logging selected but postgresql support is not compiled into binary.  Please check the documentation in README, distributed with this software.\n");
+	syslog(LOG_ERR, "Postgresql logging selected but postgresql support is not compiled into binary.  Please check the documentation in README, distributed with this software.");
 #endif
 	}
 
@@ -697,7 +711,7 @@ void _StoreIPDataInRam(struct IPData *IPData)
 		IPDataStore->FirstBlock->Next = NULL;																		
         if (!IPDataStore->FirstBlock || ! IPDataStore->FirstBlock->Data)
             {
-            printf("Could not allocate datastore! Exiting!\n");
+            syslog(LOG_ERR, "Could not allocate datastore! Exiting!");
             exit(1);
             }
 		}
@@ -840,7 +854,7 @@ void CommitData(long int timestamp)
 				MayGraph = TRUE;
 			}
 		else if (GraphIntervalCount%config.skip_intervals == 0)
-			printf("Previouse graphing run not complete... Skipping current run\n");
+			syslog(LOG_INFO, "Previouse graphing run not complete... Skipping current run");
 
 		DropOldData(timestamp);
 		}
@@ -888,7 +902,7 @@ void RCDF_PositionStream(FILE *cdf)
 		ungetc('\n', cdf);  // Just so the fscanf mask stays identical
         if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2)
 			{
-			printf("Unknown error while scanning for beginning of data...\n");
+			syslog(LOG_ERR, "Unknown error while scanning for beginning of data...\n");
 			return;	
 			}
 		}
@@ -932,17 +946,14 @@ void RCDF_Load(FILE *cdf)
             &ip->Receive.total, &ip->Receive.icmp, &ip->Receive.udp,
             &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.p2p) != 7)
 			goto End_RecoverDataFromCdf;		
-
-		if (((Counter%30000) == 0) && Counter > 0)
-			printf("%lu records read over %lu intervals...\n", Counter, IntervalsRead);
 		}
 
 End_RecoverDataFromCdf:
 	StoreIPDataInRam(IpTable);
-	printf("%lu records total...\n", Counter);	
+	syslog(LOG_INFO, "Finished recovering %lu records", Counter);	
 	DropOldData(time(NULL)); // Dump the extra data
     if(!feof(cdf))
-       printf("Failed to parse part of log file. Giving up on the file.\n");
+       syslog(LOG_ERR, "Failed to parse part of log file. Giving up on the file");
 	IpCount = 0; // Reset traffic counters
     fclose(cdf);
 	}
@@ -972,7 +983,7 @@ void RecoverDataFromCDF(void)
 		logname1[6] = index[Counter];
 		if ((cdf = fopen(logname1, "r")))
 			{
-			printf("Recovering from %s...\n", logname1);
+			syslog(LOG_INFO, "Recovering from %s", logname1);
 			if (First)
 				{
 				RCDF_PositionStream(cdf);
@@ -996,7 +1007,7 @@ inline struct IPData *FindIp(uint32_t ipaddr)
     
     if (IpCount >= IP_NUM)
         {
-        printf("IP_NUM is too low, dropping ip....");
+        syslog(LOG_ERR, "IP_NUM is too low, dropping ip....");
        	return(NULL);
         }
 	
@@ -1038,7 +1049,7 @@ int fork2()
 				// Got this incantation from a message board.  Don't forget to set
 				// GMON_OUT_PREFIX in the shell
 				extern void _start(void), etext(void);
-				printf("Calling profiler startup...\n");
+				syslog(LOG_INFO, "Calling profiler startup...");
 				monstartup((u_long) &_start, (u_long) &etext);
 #endif
             return(0);

@@ -40,7 +40,7 @@ void rdns(char *Buffer, unsigned long IP)  // This takes over sigalarm!
 
 	if (DNSTimeouts > 100)
 		{
-		printf("Too many dns timeouts, reverse lookups suspended\n");
+		syslog(LOG_ERR, "Too many dns timeouts, reverse lookups suspended");
         strncpy(Buffer, TooManyDNSTimeouts, 253);
 		Buffer[254] = '\0';
 		return;
@@ -63,7 +63,7 @@ void rdns(char *Buffer, unsigned long IP)  // This takes over sigalarm!
 	else  // Our alarm timed out
 		{
 		HostIp2CharIp(IP, chrIP);
-		printf("DNS timeout for %s: This problem reduces bandwidthd performance\n", chrIP);
+		syslog(LOG_ERR, "DNS timeout for %s: This problem reduces graphing performance", chrIP);
 		DNSTimeouts++;
         strncpy(Buffer, DNSError, 253);
 		Buffer[254] = '\0';
@@ -208,7 +208,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 		{
 		if ((file = fopen("./htdocs/index.html", "w")) == NULL)
 			{
-			printf("Failed to open ./htdocs/index.html\n");
+			syslog(LOG_ERR, "Failed to open ./htdocs/index.html");
 			exit(1);
 			}
 		}
@@ -217,7 +217,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 		filename[14] = config.tag;
 		if ((file = fopen(filename, "w")) == NULL)
 			{
-			printf("Failed to open %s\n", filename);
+			syslog(LOG_ERR, "Failed to open %s", filename);
 			exit(1);
 			}
 		}

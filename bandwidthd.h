@@ -28,6 +28,8 @@
 
 #include <time.h>
 
+#include <syslog.h>
+
 #define IP_NUM 4000			// TODO: Do this dynamicly to save ram and/or scale bigger
 #define SUBNET_NUM 100
 
