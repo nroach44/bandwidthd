@@ -659,12 +659,10 @@ void RCDF_PositionStream(FILE *cdf)
 
 	current_timestamp = time(NULL);
 
-	printf("Seeking to end of data...\n");
 	fseek(cdf, 0, SEEK_END);
 	timestamp = current_timestamp;
 	while (timestamp > current_timestamp - config.range)
 		{
-		printf("Seeking backwards...\n");
 		// What happenes if we seek past the beginning of the file?
 		if (fseek(cdf, -IP_NUM*75*(config.range/config.interval)/20,SEEK_CUR))
 			{ // fseek returned error, just seek to beginning
@@ -721,7 +719,7 @@ void RCDF_Load(FILE *cdf)
             &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.p2p) != 7)
 			goto End_RecoverDataFromCdf;		
 
-		if (((Counter%15000) == 0) && Counter > 0)
+		if (((Counter%30000) == 0) && Counter > 0)
 			printf("%lu records read over %lu intervals...\n", Counter, IntervalsRead);
 		}
 
@@ -740,8 +738,6 @@ void RecoverDataFromCDF(void)
 	FILE *cdf;
     struct stat StatBuf;
 	char filename[] = "log2.cdf";
-
-	printf("Recovering logs...\n");
 
 	if (config.tag != '1') // We don't rotate weekly and monthly logs right now
 		{
