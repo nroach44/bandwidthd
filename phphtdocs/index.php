@@ -11,7 +11,7 @@ $db = ConnectDb();
 $sql = "SELECT sensor_id from bd_tx_log group by sensor_id order by sensor_id;";
 $result = pg_query($sql);
 while ($r = pg_fetch_array($result))
-	echo "<option value=top20.php?sensor_id=".$r['sensor_id'].">".$r['sensor_id'];
+	echo "<option value=report.php?sensor_id=".$r['sensor_id'].">".$r['sensor_id'];
 ?>
 </SELECT>
 </FORM>
