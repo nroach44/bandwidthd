@@ -55,9 +55,9 @@ group by ip) as tx,
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
 from sensors, $rxtable
-where sensor_name = '$sensor_name' and
-sensors.sensor_id = ".$rxtable.".sensor_id
-ip <<= '$ip'
+where sensor_name = '$sensor_name'
+and sensors.sensor_id = ".$rxtable.".sensor_id
+and ip <<= '$ip'
 group by ip) as rx
                                                                                                                              
 where tx.ip = rx.ip;";
