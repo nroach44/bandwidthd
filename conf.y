@@ -1,4 +1,4 @@
-%{
+ %{
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -27,6 +27,7 @@ int LineNo = 1;
 void yyerror(const char *str)
     {
     fprintf(stderr, "Syntax Error \"%s\" on line %d\n", str, LineNo);
+	syslog(LOG_ERR, "Syntax Error \"%s\" on line %d", str, LineNo);
 	exit(1);
     }
 
@@ -100,15 +101,14 @@ newline:
 subneta:
 	TOKSUBNET IPADDR IPADDR
 	{
-	struct in_addr addr;
-
+	struct in_addr addr, addr2;
+	
 	SubnetTable[SubnetCount].ip = inet_network($2) & inet_network($3);
     	SubnetTable[SubnetCount].mask = inet_network($3);	
 
 	addr.s_addr = ntohl(SubnetTable[SubnetCount].ip);
-	printf("Monitoring subnet %s ", inet_ntoa(addr));
-	addr.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
-	printf("with netmask %s\n", inet_ntoa(addr));
+	addr2.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
+	syslog(LOG_INFO, "Monitoring subnet %s with netmask %s", inet_ntoa(addr), inet_ntoa(addr2));
 	}
 	;
 
@@ -116,7 +116,7 @@ subnetb:
 	TOKSUBNET IPADDR TOKSLASH NUMBER
 	{
 	unsigned int Subnet, Counter, Mask;
-	struct in_addr addr;
+	struct in_addr addr, addr2;
 
 	Mask = 1; Mask <<= 31;
 	for (Counter = 0, Subnet = 0; Counter < $4; Counter++)
@@ -127,9 +127,8 @@ subnetb:
  	SubnetTable[SubnetCount].mask = Subnet; 
 	SubnetTable[SubnetCount].ip = inet_network($2) & Subnet;
 	addr.s_addr = ntohl(SubnetTable[SubnetCount].ip);
-	printf("Monitoring subnet %s ", inet_ntoa(addr));
-	addr.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
-	printf("with netmask %s\n", inet_ntoa(addr));
+	addr2.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
+	syslog(LOG_INFO, "Monitoring subnet %s with netmask %s", inet_ntoa(addr), inet_ntoa(addr2));
 	}
 	;
 
