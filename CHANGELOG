@@ -1,3 +1,10 @@
+1.2.0
+10,000 downloads edition! :)
+Added Weekly, Monthly, and yearly graphs!
+Bandwidthd will now do a graph run immediatly after loading it's data
+New 10 Minute, 1 hour, and 12 hour interval log files
+Graphing code now scales better with different custom intervals and periods
+
 1.1.8b
 Fixed bug in support for linux cooked socket DLT_LINUX_SLL (PPPOE, T1, etc) - Christian Laubscher
 

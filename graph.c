@@ -192,7 +192,6 @@ void MakeIndexPages(int NumIps)
 	int Counter, tCounter;
 	time_t WriteTime;
 	char filename[] = "./htdocs/index2.html";
-	char str_tag[] = "-1";
 		
 	FILE *file;
 	struct IPCData **IPCData;
@@ -308,7 +307,6 @@ void MakeIndexPages(int NumIps)
 
 		fprintf(file, "<H1>%s-%c</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR></center>\n<table width=100%% border=1 cellspacing=0>\n", Buffer1, config.tag);
 
-
         // PASS 1:  Write out the table
 
 		fprintf(file, "<TR bgcolor=lightblue><TD>Ip and Name<TD align=center>Total<TD align=center>Total Sent<TD align=center>Total Received<TD align=center>FTP<TD align=center>HTTP<TD align=center>P2P<TD align=center>TCP<TD align=center>UDP<TD align=center>ICMP\n");
@@ -330,9 +328,8 @@ void MakeIndexPages(int NumIps)
 				if (IPCData[Counter]->Graph)
 					{
 					HostIp2CharIp(IPCData[Counter]->IP, Buffer1);
-					strcat(Buffer1, str_tag);
 					rdns(HostName, IPCData[Counter]->IP);
-					fprintf(file, "<a name=\"%s\"><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-S.png><BR>\n<img src=legend.gif><br>\nReceived:<br>\n<img src=%s-R.png><BR>\n<img src=legend.gif><br>\n<BR>\n", Buffer1, Buffer1, HostName, Buffer1, Buffer1);					
+					fprintf(file, "<a name=\"%s-%c\"><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png><BR>\n<img src=legend.gif><br>\nReceived:<br>\n<img src=%s-%c-R.png><BR>\n<img src=legend.gif><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, config.tag);					
 					}
 				}
 			}
@@ -770,7 +767,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
 	    MarkTime = mktime(timestruct);
             
     	x = (MarkTime-sample_begin)*( ((double)(XWIDTH-XOFFSET)) / config.range) + XOFFSET;
-	    if (x < XOFFSET)
+	    while (x < XOFFSET)
     	    {
         	MarkTime += (24*60*60);
 	        x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
@@ -803,7 +800,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
         MarkTime = mktime(timestruct);
 
     	x = (MarkTime-sample_begin)*( ((double)(XWIDTH-XOFFSET)) / config.range) + XOFFSET;
-	    if (x < XOFFSET)
+	    while (x < XOFFSET)
     	    {
 			timestruct->tm_mon++;
         	MarkTime = mktime(timestruct);
@@ -818,7 +815,7 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
 	
     	    timestruct = localtime((time_t *)&MarkTime);
 	        strftime(buffer, 100, "%b", timestruct);
-    	    gdImageString(im, gdFontSmall, x-30,  YHEIGHT-YOFFSET+10, buffer, black);        
+    	    gdImageString(im, gdFontSmall, x-6,  YHEIGHT-YOFFSET+10, buffer, black);        
 
 	        // Calculate Next x
             timestruct->tm_mon++;
@@ -835,14 +832,22 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     timestruct->tm_sec = 0;
     timestruct->tm_min = 0;
     timestruct->tm_hour = 0;
-    MarkTime = mktime(timestruct)+(6*60*60);
+    MarkTime = mktime(timestruct);
 
 	if ((6*60*60*(XWIDTH-XOFFSET))/config.range > 10) // pixels per 6 hours is more than 2
 		MarkTimeStep = 6*60*60; // Major ticks are 6 hours
-	else
+	else if ((24*60*60*(XWIDTH-XOFFSET))/config.range > 10)
 		MarkTimeStep = 24*60*60; // Major ticks are 24 hours;
+	else
+		return; // Done		
 
 	x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+	while (x < XOFFSET)
+   		{
+		MarkTime += MarkTimeStep;
+	    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+    	}
+
     while (x < (XWIDTH-10))
     	{
 	    if (x > XOFFSET) {
@@ -857,15 +862,26 @@ void PrepareXAxis(gdImagePtr im, long int timestamp)
     timestruct->tm_sec = 0;
     timestruct->tm_min = 0;
     timestruct->tm_hour = 0;
-    MarkTime = mktime(timestruct)+(60*60);
+    MarkTime = mktime(timestruct);
 
 	if ((60*60*(XWIDTH-XOFFSET))/config.range > 2) // pixels per hour is more than 2
 		MarkTimeStep = 60*60;  // Minor ticks are 1 hour
-	else
+	else if ((6*60*60*(XWIDTH-XOFFSET))/config.range > 2)
 		MarkTimeStep = 6*60*60; // Minor ticks are 6 hours
+	else if ((24*60*60*(XWIDTH-XOFFSET))/config.range > 2)
+		MarkTimeStep = 24*60*60;
+	else
+		return; // Done
 
 	// Draw Minor Tic Marks
 	x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+
+	while (x < XOFFSET)
+   		{
+		MarkTime += MarkTimeStep;
+	    x = (MarkTime-sample_begin)*((XWIDTH-XOFFSET)/config.range) + XOFFSET;
+    	}
+
     while (x < (XWIDTH-10))
         {
 	    if (x > XOFFSET) {
