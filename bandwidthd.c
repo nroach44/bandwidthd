@@ -126,6 +126,7 @@ int main(int argc, char **argv)
 	unsigned long long graph_cutoff;
 
 	config.dev = NULL;
+	config.filter = "ip";
 	config.skip_intervals = CONFIG_GRAPHINTERVALS;
 	config.graph_cutoff = CONFIG_GRAPHCUTOFF;
 	config.promisc = TRUE;
@@ -228,8 +229,12 @@ int main(int argc, char **argv)
 	pd = pcap_open_live(config.dev, 100, config.promisc, 1000, Error);
         if (pd == NULL) printf("%s\n", Error);
 
-    if (pcap_compile(pd, &fcode, "ip", 1, 0) < 0)
+    if (pcap_compile(pd, &fcode, config.filter, 1, 0) < 0)
+		{
         pcap_perror(pd, "Error");
+		printf("Exiting do to malformed filter string in bandwidthd.conf...\n");
+		exit(1);
+		}
 
     if (pcap_setfilter(pd, &fcode) < 0)
         pcap_perror(pd, "Error");

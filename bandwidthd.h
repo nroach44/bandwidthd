@@ -58,6 +58,7 @@
 struct config
 	{
 	char *dev;
+	char *filter;
 	unsigned int skip_intervals;
 	unsigned long long graph_cutoff;
 	int promisc;

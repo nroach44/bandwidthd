@@ -23,5 +23,6 @@ promiscuous				{ return TOKPROMISC; }
 output_cdf				{ return TOKOUTPUTCDF; }		
 recover_cdf				{ return TOKRECOVERCDF; }		
 graph					{ return TOKGRAPH; }
+filter					{ return TOKFILTER; }
 .						{ return TOKJUNK; }
 %%

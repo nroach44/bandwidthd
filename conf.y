@@ -37,7 +37,7 @@ int yywrap()
 %}
 
 %token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF 
-%token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE
+%token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE TOKFILTER
 %union
 {
     int number;
@@ -73,6 +73,8 @@ command:
 	graph
 	|
 	newline
+	|
+	filter
 	;
 
 subnet:
@@ -136,59 +138,46 @@ device:
 	TOKDEV string
 	{
 	config.dev = $2;
-	//printf("Using device: %s\n", config.dev);
+	}
+
+filter:
+	TOKFILTER string
+	{
+	config.filter = $2;
 	}
 
 skip_intervals:
 	TOKSKIPINTERVALS NUMBER
 	{
 	config.skip_intervals = $2+1;
-	printf("Graphing every %d intervals.\n", config.skip_intervals);
 	}
 
 graph_cutoff:
 	TOKGRAPHCUTOFF NUMBER
 	{
 	config.graph_cutoff = $2*1024;
-	printf("Not graphing IP's with less than %llu bytes of traffic.\n", config.graph_cutoff);
 	}
 
 promisc:
 	TOKPROMISC STATE
 	{
 	config.promisc = $2;
-	if (config.promisc)
-		printf("Promiscuous mode on\n");
-	else
-		printf("Promiscuous mode off\n");
 	}
 
 output_cdf:
 	TOKOUTPUTCDF STATE
 	{
 	config.output_cdf = $2;
-	if (config.output_cdf)
-		printf("Logging to htdocs/log.cdf.\n");
-	else
-		printf("Logging to cdf disabled.\n");
 	}
 
 recover_cdf:
 	TOKRECOVERCDF STATE
 	{
 	config.recover_cdf = $2;
-	if (config.recover_cdf)
-		printf("Loading inital data from log.cdf.\n");
-	else
-		printf("cdf loading disabled.\n");
 	}
 
 graph:
 	TOKGRAPH STATE
 	{
 	config.graph = $2;
-	if (config.graph)
-		printf("Graphing enabled.\n");
-	else
-		printf("Graphing disabled.\n");
 	}

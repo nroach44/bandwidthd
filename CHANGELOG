@@ -1,4 +1,6 @@
-1.2.1
+1.2.1b
+Added filter option to bandwidhtd.conf to specify libpcap filter
+Fixed problems with YAxis laebling and scaling on high volume networks
 Skips starting a new graphing run if the last run is still going to prevent
 	fork bomb style box crashes
 Exits on a configuration error
