@@ -64,13 +64,17 @@ void bd_CollectingData(char *filename)
 	index = fopen(filename, "w");	
 	if (index)
 		{
-		fprintf(index, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
+		fprintf(index, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
+		fprintf(index, "<HTML><HEAD><TITLE>Bandwidthd</TITLE>\n");
+
+		fprintf(index, "<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n");
+		fprintf(index, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 		fprintf(index, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
-		fprintf(index, "</HEAD><BODY><center><img src=\"logo.gif\"><BR>\n");
-		fprintf(index, "<BR>\n - <a href=index.html>Daily</a> -- <a href=index2.html>Weekly</a> -- ");
-		fprintf(index, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a><BR>\n");
+		fprintf(index, "</HEAD>\n<BODY><center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n");
+		fprintf(index, "<BR>\n - <a href=\"index.html\">Daily</a> -- <a href=\"index2.html\">Weekly</a> -- ");
+		fprintf(index, "<a href=\"index3.html\">Monthly</a> -- <a href=\"index4.html\">Yearly</a><BR>\n");
 		fprintf(index, "<BR>bandwidthd is collecting data...\n");		
-		fprintf(index, "</BODY></HTML>\n");
+		fprintf(index, "</center></BODY></HTML>\n");
 		fclose(index);
 		}
 	else

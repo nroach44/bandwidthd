@@ -243,11 +243,16 @@ void MakeIndexPages(int NumIps)
 		default: PeriodDesc = ""; break;
 		}
 	
-	fprintf(file, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
+	fprintf(file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
+	fprintf(file, "<HTML>\n<HEAD>\n<TITLE>Bandwidthd</TITLE>\n");
+
+	fprintf(file, "<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n");
+	fprintf(file, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 	fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
-	fprintf(file, "</HEAD><BODY vlink=blue>\n%s<br>\n<center><img src=\"logo.gif\"><BR>\n", ctime(&WriteTime));
-	fprintf(file, "<BR>\n - <a href=index.html>Daily</a> -- <a href=index2.html>Weekly</a> -- ");
-	fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a> - <BR>\n");
+	fprintf(file, "</HEAD>\n<BODY vlink=blue>\n%s<br>\n<center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n", ctime(&WriteTime));
+	fprintf(file, "Programmed by David Hinkle, Commissioned by <a href=\"http://www.derbytech.com\">DerbyTech</a> wireless networking.<BR>");
+	fprintf(file, "<BR>\n - <a href=\"index.html\">Daily</a> -- <a href=\"index2.html\">Weekly</a> -- ");
+	fprintf(file, "<a href=\"index3.html\">Monthly</a> -- <a href=\"index4.html\">Yearly</a> - <BR>\n");
 
 	fprintf(file, "<BR>\nPick a Subnet:<BR>\n");	
 	if (config.tag == '1')
@@ -258,12 +263,13 @@ void MakeIndexPages(int NumIps)
 	for (Counter = 0; Counter < SubnetCount; Counter++)            
 		{
 		HostIp2CharIp(SubnetTable[Counter].ip, Buffer1);
-		fprintf(file, "- <a href=Subnet-%c-%s.html>%s</a> -", config.tag, Buffer1, Buffer1);
+		fprintf(file, "- <a href=\"Subnet-%c-%s.html\">%s</a> -", config.tag, Buffer1, Buffer1);
 		}
 
 	/////  TOP 20
 
-	fprintf(file, "<H1>Top 20 IPs by Traffic - %s</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR><center>\n<table width=100%% border=1 cellspacing=0>\n", PeriodDesc);
+	fprintf(file, "<H1>Top 20 IPs by Traffic - %s</H1></center>", PeriodDesc);
+	fprintf(file, "<center>\n<table width=\"100%%\" border=1 cellspacing=0>\n");
 
     // PASS 1:  Write out the table
 
@@ -287,7 +293,7 @@ void MakeIndexPages(int NumIps)
 				HostIp2CharIp(IPCData[Counter]->IP, Buffer1);
 				rdns(HostName, IPCData[Counter]->IP);
 				}
-			fprintf(file, "<a name=\"%s-%c\"><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png><BR>\n<img src=legend.gif><br>\nReceived:<br>\n<img src=%s-%c-R.png><BR>\n<img src=legend.gif><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, config.tag);					
+			fprintf(file, "<a name=\"%s-%c\"></a><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png ALT=\"Sent traffic for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\nReceived:<br>\n<img src=%s-%c-R.png ALT=\"Sent traffic for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, Buffer1, config.tag, Buffer1);
 			}
 
 	fprintf(file, "</BODY></HTML>\n");
@@ -302,12 +308,17 @@ void MakeIndexPages(int NumIps)
 		HostIp2CharIp(SubnetTable[SubnetCounter].ip, Buffer1);
 		sprintf(Buffer2, "./htdocs/Subnet-%c-%s.html", config.tag, Buffer1);
 		file = fopen(Buffer2, "w");
-		fprintf(file, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
-		fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n</HEAD>\n<BODY vlink=blue>\n%s<br>\n<CENTER><a name=\"Top\">", ctime(&WriteTime));
-		fprintf(file, "<img src=\"logo.gif\"><BR>");
+		fprintf(file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
+		fprintf(file, "<HTML>\n<HEAD><TITLE>Bandwidthd - Subnet %s</TITLE>\n", Buffer1);
+		fprintf(file, "<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n");
+		fprintf(file, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
+		fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
+		fprintf(file, "</HEAD>\n<BODY vlink=blue>\n%s<br>\n<CENTER><a name=\"Top\"></a>", ctime(&WriteTime));
+		fprintf(file, "<img src=\"logo.gif\" ALT=\"Logo\"><BR>");
+		fprintf(file, "Programmed by David Hinkle, Commissioned by <a href=\"http://www.derbytech.com\">DerbyTech</a> wireless networking.<BR>\n");
 
-		fprintf(file, "<BR>\n - <a href=index.html>Daily</a> -- <a href=index2.html>Weekly</a> -- ");
-		fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a> - <BR>\n");
+		fprintf(file, "<BR>\n - <a href=\"index.html\">Daily</a> -- <a href=\"index2.html\">Weekly</a> -- ");
+		fprintf(file, "<a href=\"index3.html\">Monthly</a> -- <a href=\"index4.html\">Yearly</a> - <BR>\n");
 
 		fprintf(file, "<BR>\nPick a Subnet:<BR>\n");
 		if (config.tag == '1')
@@ -318,10 +329,11 @@ void MakeIndexPages(int NumIps)
 		for (Counter = 0; Counter < SubnetCount; Counter++)
 			{
 			HostIp2CharIp(SubnetTable[Counter].ip, Buffer2);
-			fprintf(file, "- <a href=Subnet-%c-%s.html>%s</a> -", config.tag, Buffer2, Buffer2);
+			fprintf(file, "- <a href=\"Subnet-%c-%s.html\">%s</a> -", config.tag, Buffer2, Buffer2);
 			}
 
-		fprintf(file, "<H1>%s - %s</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR></center>\n<table width=100%% border=1 cellspacing=0>\n", Buffer1, PeriodDesc);
+		fprintf(file, "<H1>%s - %s</H1></center>", Buffer1, PeriodDesc);
+		fprintf(file, "<table width=\"100%%\" border=1 cellspacing=0>\n");
 
         // PASS 1:  Write out the table
 
@@ -334,7 +346,7 @@ void MakeIndexPages(int NumIps)
     			}
 			}
 
-		fprintf(file, "</table></center>\n");
+		fprintf(file, "</table>\n");
 
 		// PASS 2: The graphs
 		for (Counter=0; Counter < NumIps && config.graph; Counter++)
@@ -345,7 +357,7 @@ void MakeIndexPages(int NumIps)
 					{
 					HostIp2CharIp(IPCData[Counter]->IP, Buffer1);
 					rdns(HostName, IPCData[Counter]->IP);
-					fprintf(file, "<a name=\"%s-%c\"><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png><BR>\n<img src=legend.gif><br>\nReceived:<br>\n<img src=%s-%c-R.png><BR>\n<img src=legend.gif><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, config.tag);					
+					fprintf(file, "<a name=\"%s-%c\"></a><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png ALT=\"Sent traffic graph for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\nReceived:<br>\n<img src=%s-%c-R.png ALT=\"Received traffic for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, Buffer1, config.tag, Buffer1);
 					}
 				}
 			}
