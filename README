@@ -28,14 +28,13 @@ is graphed on a Celeron 450 every 10 minutes.
 Bandwidthd compiles clean on:
 
 ix86	Solaris 9
-	Debian 2.2
-	Fedora Core 2
-	OpenBSD 3.4
-	FreeBSD 4.8
-	NetBSD 1.6.1
+		Debian 2.2
+		Fedora Core 2
+		OpenBSD 3.4
+		FreeBSD 4.8
+		NetBSD 1.6.1
 AMD64	Fedora Core 3
-PPC G4 MacOSX 10.2
-Sparc R220 Solaris 9
+PPC G4 	MacOSX 10.2
 
 Thanks goes to SourceForge for providing the test platforms.
 
