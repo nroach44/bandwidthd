@@ -1,5 +1,5 @@
 CREATE TABLE bd_rx_log
-(sensor_id varchar,
+(sensor_id int,
 ip inet,
 timestamp timestamp with time zone DEFAULT now(),
 sample_duration int,
@@ -10,10 +10,10 @@ tcp int,
 ftp int,
 http int,
 p2p int);
-create index bd_rx_log_sensor_id_timestamp_ip_idx on bd_rx_log (sensor_id, timestamp, ip);
+create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp);
 
 CREATE TABLE bd_tx_log
-(sensor_id varchar,
+(sensor_id int,
 ip inet,
 timestamp timestamp with time zone DEFAULT now(),
 sample_duration int,
@@ -24,10 +24,10 @@ tcp int,
 ftp int,
 http int,
 p2p int);
-create index bd_tx_log_sensor_id_timestamp_ip_idx on bd_tx_log (sensor_id, timestamp, ip);
+create index bd_tx_log_sensor_id_ip_timestamp_idx on bd_tx_log (sensor_id, ip, timestamp);
 
 CREATE TABLE bd_rx_total_log
-(sensor_id varchar,
+(sensor_id int,
 ip inet,
 timestamp timestamp with time zone DEFAULT now(),
 sample_duration int,
@@ -40,8 +40,9 @@ http int,
 p2p int);
 create index bd_rx_total_log_sensor_id_timestamp_ip_idx on bd_rx_total_log (sensor_id, timestamp);
 
+
 CREATE TABLE bd_tx_total_log
-(sensor_id varchar,
+(sensor_id int,
 ip inet,
 timestamp timestamp with time zone DEFAULT now(),
 sample_duration int,
@@ -53,3 +54,10 @@ ftp int,
 http int,
 p2p int);
 create index bd_tx_total_log_sensor_id_timestamp_ip_idx on bd_tx_total_log (sensor_id, timestamp);
+
+CREATE TABLE sensors
+(
+sensor_id serial PRIMARY KEY,
+sensor_name varchar,
+last_connection timestamp with time zone
+);

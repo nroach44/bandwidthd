@@ -591,6 +591,7 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 	struct Statistics *Stats;
     PGresult   *res;
 	static PGconn *conn = NULL;
+	static char sensor_id[50];
 	const char *paramValues[10];
 	char *sql1; 
 	char *sql2;
@@ -598,6 +599,17 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 
 	if (!config.output_database == DB_PGSQL)
 		return;
+
+	paramValues[0] = Values[0];
+	paramValues[1] = Values[1];
+	paramValues[2] = Values[2];
+	paramValues[3] = Values[3];	
+	paramValues[4] = Values[4];
+	paramValues[5] = Values[5];
+	paramValues[6] = Values[6];
+	paramValues[7] = Values[7];
+	paramValues[8] = Values[8];
+	paramValues[9] = Values[9];
 
 	// ************ Inititialize the db if it's not already
 	if (!conn)
@@ -613,22 +625,89 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
         	conn = NULL;
 	        return;
     	    }
+
+		strncpy(Values[0], config.sensor_id, 50);
+		res = PQexecParams(conn, "select sensor_id from sensors where sensor_name = $1;",
+			1,       /* one param */
+            NULL,    /* let the backend deduce param type */
+   	        paramValues,
+       	    NULL,    /* don't need param lengths since text */
+           	NULL,    /* default to all text params */
+            0);      /* ask for binary results */
+		
+   		if (PQresultStatus(res) != PGRES_TUPLES_OK)
+       		{
+        	syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
+    	    PQclear(res);
+   	    	PQfinish(conn);
+    	    conn = NULL;
+       		return;
+	        }
+
+		if (!PQntuples(res))
+			{
+			// Insert new sensor id
+			PQclear(res);
+			res = PQexecParams(conn, "insert into sensors (sensor_name, last_connection) VALUES ($1, now());",
+				1,       /* one param */
+    	        NULL,    /* let the backend deduce param type */
+   	    	    paramValues,
+       	    	NULL,    /* don't need param lengths since text */
+				NULL,    /* default to all text params */
+            	0);      /* ask for binary results */
+
+    		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        		{
+	        	syslog(LOG_ERR, "Postresql UPDATE failed: %s", PQerrorMessage(conn));
+	    	    PQclear(res);
+    	    	PQfinish(conn);
+	    	    conn = NULL;
+        		return;
+		        }
+			PQclear(res);
+			res = PQexecParams(conn, "select sensor_id from sensors where sensor_name = $1;",
+				1,       /* one param */
+        	    NULL,    /* let the backend deduce param type */
+   	        	paramValues,
+	       	    NULL,    /* don't need param lengths since text */
+    	       	NULL,    /* default to all text params */
+        	    0);      /* ask for binary results */
+		
+	   		if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    	   		{
+        		syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
+    	    	PQclear(res);
+	   	    	PQfinish(conn);
+    		    conn = NULL;
+       			return;
+	        	}
+			strncpy(sensor_id, PQgetvalue(res, 0, 0), 50);
+			PQclear(res);
+			}	
 		}
 
 	// **** Perform inserts
 
-	paramValues[0] = Values[0];
-	paramValues[1] = Values[1];
-	paramValues[2] = Values[2];
-	paramValues[3] = Values[3];	
-	paramValues[4] = Values[4];
-	paramValues[5] = Values[5];
-	paramValues[6] = Values[6];
-	paramValues[7] = Values[7];
-	paramValues[8] = Values[8];
-	paramValues[9] = Values[9];
+	strncpy(Values[0], sensor_id, 50);
 
-	strncpy(Values[0], config.sensor_id, 50);
+	res = PQexecParams(conn, "update sensors set last_connection = now() where sensor_id = $1;",
+			1,       /* one param */
+    	    NULL,    /* let the backend deduce param type */
+   	    	paramValues,
+	    	NULL,    /* don't need param lengths since text */
+			NULL,    /* default to all text params */
+       		0);      /* ask for binary results */
+
+ 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    	{
+	    syslog(LOG_ERR, "Postresql UPDATE failed: %s", PQerrorMessage(conn));
+	    PQclear(res);
+    	PQfinish(conn);
+	    conn = NULL;
+        return;
+		}							
+	PQclear(res);
+
 	Values[0][49] = '\0';
 	snprintf(Values[1], 50, "%llu", config.interval);
 	for (counter=0; counter < IpCount; counter++)

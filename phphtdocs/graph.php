@@ -76,8 +76,8 @@ if (isset($_GET['ip']))
 else
 	exit(1);
 
-if (isset($_GET['sensor_id']))
-	$sensor_id = $_GET['sensor_id'];
+if (isset($_GET['sensor_name']))
+	$sensor_name = $_GET['sensor_name'];
 else
 	exit(1);
 
@@ -112,8 +112,8 @@ $a_ftp = array();
 $a_http = array();
 $a_p2p = array();
 
-$sql = "select *, extract(epoch from timestamp) as ts from $table where ip <<= '$ip' and sensor_id = '$sensor_id' and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime order by ip;";
-//echo $sql."<br>";
+$sql = "select *, extract(epoch from timestamp) as ts from sensors, $table where sensors.sensor_id = ".$table.".sensor_id and ip <<= '$ip' and sensor_name = '$sensor_name' and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime order by ip;";
+//echo $sql."<br>"; exit(1);
 $result = pg_query($sql);
 
 // The SQL statement pulls the data out of the database ordered by IP address, that way we can average each

@@ -8,10 +8,10 @@
 <?
 include("include.php");
 $db = ConnectDb();
-$sql = "SELECT sensor_id from bd_tx_log group by sensor_id order by sensor_id;";
+$sql = "SELECT sensor_name from sensors order by sensor_name;";
 $result = pg_query($sql);
 while ($r = pg_fetch_array($result))
-	echo "<option value=report.php?sensor_id=".$r['sensor_id'].">".$r['sensor_id'];
+	echo "<option value=report.php?sensor_name=".$r['sensor_name'].">".$r['sensor_name'];
 ?>
 </SELECT>
 </FORM>

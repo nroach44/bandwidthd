@@ -3,11 +3,11 @@
 <center>
 <img src=logo.gif>
 <?
-if (isset($_GET['sensor_id']))
-    $sensor_id = $_GET['sensor_id'];
+if (isset($_GET['sensor_name']))
+    $sensor_name = $_GET['sensor_name'];
 else
     {
-    echo "<br>Please provide a sensor_id";
+    echo "<br>Please provide a sensor_name";
     exit(1);
     }
 
@@ -46,15 +46,17 @@ from
                                                                                                                              
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from $txtable
-where sensor_id = '$sensor_id' and
-ip <<= '$ip'
+from sensors, $txtable
+where sensor_name = '$sensor_name'
+and sensors.sensor_id = ".$txtable.".sensor_id
+and ip <<= '$ip'
 group by ip) as tx,
                                                                                                                              
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from $rxtable
-where sensor_id = '$sensor_id' and
+from sensors, $rxtable
+where sensor_name = '$sensor_name' and
+sensors.sensor_id = ".$rxtable.".sensor_id
 ip <<= '$ip'
 group by ip) as rx
                                                                                                                              
@@ -74,25 +76,25 @@ echo fmtb($r['total']).fmtb($r['sent']).fmtb($r['received']).
 echo "</table></center>";
 
 echo "<center><h4>Daily</h4></center>";
-echo "Send:<br><img src=graph.php?ip=$ip&sensor_id=".$sensor_id."&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?ip=$ip&sensor_name=".$sensor_name."&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?ip=$ip&sensor_id=".$sensor_id."&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?ip=$ip&sensor_name=".$sensor_name."&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
 
 echo "<center><h4>Weekly</h4></center>";
-echo "Send:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_id=$sensor_id&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_name=$sensor_name&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_id=$sensor_id&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?interval=".INT_WEEKLY."&ip=$ip&sensor_name=$sensor_name&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
 
 echo "<center><h4>Monthly</h4></center>";
-echo "Send:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_id=$sensor_id&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_name=$sensor_name&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_id=$sensor_id&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?interval=".INT_MONTHLY."&ip=$ip&sensor_name=$sensor_name&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
 
 echo "<center><h4>Yearly</h4></center>";
-echo "Send:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_id=$sensor_id&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Send:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_name=$sensor_name&table=$txtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";
-echo "Receive:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_id=$sensor_id&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+echo "Receive:<br><img src=graph.php?interval=".INT_YEARLY."&ip=$ip&sensor_name=$sensor_name&table=$rxtable&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 echo "<img src=legend.gif><br>";

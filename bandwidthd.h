@@ -45,7 +45,7 @@
 #define RANGE3 3024000.0    // 35 days
 #define RANGE4 35640000.0	// 412.5ish days 
 
-#define INTERVAL1 150L     	// 150 -60 (210 is the perfect interval?)
+#define INTERVAL1 200L     	// 150 -60 (213 is the perfect interval?)
 #define INTERVAL2 600L		// 10 minutes
 #define INTERVAL3 3600L		// 1 hour
 #define INTERVAL4 43200L	// 12 hours 

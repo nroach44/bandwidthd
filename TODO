@@ -1,17 +1,16 @@
 Move output modules to forked section
-Lots of ram could be saved by not storing empty send or receive structures in ram
-	(Happens when a ip receives packets but does not send them during an interval for example,
-	happens alot due to ping scan traffic, broadcast traffic, etc, initial investigations indecate
-	this could cut ram usage in direct graphing mode in half)
 Config switches for sample intervals and graphing ranges
 
 # Features requested by people, I make a note of them here in case myself
 # or someone else wants to come along and implement them.
 Stoilis:
 List of IP's to exclude from the page
-Switch to put name reverses at the top of the page in the table
 Switch to hide all ip addresses
 
 Me:
 Switch to only graph traffic not to and from the local network (internet
 	traffic only)
+
+Change ram datastore:  Linked lists with identifiers that store only non-zero traffic, use
+	longs for traffic storage instead of long longs and implement a multiplyer field.
+	will allow implementation of custom ports to graph and reduce ram usage by 70%ish

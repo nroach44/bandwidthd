@@ -50,4 +50,5 @@ function fmtb($bytes)
 	}
 
 $starttime = time();
+set_time_limit(300);
 ?>

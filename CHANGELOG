@@ -1,3 +1,7 @@
+Changed default interval to save ram and cpu power
+Changed indexing scheme again
+Moved sensor names to a seperate table to improve performance
+
 2.0.0 beta cvs on Jan 2, 2005
 Changed Optimization of indexes
 Implemented Totals graph optimization for main sensor query

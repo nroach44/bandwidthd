@@ -5,11 +5,11 @@
 <?
 // Get variables from url
 
-if (isset($_GET['sensor_id']))
-    $sensor_id = $_GET['sensor_id'];
+if (isset($_GET['sensor_name']))
+    $sensor_name = $_GET['sensor_name'];
 else
 	{
-	echo "<br>Please provide a sensor_id";
+	echo "<br>Please provide a sensor_name";
 	exit(1);
 	}
 
@@ -35,7 +35,7 @@ $db = ConnectDb();
 
 <OPTION SELECTED value="index.php">--Select A Sensor--
 <?
-$sql = "SELECT sensor_id from bd_tx_log group by sensor_id order by sensor_id;";
+$sql = "SELECT sensor_name from sensors order by sensor_name;";
 $result = pg_query($sql);
 $url="report.php?";
 if (isset($limit))
@@ -45,13 +45,13 @@ if (isset($subnet))
 if (isset($interval))
 	$url .= "&interval=$interval";
 while ($r = pg_fetch_array($result))
-    echo "<option value=$url&sensor_id=".$r['sensor_id'].">".$r['sensor_id']."\n";
+    echo "<option value=$url&sensor_name=".$r['sensor_name'].">".$r['sensor_name']."\n";
 ?>
 </SELECT>
 <td><SELECT name="intervals" onChange="window.location=document.navigation.intervals.options[document.navigation.intervals.selectedIndex].value">
 <OPTION SELECTED value="index.php">--Select An Interval--
 <?
-$url="report.php?sensor_id=$sensor_id";
+$url="report.php?sensor_name=$sensor_name";
 if (isset($limit))
 	$url .= "&limit=$limit";
 if (isset($subnet))
@@ -66,7 +66,7 @@ if (isset($subnet))
 <td><SELECT name="limit" onChange="window.location=document.navigation.limit.options[document.navigation.limit.selectedIndex].value">
 <OPTION SELECTED value="index.php">--How Many Results--
 <?
-$url="report.php?sensor_id=$sensor_id";
+$url="report.php?sensor_name=$sensor_name";
 if (isset($interval))
     $url .= "&interval=$interval";
 if (isset($subnet))
@@ -79,7 +79,7 @@ if (isset($subnet))
 </select>
 
 <?
-$url="report.php?sensor_id=$sensor_id";
+$url="report.php?sensor_name=$sensor_name";
 if (isset($limit))
     $url .= "&limit=$limit";
 if (isset($interval))
@@ -106,9 +106,9 @@ if ($limit == "all")
 	unset($limit);
 
 if (isset($limit))
-	echo "<h2>Top $limit - $sensor_id</h2>";
+	echo "<h2>Top $limit - $sensor_name</h2>";
 else
-	echo "<h2>All Records - $sensor_id</h2>";
+	echo "<h2>All Records - $sensor_name</h2>";
 
 // Sqlize the incomming variables
 if (isset($subnet))
@@ -126,16 +126,18 @@ from
 
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from bd_tx_log
-where sensor_id = '$sensor_id'
+from sensors, bd_tx_log
+where sensor_name = '$sensor_name'
+and sensors.sensor_id = bd_tx_log.sensor_id
 $sql_subnet
 and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime
 group by ip) as tx,
 
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
 sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from bd_rx_log
-where sensor_id = '$sensor_id'
+from sensors, bd_rx_log
+where sensor_name = '$sensor_name'
+and sensors.sensor_id = bd_rx_log.sensor_id
 $sql_subnet
 and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime
 group by ip) as rx
@@ -143,9 +145,10 @@ group by ip) as rx
 where tx.ip = rx.ip
 order by total desc $limit;";
 
-//echo "</center><pre>$sql</pre><center>";
-
+//echo "</center><pre>$sql</pre><center>"; exit(0);
+pg_query("SET sort_mem TO 30000;");
 $result = pg_query($sql);
+pg_query("set sort_mem to default;");
 echo "<table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
 
 if (!isset($subnet)) // Set this now for total graphs
@@ -191,16 +194,16 @@ if ($subnet == "0.0.0.0/0")
 	$total_table = "bd_tx_total_log";
 else
 	$total_table = "bd_tx_log";
-echo "<a name=Total><h3><a href=details.php?sensor_id=$sensor_id&ip=$subnet>";
+echo "<a name=Total><h3><a href=details.php?sensor_name=$sensor_name&ip=$subnet>";
 echo "Total - Total of $subnet</h3>";
 echo "</a>";
-echo "Send:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table&yscale=$scale><br>";
+echo "Send:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_name=".$sensor_name."&table=$total_table&yscale=$scale><br>";
 echo "<img src=legend.gif><br>";
 if ($subnet == "0.0.0.0/0")
 	$total_table = "bd_rx_total_log";
 else
 	$total_table = "bd_rx_log";
-echo "Receive:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table&yscale=$scale><br>";
+echo "Receive:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_name=".$sensor_name."&table=$total_table&yscale=$scale><br>";
 echo "<img src=legend.gif><br>";
 
 
@@ -208,15 +211,15 @@ echo "<img src=legend.gif><br>";
 for($Counter=0; $Counter < pg_num_rows($result); $Counter++) 
 	{
 	$r = pg_fetch_array($result, $Counter);
-	echo "<a name=".$r['ip']."><h3><a href=details.php?sensor_id=$sensor_id&ip=".$r['ip'].">";
+	echo "<a name=".$r['ip']."><h3><a href=details.php?sensor_name=$sensor_name&ip=".$r['ip'].">";
 	if ($r['ip'] == "0.0.0.0")
 		echo "Total - Total of all subnets</h3>";
 	else
 		echo $r['ip']." - ".gethostbyaddr($r['ip'])."</h3>";
 	echo "</a>";
-	echo "Send:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_id=".$sensor_id."&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+	echo "Send:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_name=".$sensor_name."&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 	echo "<img src=legend.gif><br>";
-	echo "Receive:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_id=".$sensor_id."&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
+	echo "Receive:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_name=".$sensor_name."&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 	echo "<img src=legend.gif><br>";
 	}
 
