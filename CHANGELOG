@@ -1,3 +1,10 @@
+Make file tweaks
+Adhere more strictly to GNU coding standards for directories
+Optional htdocs and log file locations specified at configure time
+Optional bandwidthd.conf entries to specify htdocs and log file locations
+Command line option help
+Command line option for specifying a bandwidthd.conf file
+
 2.0.1 
 Big Feature - Added optional postgresql database logging mode and php for dynamic graph creation from 
 	databases.  Great for big sites,  multiple sensors with very low overhead collect traffic statistics

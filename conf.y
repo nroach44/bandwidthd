@@ -33,7 +33,7 @@ int bdconfig_wrap()
 
 %token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF 
 %token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE TOKFILTER
-%token TOKMETAREFRESH TOKPGSQLCONNECTSTRING TOKSENSORID
+%token TOKMETAREFRESH TOKPGSQLCONNECTSTRING TOKSENSORID TOKHTDOCSDIR TOKLOGDIR
 %union
 {
     int number;
@@ -77,6 +77,10 @@ command:
 	pgsql_connect_string
 	|
 	sensor_id
+	|
+	htdocs_dir
+	|
+	log_dir
 	;
 
 subnet:
@@ -138,6 +142,20 @@ device:
 	TOKDEV string
 	{
 	config.dev = $2;
+	}
+	;
+
+htdocs_dir:
+	TOKHTDOCSDIR string
+	{
+	config.htdocs_dir = $2;
+	}
+	;
+
+log_dir:
+	TOKLOGDIR string
+	{
+	config.log_dir = $2;
 	}
 	;
 

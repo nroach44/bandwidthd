@@ -117,4 +117,17 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
 
+
+# Set directory names
+AC_ARG_WITH([htdocs-dir], AC_HELP_STRING([--with-htdocs-dir=DIR], [Sets default htdocs directory.  Default is LOCALSTATEDIR/bandwidthd/htdocs]),
+	htdocs_dir=${with_htdocs_dir},
+	htdocs_dir="${localstatedir}/bandwidthd/htdocs")
+AC_ARG_WITH([log-dir], AC_HELP_STRING([--with-log-dir=DIR], [Sets default cdf log directory.  Default is LOCALSTATEDIR/bandwidthd]),
+	log_dir=${with_log_dir},
+	log_dir="${localstatedir}/bandwidthd")
+config_file="${sysconfdir}/bandwidthd.conf"
+AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
+AC_DEFINE_DIR(LOG_DIR, log_dir, [Name of log directory])
+AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
+
 AC_OUTPUT(Makefile)

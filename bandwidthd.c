@@ -73,32 +73,42 @@ void signal_handler(int sig)
 		}
 	}
 
-void bd_CollectingData(char *filename)
+void bd_CollectingData()
 	{
+	char FileName[4][MAX_FILENAME];
 	FILE *index;
+	int Counter;
 
-	index = fopen(filename, "wt");	
-	if (index)
-		{
-		fprintf(index, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
-		fprintf(index, "<HTML><HEAD><TITLE>Bandwidthd</TITLE>\n");
+	snprintf(FileName[0], MAX_FILENAME, "%s/index.html", config.htdocs_dir);
+	snprintf(FileName[1], MAX_FILENAME, "%s/index2.html", config.htdocs_dir);
+	snprintf(FileName[2], MAX_FILENAME, "%s/index3.html", config.htdocs_dir);	
+	snprintf(FileName[3], MAX_FILENAME, "%s/index4.html", config.htdocs_dir);
 
-		if (config.meta_refresh)
-			fprintf(index, "<META HTTP-EQUIV=\"REFRESH\" content=\"%u\">\n",
-					config.meta_refresh);
-		fprintf(index, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
-		fprintf(index, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
-		fprintf(index, "</HEAD>\n<BODY><center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n");
-		fprintf(index, "<BR>\n - <a href=\"index.html\">Daily</a> -- <a href=\"index2.html\">Weekly</a> -- ");
-		fprintf(index, "<a href=\"index3.html\">Monthly</a> -- <a href=\"index4.html\">Yearly</a><BR>\n");
-		fprintf(index, "</CENTER><BR>bandwidthd has nothing to graph.  This message should be replaced by graphs in a few minutes.  If it's not, please see the section titled \"Known Bugs and Troubleshooting\" in the README");		
-		fprintf(index, "</BODY></HTML>\n");
-		fclose(index);
-		}
-	else
+	for(Counter = 0; Counter < 4; Counter++)
 		{
-		syslog(LOG_ERR, "Cannot open %s for writing", filename);
-		exit(1);
+		index = fopen(FileName[Counter], "wt");	
+		if (index)
+			{
+			fprintf(index, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
+			fprintf(index, "<HTML><HEAD><TITLE>Bandwidthd</TITLE>\n");
+	
+			if (config.meta_refresh)
+				fprintf(index, "<META HTTP-EQUIV=\"REFRESH\" content=\"%u\">\n",
+						config.meta_refresh);
+			fprintf(index, "<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
+			fprintf(index, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
+			fprintf(index, "</HEAD>\n<BODY><center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n");
+			fprintf(index, "<BR>\n - <a href=\"index.html\">Daily</a> -- <a href=\"index2.html\">Weekly</a> -- ");
+			fprintf(index, "<a href=\"index3.html\">Monthly</a> -- <a href=\"index4.html\">Yearly</a><BR>\n");
+			fprintf(index, "</CENTER><BR>bandwidthd has nothing to graph.  This message should be replaced by graphs in a few minutes.  If it's not, please see the section titled \"Known Bugs and Troubleshooting\" in the README");		
+			fprintf(index, "</BODY></HTML>\n");
+			fclose(index);
+			}
+		else
+			{
+			syslog(LOG_ERR, "Cannot open %s for writing", FileName[Counter]);
+			exit(1);
+			}
 		}
 	}
 
@@ -225,6 +235,16 @@ void makepidfile(pid_t pid)
 		syslog(LOG_ERR, "Could not open /var/run/bandwidthd.pid for write");
 	}
 
+void PrintHelp(void)
+	{
+	printf("\nUsage: bandwidthd [OPTION]\n\nOptions:\n");
+	printf("\t-D\t\tDo not fork to background\n");
+	printf("\t-l\t\tList detected devices\n");
+	printf("\t-c filename\tAlternate configuration file\n");
+	printf("\t--help\t\tShow this help\n");
+	printf("\n");
+	exit(0);
+	}
 
 int main(int argc, char **argv)
     {
@@ -239,6 +259,36 @@ int main(int argc, char **argv)
 	int ForkBackground = TRUE;
 	int ListDevices = FALSE;
 	int Counter;
+	char *bd_conf = NULL;
+
+	for(Counter = 1; Counter < argc; Counter++)
+		{
+		if (argv[Counter][0] == '-')
+			{
+			switch(argv[Counter][1])
+				{
+				case 'D':
+					ForkBackground = FALSE;
+					break;
+				case 'l':
+					ListDevices = TRUE; 
+			 		break;
+				case 'c':
+					if (argv[Counter+1])
+						{
+						bd_conf = argv[Counter+1];
+						Counter++;
+						}
+					else
+						PrintHelp();
+					break;
+				default:
+					printf("Improper argument: %s\n", argv[Counter]);
+				case '-':
+					PrintHelp();
+				}
+			}
+		}
 
 	config.dev = NULL;
 	config.filter = "ip";
@@ -252,21 +302,37 @@ int main(int argc, char **argv)
 	config.output_database = FALSE;
 	config.db_connect_string = NULL;
 	config.sensor_id = "unset";  
+	config.log_dir = LOG_DIR;
+	config.htdocs_dir = HTDOCS_DIR;
 
 	openlog("bandwidthd", LOG_CONS, LOG_DAEMON);
 
-	if (stat("./etc/bandwidthd.conf", &StatBuf))
+	// Locate configuration file
+	if (!(bd_conf && !stat(bd_conf, &StatBuf)))
 		{
-		chdir(INSTALL_DIR);
-		if (stat("./etc/bandwidthd.conf", &StatBuf))
+		if (bd_conf)
 			{
-			printf("Cannot find ./etc/bandwidthd.conf or %s/etc/bandwidthd.conf\n", INSTALL_DIR);
-			syslog(LOG_ERR, "Cannot find ./etc/bandwidthd.conf or %s/etc/bandwidthd.conf", INSTALL_DIR);
+			printf("Could not find %s\n", bd_conf);
 			exit(1);
 			}
+		else
+			if (!stat("bandwidthd.conf", &StatBuf))
+				bd_conf = "bandwidthd.conf";
+			else
+				if (!stat("./etc/bandwidthd.conf", &StatBuf))
+					bd_conf = "./etc/bandwidthd.conf";
+				else
+					if (!stat(CONFIG_FILE, &StatBuf))
+						bd_conf = CONFIG_FILE;
+					else
+						{
+						printf("Cannot find bandwidthd.conf, ./etc/bandwidthd.conf or %s\n", CONFIG_FILE);
+						syslog(LOG_ERR, "Cannot find bandwidthd.conf, ./etc/bandwidthd.conf or %s", CONFIG_FILE);
+						exit(1);
+						}
 		}
 
-	bdconfig_in = fopen("./etc/bandwidthd.conf", "rt");
+	bdconfig_in = fopen(bd_conf, "rt");
 	if (!bdconfig_in)
 		{
 		syslog(LOG_ERR, "Cannot open bandwidthd.conf");
@@ -291,24 +357,7 @@ int main(int argc, char **argv)
 		exit(1);
 	*/
 
-	for(Counter = 1; Counter < argc; Counter++)
-		{
-		if (argv[Counter][0] == '-')
-			{
-			switch(argv[Counter][1])
-				{
-				case 'D':
-					ForkBackground = FALSE;
-					break;
-				case 'l':
-					ListDevices = TRUE; 
-			 		break;
-				default:
-					printf("Improper argument: %s\n", argv[Counter]);
-					exit(1);
-				}
-			}
-		}
+
 
 #ifdef HAVE_PCAP_FINDALLDEVS
 	pcap_findalldevs(&Devices, Error);
@@ -332,12 +381,7 @@ int main(int argc, char **argv)
 #endif	
 
 	if (config.graph)
-		{
-		bd_CollectingData("htdocs/index.html");
-		bd_CollectingData("htdocs/index2.html");
-		bd_CollectingData("htdocs/index3.html");
-		bd_CollectingData("htdocs/index4.html");
-		}
+		bd_CollectingData();
 
 	/* detach from console. */
 	if (ForkBackground)
@@ -884,9 +928,9 @@ void StoreIPDataInCDF(struct IPData IncData[])
 	FILE *cdf;
 	struct Statistics *Stats;
 	char IPBuffer[50];
-	char logfile[] = "log.1.0.cdf";
+	char logfile[MAX_FILENAME];
 	
-	logfile[4] = config.tag;	
+	snprintf(logfile, MAX_FILENAME, "%s/log.%c.0.cdf", config.log_dir, config.tag);
 
    	cdf = fopen(logfile, "at");
 
@@ -1000,8 +1044,9 @@ void CommitData(time_t timestamp)
 	static int MayGraph = TRUE;
     unsigned int counter;
 	struct stat StatBuf;
-	char logname1[] = "log.1.5.cdf";
-	char logname2[] = "log.1.4.cdf";
+	char logname1[MAX_FILENAME];
+	char logname2[MAX_FILENAME];
+	int offset;
 	// Set the timestamps
 	for (counter=0; counter < IpCount; counter++)
         IpTable[counter].timestamp = timestamp;
@@ -1019,29 +1064,28 @@ void CommitData(time_t timestamp)
 
 		if (RotateLogs >= config.range/RANGE1) // We set this++ on HUP
 			{
-			logname1[4] = config.tag;
-			logname2[4] = config.tag;
-			logname2[6] = '5';
+			snprintf(logname1, MAX_FILENAME, "%s/log.%c.%n4.cdf", config.log_dir, config.tag, &offset); 
+			snprintf(logname2, MAX_FILENAME, "%s/log.%c.5.cdf", config.log_dir, config.tag); 
 
 			if (!stat(logname2, &StatBuf)) // File exists
 				unlink(logname2);
-			logname1[6] = '4';
+
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2);
-			logname1[6] = '3';
-			logname2[6] = '4';			
+			logname1[offset] = '3';
+			logname2[offset] = '4';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2);
-            logname1[6] = '2';
-            logname2[6] = '3';			
+            logname1[offset] = '2';
+            logname2[offset] = '3';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2);
-            logname1[6] = '1';
-            logname2[6] = '2';			
+            logname1[offset] = '1';
+            logname2[offset] = '2';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2);
-            logname1[6] = '0';
-            logname2[6] = '1';			
+            logname1[offset] = '0';
+            logname2[offset] = '1';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2); 
 			fclose(fopen(logname1, "at")); // Touch file
@@ -1185,28 +1229,27 @@ void RecoverDataFromCDF(void)
 	{
 	FILE *cdf;
 	char index[] = "012345";
-    char logname1[] = "log.1.0.cdf";
-    char logname2[] = "log.1.1.cdf";
+	char logname[MAX_FILENAME];
+	int offset;
 	int Counter;
 	int First = FALSE;
 
-	logname1[4] = config.tag;
-	logname2[4] = config.tag;
+	snprintf(logname, MAX_FILENAME, "%s/log.%c.%n0.cdf", config.log_dir, config.tag, &offset);
 
 	for (Counter = 5; Counter >= 0; Counter--)
 		{
-		logname1[6] = index[Counter];
-		if (RCDF_Test(logname1))
+		logname[offset] = index[Counter];
+		if (RCDF_Test(logname))
 			break;
 		}
 	
 	First = TRUE;
 	for (; Counter >= 0; Counter--)
 		{
-		logname1[6] = index[Counter];
-		if ((cdf = fopen(logname1, "rt")))
+		logname[offset] = index[Counter];
+		if ((cdf = fopen(logname, "rt")))
 			{
-			syslog(LOG_INFO, "Recovering from %s", logname1);
+			syslog(LOG_INFO, "Recovering from %s", logname);
 			if (First)
 				{
 				RCDF_PositionStream(cdf);

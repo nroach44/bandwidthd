@@ -98,7 +98,11 @@ typedef u_int16_t uint16_t;
 
 #define PERMIS 1
 
+#define MAX_FILENAME 1024
+
 #define DB_PGSQL 1
+// No mysql support yet
+#define DB_MYSQL 2
 
 struct config
 	{
@@ -117,6 +121,8 @@ struct config
 	int output_database;
 	char *db_connect_string;
 	char *sensor_id;
+	char *log_dir;
+	char *htdocs_dir;
 	};
 
 struct SubnetData

@@ -27,5 +27,7 @@ filter					{ return TOKFILTER; }
 meta_refresh			{ return TOKMETAREFRESH; }
 pgsql_connect_string	{ return TOKPGSQLCONNECTSTRING; }
 sensor_id				{ return TOKSENSORID; }
+htdocs_dir				{ return TOKHTDOCSDIR; }
+log_dir					{ return TOKLOGDIR; }
 .						{ return TOKJUNK; }
 %%

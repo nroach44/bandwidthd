@@ -199,7 +199,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	int SubnetCounter;
 	int Counter, tCounter;
 	time_t WriteTime;
-	char filename[] = "./htdocs/index2.html";
+	char filename[MAX_FILENAME];
 	char *PeriodDesc;
 	
 	FILE *file;
@@ -217,7 +217,8 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	
 	if (config.tag == '1')
 		{
-		if ((file = fopen("./htdocs/index.html", "wt")) == NULL)
+		snprintf(filename, MAX_FILENAME, "%s/index.html", config.htdocs_dir);
+		if ((file = fopen(filename, "wt")) == NULL)
 			{
 			syslog(LOG_ERR, "Failed to open ./htdocs/index.html");
 			exit(1);
@@ -225,7 +226,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 		}
 	else
 		{
-		filename[14] = config.tag;
+		snprintf(filename, MAX_FILENAME, "%s/index%c.html", config.htdocs_dir, config.tag);
 		if ((file = fopen(filename, "wt")) == NULL)
 			{
 			syslog(LOG_ERR, "Failed to open %s", filename);
@@ -307,8 +308,8 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	for (SubnetCounter = 0; SubnetCounter < SubnetCount; SubnetCounter++)
 		{
 		HostIp2CharIp(SubnetTable[SubnetCounter].ip, Buffer1);
-		sprintf(Buffer2, "./htdocs/Subnet-%c-%s.html", config.tag, Buffer1);
-		file = fopen(Buffer2, "wt");
+		snprintf(filename, MAX_FILENAME, "%s/htdocs/Subnet-%c-%s.html", config.htdocs_dir, config.tag, Buffer1);
+		file = fopen(filename, "wt");
 		fprintf(file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 		fprintf(file, "<HTML>\n<HEAD><TITLE>Bandwidthd - Subnet %s</TITLE>\n", Buffer1);
 
@@ -376,7 +377,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, time_t timestamp)
     {
     FILE *OutputFile;
-    char outputfilename[50];
+    char filename[MAX_FILENAME];
     gdImagePtr im, im2;
     int white;
     unsigned long long int YMax;
@@ -411,23 +412,23 @@ void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, tim
         PrepareXAxis(im2, timestamp);
         PrepareYAxis(im2, YMax);
 
-        sprintf(outputfilename, "./htdocs/%s-%c-S.png", CharIp, config.tag);
-        OutputFile = fopen(outputfilename, "wb");    
+        snprintf(filename, MAX_FILENAME, "%s/htdocs/%s-%c-S.png", config.htdocs_dir, CharIp, config.tag);
+        OutputFile = fopen(filename, "wb");    
         gdImagePng(im, OutputFile);
         fclose(OutputFile);
 
-        sprintf(outputfilename, "./htdocs/%s-%c-R.png", CharIp, config.tag);
-        OutputFile = fopen(outputfilename, "wb");
+        snprintf(filename, MAX_FILENAME, "%s/htdocs/%s-%c-R.png", config.htdocs_dir, CharIp, config.tag);
+        OutputFile = fopen(filename, "wb");
         gdImagePng(im2, OutputFile);
         fclose(OutputFile);
         }
     else
         {
         // The graph isn't worth clutering up the web pages with
-        sprintf(outputfilename, "./htdocs/%s-%c-R.png", CharIp, config.tag);
-        unlink(outputfilename);
-        sprintf(outputfilename, "./htdocs/%s-%c-S.png", CharIp, config.tag);
-        unlink(outputfilename);
+        sprintf(filename, "%s/htdocs/%s-%c-R.png", config.htdocs_dir, CharIp, config.tag);
+        unlink(filename);
+        sprintf(filename, "%s/htdocs/%s-%c-S.png", config.htdocs_dir, CharIp, config.tag);
+        unlink(filename);
         }
 
 	gdImageDestroy(im);
