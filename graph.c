@@ -11,7 +11,6 @@
 #include <time.h>
 #include "bandwidthd.h"
 
-extern struct IPCData *IPCSharedData;
 extern unsigned int SubnetCount;
 extern struct config config;
 
@@ -76,39 +75,39 @@ static void rdnslngjmp(int signal)
     longjmp(dnsjump, 1);
 	}
 
-void swap(struct IPCData **a, struct IPCData **b) {
-	struct IPCData *temp;
+void swap(struct SummaryData **a, struct SummaryData **b) {
+	struct SummaryData *temp;
     temp = *a; *a = *b; *b = temp;
 }
-void QuickSortIpcData(struct IPCData *IPCData[], int left, int right) {
+void QuickSortSummaryData(struct SummaryData *SummaryData[], int left, int right) {
     int i,j,center;
     unsigned long long pivot;
     if (left==right) return;
     if (left+1==right) {
-        if (IPCData[left]->Total < IPCData[right]->Total)
-            swap(&IPCData[left],&IPCData[right]);
+        if (SummaryData[left]->Total < SummaryData[right]->Total)
+            swap(&SummaryData[left],&SummaryData[right]);
         return;
     }
     /* use the median-of-three method for picking pivot */
     center = (left+right)/2;
-    if (IPCData[left]->Total < IPCData[center]->Total)
-        swap(&IPCData[left],&IPCData[center]);
-    if (IPCData[left]->Total < IPCData[right]->Total)
-        swap(&IPCData[left],&IPCData[right]);
-    if (IPCData[center]->Total < IPCData[right]->Total)
-        swap(&IPCData[center],&IPCData[right]);
-    pivot = IPCData[center]->Total;
-    swap(&IPCData[center],&IPCData[right-1]); /* hide the pivot */
+    if (SummaryData[left]->Total < SummaryData[center]->Total)
+        swap(&SummaryData[left],&SummaryData[center]);
+    if (SummaryData[left]->Total < SummaryData[right]->Total)
+        swap(&SummaryData[left],&SummaryData[right]);
+    if (SummaryData[center]->Total < SummaryData[right]->Total)
+        swap(&SummaryData[center],&SummaryData[right]);
+    pivot = SummaryData[center]->Total;
+    swap(&SummaryData[center],&SummaryData[right-1]); /* hide the pivot */
     i = left; j = right - 1;
     do {
-        do { ++i; } while (IPCData[i]->Total > pivot);
-        do { --j; } while (IPCData[j]->Total < pivot);
-        swap(&IPCData[i],&IPCData[j]);
+        do { ++i; } while (SummaryData[i]->Total > pivot);
+        do { --j; } while (SummaryData[j]->Total < pivot);
+        swap(&SummaryData[i],&SummaryData[j]);
     } while (j > i);
-    swap(&IPCData[i],&IPCData[j]); /* undo last swap */
-    swap(&IPCData[i],&IPCData[right-1]); /* restore pivot */
-    QuickSortIpcData(IPCData,left,i-1);
-    QuickSortIpcData(IPCData,i+1,right);
+    swap(&SummaryData[i],&SummaryData[j]); /* undo last swap */
+    swap(&SummaryData[i],&SummaryData[right-1]); /* restore pivot */
+    QuickSortSummaryData(SummaryData,left,i-1);
+    QuickSortSummaryData(SummaryData,i+1,right);
 }
 
 #define NumFactor 1024
@@ -122,7 +121,7 @@ static void FormatNum(unsigned long long n, char *buf, int len) {
     f /= NumFactor; snprintf(buf,len,"<td align=\"right\"><tt>%.1fT</tt></td>",f);
 }
 
-void PrintTableLine(FILE *stream, struct IPCData *Data, int Counter)
+void PrintTableLine(FILE *stream, struct SummaryData *Data, int Counter)
 	{
 	char Buffer1[50];
 	char Buffer2[50];
@@ -184,7 +183,7 @@ void PrintTableLine(FILE *stream, struct IPCData *Data, int Counter)
 			Buffer8); // ICMP
 	}
 
-void MakeIndexPages(int NumIps)
+void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	{
 	int SubnetCounter;
 	int Counter, tCounter;
@@ -193,7 +192,6 @@ void MakeIndexPages(int NumIps)
 	char *PeriodDesc;
 	
 	FILE *file;
-	struct IPCData **IPCData;
 
 	char Buffer1[50];
 	char Buffer2[50];
@@ -201,17 +199,7 @@ void MakeIndexPages(int NumIps)
 
 	WriteTime = time(NULL);
 	
-	////////////////////////////////////////////////
-	// Allocate Index space and sort IP's by traffic
-
-	IPCData = malloc(sizeof(struct IPCData)*IP_NUM);
-	// Initilize list
-	for (Counter = 0; Counter < NumIps; Counter++)
-		{
-        IPCData[Counter] = &IPCSharedData[Counter];
-		}
-
-	QuickSortIpcData(IPCData, 0, NumIps-1);
+	QuickSortSummaryData(SummaryData, 0, NumIps-1);
 
 	////////////////////////////////////////////////
 	// Print main index page
@@ -277,23 +265,23 @@ void MakeIndexPages(int NumIps)
 
 	fprintf(file, "<TR bgcolor=lightblue><TD>Ip and Name<TD align=center>Total<TD align=center>Total Sent<TD align=center>Total Received<TD align=center>FTP<TD align=center>HTTP<TD align=center>P2P<TD align=center>TCP<TD align=center>UDP<TD align=center>ICMP\n");
 	for (Counter=0; Counter < 21 && Counter < NumIps; Counter++)
-		PrintTableLine(file, IPCData[Counter], Counter);
+		PrintTableLine(file, SummaryData[Counter], Counter);
 
 	fprintf(file, "</table></center>\n");
 
 	// PASS 2: The graphs
 	for (Counter=0; Counter < 21 && Counter < NumIps; Counter++)
-		if (IPCData[Counter]->Graph)
+		if (SummaryData[Counter]->Graph)
 			{
-			if (IPCData[Counter]->IP == 0)
+			if (SummaryData[Counter]->IP == 0)
 				{
 				strcpy(Buffer1, "Total");	
 				strcpy(HostName, "Total of all subnets");
 				}
 			else
 				{	
-				HostIp2CharIp(IPCData[Counter]->IP, Buffer1);
-				rdns(HostName, IPCData[Counter]->IP);
+				HostIp2CharIp(SummaryData[Counter]->IP, Buffer1);
+				rdns(HostName, SummaryData[Counter]->IP);
 				}
 			fprintf(file, "<a name=\"%s-%c\"></a><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png ALT=\"Sent traffic for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\nReceived:<br>\n<img src=%s-%c-R.png ALT=\"Sent traffic for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, Buffer1, config.tag, Buffer1);
 			}
@@ -345,23 +333,23 @@ void MakeIndexPages(int NumIps)
 		fprintf(file, "<TR bgcolor=lightblue><TD>Ip and Name<TD align=center>Total<TD align=center>Total Sent<TD align=center>Total Received<TD align=center>FTP<TD align=center>HTTP<TD align=center>P2P<TD align=center>TCP<TD align=center>UDP<TD align=center>ICMP\n");
 		for (tCounter=0, Counter=0; Counter < NumIps; Counter++)
 			{
-            if (SubnetTable[SubnetCounter].ip == (IPCData[Counter]->IP & SubnetTable[SubnetCounter].mask))
+            if (SubnetTable[SubnetCounter].ip == (SummaryData[Counter]->IP & SubnetTable[SubnetCounter].mask))
 				{ // The ip belongs to this subnet
-				PrintTableLine(file, IPCData[Counter], tCounter++);
+				PrintTableLine(file, SummaryData[Counter], tCounter++);
     			}
 			}
 
 		fprintf(file, "</table>\n");
 
 		// PASS 2: The graphs
-		for (Counter=0; Counter < NumIps && config.graph; Counter++)
+		for (Counter=0; Counter < NumIps; Counter++)
 			{
-            if (SubnetTable[SubnetCounter].ip == (IPCData[Counter]->IP & SubnetTable[SubnetCounter].mask))
+            if (SubnetTable[SubnetCounter].ip == (SummaryData[Counter]->IP & SubnetTable[SubnetCounter].mask))
 				{ // The ip belongs to this subnet
-				if (IPCData[Counter]->Graph)
+				if (SummaryData[Counter]->Graph)
 					{
-					HostIp2CharIp(IPCData[Counter]->IP, Buffer1);
-					rdns(HostName, IPCData[Counter]->IP);
+					HostIp2CharIp(SummaryData[Counter]->IP, Buffer1);
+					rdns(HostName, SummaryData[Counter]->IP);
 					fprintf(file, "<a name=\"%s-%c\"></a><H1><a href=\"#top\">(Top)</a> %s - %s</H1><BR>\nSend:<br>\n<img src=%s-%c-S.png ALT=\"Sent traffic graph for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\nReceived:<br>\n<img src=%s-%c-R.png ALT=\"Received traffic for %s\"><BR>\n<img src=legend.gif ALT=\"Legend\"><br>\n<BR>\n", Buffer1, config.tag, Buffer1, HostName, Buffer1, config.tag, Buffer1, Buffer1, config.tag, Buffer1);
 					}
 				}
@@ -371,10 +359,10 @@ void MakeIndexPages(int NumIps)
 		fclose(file);
 		}
 
-	free(IPCData);
+	free(SummaryData);
 	}
 
-void GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int timestamp)
+void GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, long int timestamp)
     {
     FILE *OutputFile;
     char outputfilename[50];
@@ -402,7 +390,7 @@ void GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int ti
     white = gdImageColorAllocate(im2, 255, 255, 255);
     //gdImageFill(im2, 10, 10, white);
 
-    YMax = GraphData(im, im2, DataStore, GraphBeginTime, IPCData);
+    YMax = GraphData(im, im2, DataStore, GraphBeginTime, SummaryData);
     if (YMax != 0)
         {
         // Finish the graph
@@ -436,7 +424,7 @@ void GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int ti
     }
 
 // Returns YMax
-long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp, struct IPCData *IPCData)
+long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp, struct SummaryData *SummaryData)
     {
     long int YMax=0;
 	
@@ -473,10 +461,6 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
     int blue, lblue, red, yellow, purple, green, brown, black;
     int blue2, lblue2, red2, yellow2, purple2, green2, brown2, black2;
 
-	// Replaced by IPCData Structure
-	//unsigned long int TotalSent = 0;
-	//unsigned long int TotalReceived = 0;
-
 	unsigned long int SentPeak = 0;
 	unsigned long int ReceivedPeak = 0;
 
@@ -502,8 +486,8 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
 	Data = CurrentBlock->Data;
     DataPoints = CurrentBlock->NumEntries;
 
-	memset(IPCData, 0, sizeof(struct IPCData));
-	IPCData->IP = Data[0].ip;
+	memset(SummaryData, 0, sizeof(struct SummaryData));
+	SummaryData->IP = Data[0].ip;
 	
     memset(Count, 0, sizeof(Count[0])*XWIDTH);
 
@@ -539,22 +523,22 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
 				
 				if (Data[Counter].Send.total > SentPeak)
 					SentPeak = Data[Counter].Send.total;
-                total[xint] += Data[Counter].Send.total;
-                icmp[xint] += Data[Counter].Send.icmp;
-                udp[xint] += Data[Counter].Send.udp;
+       	        total[xint] += Data[Counter].Send.total;
+           	    icmp[xint] += Data[Counter].Send.icmp;
+               	udp[xint] += Data[Counter].Send.udp;
                 tcp[xint] += Data[Counter].Send.tcp;
 				ftp[xint] += Data[Counter].Send.ftp;
-                http[xint] += Data[Counter].Send.http;
+       	        http[xint] += Data[Counter].Send.http;
 				p2p[xint] += Data[Counter].Send.p2p;
 
                 if (Data[Counter].Receive.total > ReceivedPeak)
-                	ReceivedPeak = Data[Counter].Receive.total;
-                total2[xint] += Data[Counter].Receive.total;
-                icmp2[xint] += Data[Counter].Receive.icmp;
-                udp2[xint] += Data[Counter].Receive.udp;
+   	            	ReceivedPeak = Data[Counter].Receive.total;
+       	        total2[xint] += Data[Counter].Receive.total;
+           	    icmp2[xint] += Data[Counter].Receive.icmp;
+               	udp2[xint] += Data[Counter].Receive.udp;
                 tcp2[xint] += Data[Counter].Receive.tcp;
 				ftp2[xint] += Data[Counter].Receive.ftp;
-                http2[xint] += Data[Counter].Receive.http;
+       	        http2[xint] += Data[Counter].Receive.http;
 				p2p2[xint] += Data[Counter].Receive.p2p;
                 }
             }
@@ -578,15 +562,15 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
             {
             if (Count[Counter] > 0)
                 {
-            	IPCData->Total += total[Counter] + total2[Counter];
-				IPCData->TotalSent += total[Counter];
- 				IPCData->TotalReceived += total2[Counter];
-				IPCData->TCP += tcp[Counter] + tcp2[Counter];
-				IPCData->FTP += ftp[Counter] + ftp2[Counter];
-				IPCData->HTTP += http[Counter] + http2[Counter];
-				IPCData->P2P += p2p[Counter] + p2p2[Counter];
-				IPCData->UDP += udp[Counter] + udp2[Counter];
-				IPCData->ICMP += icmp[Counter] + icmp2[Counter];
+            	SummaryData->Total += total[Counter] + total2[Counter];
+				SummaryData->TotalSent += total[Counter];
+ 				SummaryData->TotalReceived += total2[Counter];
+				SummaryData->TCP += tcp[Counter] + tcp2[Counter];
+				SummaryData->FTP += ftp[Counter] + ftp2[Counter];
+				SummaryData->HTTP += http[Counter] + http2[Counter];
+				SummaryData->P2P += p2p[Counter] + p2p2[Counter];
+				SummaryData->UDP += udp[Counter] + udp2[Counter];
+				SummaryData->ICMP += icmp[Counter] + icmp2[Counter];
 
                 // Preform the average
                 total[Counter] /= (Count[Counter]*config.interval);
@@ -616,13 +600,13 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
 
     YMax += YMax*0.05;    // Add an extra 5%
 	
-    if ((IPCData->IP != 0 && IPCData->Total < config.graph_cutoff) || !config.graph)
+    if ((SummaryData->IP != 0 && SummaryData->Total < config.graph_cutoff))
 		{
-		IPCData->Graph = FALSE;
+		SummaryData->Graph = FALSE;
         return(0);
 		}
 	else
-        IPCData->Graph = TRUE;
+        SummaryData->Graph = TRUE;
 
     // Plot the points
     for(Counter=XOFFSET+1; Counter < XWIDTH; Counter++)    
@@ -673,24 +657,7 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
                 gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - p2p[Counter], Counter, (YHEIGHT-YOFFSET) - udp[Counter] - 1, purple);
                 gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - http[Counter], Counter, (YHEIGHT-YOFFSET) - p2p[Counter] - 1, blue);
                 gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - ftp[Counter], Counter, (YHEIGHT-YOFFSET) - http[Counter] - 1, lblue);
-				
-				if (SentPeak < 1024/8)
-					snprintf(Buffer2, 50, "Peak Send Rate: %.1f Bits/sec", (float)SentPeak*8);
-				else if (SentPeak < (1024*1024)/8)
-					snprintf(Buffer2, 50, "Peak Send Rate: %.1f KBits/sec", ((float)SentPeak*8.0)/1024.0);
-				else snprintf(Buffer2, 50, "Peak Send Rate: %.1f MBits/sec", ((float)SentPeak*8.0)/(1024.0*1024.0));
-				
-				
-				if (IPCData->TotalSent < 1024)
-					snprintf(Buffer, 30, "Sent %.1f Bytes", (float)IPCData->TotalSent);					
-				else if (IPCData->TotalSent < 1024*1024)
-					snprintf(Buffer, 30, "Sent %.1f KBytes", (float)IPCData->TotalSent/1024.0);
-				else snprintf(Buffer, 30, "Sent %.1f MBytes", (float)IPCData->TotalSent/(1024.0*1024.0));
-
-				gdImageString(im, gdFontSmall, XOFFSET+5,  YHEIGHT-20, Buffer, black);
-				gdImageString(im, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, Buffer2, black);				
-
-				
+								
 				// Receive
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - total2[Counter], Counter, YHEIGHT-YOFFSET-1, yellow2);
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - icmp2[Counter], Counter, YHEIGHT-YOFFSET-1, red2);
@@ -700,23 +667,40 @@ long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore,
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - http2[Counter], Counter, (YHEIGHT-YOFFSET) - p2p2[Counter] - 1, blue2);
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - ftp2[Counter], Counter, (YHEIGHT-YOFFSET) - http2[Counter] - 1, lblue2);
 
-                if (ReceivedPeak < 1024/8)
-                    snprintf(Buffer2, 50, "Peak Receive Rate: %.1f Bits/sec", (float)ReceivedPeak*8);
-                else if (ReceivedPeak < (1024*1024)/8)
-                    snprintf(Buffer2, 50, "Peak Receive Rate: %.1f KBits/sec", ((float)ReceivedPeak*8.0)/1024.0);
-                else snprintf(Buffer2, 50, "Peak Receive Rate: %.1f MBits/sec", ((float)ReceivedPeak*8.0)/(1024.0*1024.0));
 
-
-                if (IPCData->TotalReceived < 1024)
-                    snprintf(Buffer, 30, "Received %.1f Bytes", (float)IPCData->TotalReceived);
-                else if (IPCData->TotalReceived < 1024*1024)
-                    snprintf(Buffer, 30, "Received %.1f KBytes", (float)IPCData->TotalReceived/1024.0);
-                else snprintf(Buffer, 30, "Received %.1f MBytes", (float)IPCData->TotalReceived/(1024.0*1024.0));
-                                                                                                              
-                gdImageString(im2, gdFontSmall, XOFFSET+5,  YHEIGHT-20, Buffer, black2);                
-                gdImageString(im2, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, Buffer2, black2);
                 }
             }
+
+	if (SentPeak < 1024/8)
+		snprintf(Buffer2, 50, "Peak Send Rate: %.1f Bits/sec", (float)SentPeak*8);
+	else if (SentPeak < (1024*1024)/8)
+		snprintf(Buffer2, 50, "Peak Send Rate: %.1f KBits/sec", ((float)SentPeak*8.0)/1024.0);
+	else snprintf(Buffer2, 50, "Peak Send Rate: %.1f MBits/sec", ((float)SentPeak*8.0)/(1024.0*1024.0));
+								
+	if (SummaryData->TotalSent < 1024)
+		snprintf(Buffer, 30, "Sent %.1f Bytes", (float)SummaryData->TotalSent);					
+	else if (SummaryData->TotalSent < 1024*1024)
+		snprintf(Buffer, 30, "Sent %.1f KBytes", (float)SummaryData->TotalSent/1024.0);
+	else snprintf(Buffer, 30, "Sent %.1f MBytes", (float)SummaryData->TotalSent/(1024.0*1024.0));
+
+	gdImageString(im, gdFontSmall, XOFFSET+5,  YHEIGHT-20, Buffer, black);
+	gdImageString(im, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, Buffer2, black);				
+
+	if (ReceivedPeak < 1024/8)
+       	snprintf(Buffer2, 50, "Peak Receive Rate: %.1f Bits/sec", (float)ReceivedPeak*8);
+    else if (ReceivedPeak < (1024*1024)/8)
+    	snprintf(Buffer2, 50, "Peak Receive Rate: %.1f KBits/sec", ((float)ReceivedPeak*8.0)/1024.0);               
+	else snprintf(Buffer2, 50, "Peak Receive Rate: %.1f MBits/sec", ((float)ReceivedPeak*8.0)/(1024.0*1024.0));
+
+    if (SummaryData->TotalReceived < 1024)
+        snprintf(Buffer, 30, "Received %.1f Bytes", (float)SummaryData->TotalReceived);
+    else if (SummaryData->TotalReceived < 1024*1024)
+        snprintf(Buffer, 30, "Received %.1f KBytes", (float)SummaryData->TotalReceived/1024.0);
+    else snprintf(Buffer, 30, "Received %.1f MBytes", (float)SummaryData->TotalReceived/(1024.0*1024.0));
+                                                                                                              
+    gdImageString(im2, gdFontSmall, XOFFSET+5,  YHEIGHT-20, Buffer, black2);                
+    gdImageString(im2, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, Buffer2, black2);
+
     return(YMax);
     }
 

@@ -1,3 +1,18 @@
+2.0.0 beta cvs on Dec 31, 2004
+Fixed problem that caused bandwidthd to sit and never create graphs
+Huge performance gain in graphing engine due to bug fix (Peak Send and Total Sent strings font
+	operations were being done to each graphic almost 1000 times instead of just 1)
+if graph is set to false do not store data in ram, do not fork unless output_cdf is true
+log names changed to be consistent so all logs could be rotated with same function
+log rotation on all logs implemented - secondary logs rotate every RANGE?/RANGE1 HUP's
+Removed need of Sys V IPC shared memeory
+
+Big Feature - Added postgresql database logging mode and php for dynamic graph creation from 
+databases.  Great for big sites,  multiple sensors with very low overhead collect traffic statistics
+and log them to database.  Graphs are created when a user visits the page instead of burning CPU
+cycles night and day.  Logging/Multiple sensor support is completed.  Basic php pages also completed
+but still in development
+
 1.2.1b
 Reduced Loading spam
 Added filter option to bandwidhtd.conf to specify libpcap filter

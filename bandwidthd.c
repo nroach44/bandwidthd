@@ -7,6 +7,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
+#ifdef PGSQL
+#include "libpq-fe.h"
+#endif
 #include "bandwidthd.h"
 
 
@@ -37,12 +40,8 @@ int RotateLogs = FALSE;
 struct SubnetData SubnetTable[SUBNET_NUM];
 struct IPData IpTable[IP_NUM];
 
-key_t IPCKey;
-int shmid;
 int DataLink;
 int IP_Offset;
-
-struct IPCData *IPCSharedData;
 
 struct IPDataStore *IPDataStore = NULL;
 extern int yyparse(void);
@@ -50,12 +49,10 @@ extern FILE *yyin;
 
 struct config config;
 
-pid_t workerchildpids[NR_WORKER_CHILDS];
-
 void signal_handler(int sig)
 	{
 	signal(SIGHUP, signal_handler);
-	RotateLogs = TRUE; 	
+	RotateLogs++; 	
 	}
 
 void bd_CollectingData(char *filename)
@@ -91,6 +88,7 @@ void bd_CollectingData(char *filename)
 int WriteOutWebpages(long int timestamp)
 {
 	struct IPDataStore *DataStore = IPDataStore;
+	struct SummaryData **SummaryData;
 	int NumGraphs = 0;
 	pid_t graphpid;
 
@@ -112,16 +110,21 @@ int WriteOutWebpages(long int timestamp)
 #endif
           	signal(SIGHUP, SIG_IGN);
 
-     	    nice(4); // reduce priority so I don't choke out other tasks
-			
+    	    nice(4); // reduce priority so I don't choke out other tasks
+
+			SummaryData = malloc(sizeof(struct SummaryData *)*IP_NUM);
+
 			while (DataStore) // Is not null
 				{
 				if (DataStore->FirstBlock->NumEntries > 0)
-					GraphIp(DataStore, &IPCSharedData[NumGraphs++], timestamp+LEAD*config.range);
+					{
+					SummaryData[NumGraphs] = (struct SummaryData *) malloc(sizeof(struct SummaryData));
+					GraphIp(DataStore, SummaryData[NumGraphs++], timestamp+LEAD*config.range);
+					}
 			    DataStore = DataStore->Next;
 				}
 
-			MakeIndexPages(NumGraphs);
+			MakeIndexPages(NumGraphs, SummaryData);
 	
 			_exit(0);
 			}
@@ -200,7 +203,6 @@ int main(int argc, char **argv)
     {
     struct bpf_program fcode;
     u_char *pcap_userdata = 0;
-    struct shmid_ds shmstatus;
 	char Error[PCAP_ERRBUF_SIZE];
 	char CurrentDirWarning[] = "bandwidthd always works out of the current directory, cd to some place with a ./etc/bandwidthd.conf and a ./htdocs/ then run it";
 	int i;
@@ -214,8 +216,10 @@ int main(int argc, char **argv)
 	config.output_cdf = FALSE;
 	config.recover_cdf = FALSE;
 	config.meta_refresh = CONFIG_METAREFRESH;
+	config.output_database = FALSE;
+	config.db_connect_string = NULL;
+	config.sensor_id = "unset";  
 
-  
 	yyin = fopen("./etc/bandwidthd.conf", "r");
 	if (!yyin)
 		{
@@ -239,10 +243,14 @@ int main(int argc, char **argv)
 		(unsigned long) (0-1), (unsigned long long) (0-1));
 		exit(1);
 	*/
-	bd_CollectingData("htdocs/index.html");
-	bd_CollectingData("htdocs/index2.html");
-	bd_CollectingData("htdocs/index3.html");
-	bd_CollectingData("htdocs/index4.html");
+
+	if (config.graph)
+		{
+		bd_CollectingData("htdocs/index.html");
+		bd_CollectingData("htdocs/index2.html");
+		bd_CollectingData("htdocs/index3.html");
+		bd_CollectingData("htdocs/index4.html");
+		}
 
 	/* detach from console. */
 	if (fork2())
@@ -252,69 +260,36 @@ int main(int argc, char **argv)
 
 	setchildconfig(0); /* initialize first (day graphing) process config */
 
-	/* fork processes for week, month and year graphing. */
-	for (i=1; i<=NR_WORKER_CHILDS; i++) {
-		pid_t pid;
-
-		pid = fork();
-
-		/* initialize children and let them start doing work,
-		 * while parent continues to fork children.
-		 */
-
-		if (pid == 0) { /* child */
-			setchildconfig(i);
-			break;
-		}
-
-		if (pid == -1) { /* fork failed */
-			printf("Bandwidthd: failed to fork graphing child (%d).\n", i);
-			/* i--; ..to retry? -> possible infinite loop */
-			continue;
-		}
-
-		/* first process maintains a list of child pids */
-		workerchildpids[i] = pid;
-	}
-
-    if(config.recover_cdf)
-	    RecoverDataFromCDF();
-	
-	IPCKey = ftok(".", config.tag);
-	if ((shmid = shmget(IPCKey, sizeof(struct IPCData)*IP_NUM, IPC_CREAT | IPC_EXCL)) == -1)
+	if (config.graph || config.output_cdf)
 		{
-		if ((shmid = shmget(IPCKey, sizeof(struct IPCData)*IP_NUM, 0)) == -1)
+		/* fork processes for week, month and year graphing. */
+		for (i=1; i<=NR_WORKER_CHILDS; i++) 
 			{
-			printf("Error allocating %d bytes of IPC Shared memory, or attaching to existing segment. Do you have System V IPC turned on in your kernel? Do you have enough? Has a memory segment already been created with my ID that I don't have permisions to?\n", sizeof(struct IPCData)*IP_NUM);
-			exit(0);
-			}
+			pid_t pid;
 
-		shmctl(shmid, IPC_STAT, &shmstatus);
-		if (shmstatus.shm_nattch == 0)
-			{
-			shmctl(shmid, IPC_RMID, &shmstatus);
-			if ((shmid = shmget(IPCKey, sizeof(struct IPCData)*IP_NUM, IPC_CREAT | IPC_EXCL)) == -1)
-				{
-				printf("Shared memory busted.  I am busted, everything is busted.  Have a nice day\n");
-				exit(1);
+			pid = fork();
+
+			/* initialize children and let them start doing work,
+			 * while parent continues to fork children.
+			 */
+
+			if (pid == 0) 
+				{ /* child */
+				setchildconfig(i);
+				break;
+				}
+
+			if (pid == -1) 
+				{ /* fork failed */
+				printf("Bandwidthd: failed to fork graphing child (%d).\n", i);
+				/* i--; ..to retry? -> possible infinite loop */
+				continue;
 				}
 			}
-		else
-			{
-#ifndef BSD
-			printf("My shared memory segment %d is already in use (%ld locks), perhaps bandwidthd is already running in this directory?\n", shmid, shmstatus.shm_nattch);
-#else
-			printf("My shared memory segment %d is already in use (%hd locks), perhaps bandwidthd is already running in this directory?\n", shmid, shmstatus.shm_nattch);
-#endif
-			exit(1);
-			}
-		}
-	
-	if ((int) (IPCSharedData = shmat(shmid, 0, 0)) == -1)
-		{
-		printf("Error attaching to shared memory segment!\n");
-		exit(0);
-		}
+
+	    if(config.recover_cdf)
+		    RecoverDataFromCDF();
+		}	
 
     IntervalStart = time(NULL);
 
@@ -551,6 +526,131 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 		}
 	}
 
+
+
+void StoreIPDataInPostgresql(struct IPData IncData[])
+	{
+#ifdef PGSQL
+	struct IPData *IPData;
+	unsigned int counter;
+	struct Statistics *Stats;
+    PGresult   *res;
+	static PGconn *conn = NULL;
+	const char *paramValues[10];
+	char Values[10][50];
+
+	if (!config.output_database == DB_PGSQL)
+		return;
+
+	// We fork before we connect to the database, so this will unfortunatly never be 
+	// initialized prior to execution, but if we figure out a way to keep the connection constant
+	// this will be ready for it
+	// ************ Inititialize the db if it's not already
+
+	if (!conn)
+		{
+		/* Connect to the database */
+    	conn = PQconnectdb(config.db_connect_string);
+
+	    /* Check to see that the backend connection was successfully made */
+    	if (PQstatus(conn) != CONNECTION_OK)
+        	{
+	        printf("Connection to database '%s' failed: %s\n", config.db_connect_string, PQerrorMessage(conn));
+    	    PQfinish(conn);
+        	conn = NULL;
+	        return;
+    	    }
+		}
+
+	// **** Perform inserts
+
+	paramValues[0] = Values[0];
+	paramValues[1] = Values[1];
+	paramValues[2] = Values[2];
+	paramValues[3] = Values[3];	
+	paramValues[4] = Values[4];
+	paramValues[5] = Values[5];
+	paramValues[6] = Values[6];
+	paramValues[7] = Values[7];
+	paramValues[8] = Values[8];
+	paramValues[9] = Values[9];
+
+	strncpy(Values[0], config.sensor_id, 50);
+	Values[0][49] = '\0';
+	snprintf(Values[1], 50, "%llu", config.interval);
+	for (counter=0; counter < IpCount; counter++)
+		{
+        IPData = &IncData[counter];
+        HostIp2CharIp(IPData->ip, Values[2]);
+
+		Stats = &(IPData->Send);
+		if (Stats->total) // Don't log empty sets
+			{
+			snprintf(Values[3], 50, "%llu", Stats->total);
+			snprintf(Values[4], 50, "%llu", Stats->icmp);
+			snprintf(Values[5], 50, "%llu", Stats->udp);
+			snprintf(Values[6], 50, "%llu", Stats->tcp);
+			snprintf(Values[7], 50, "%llu", Stats->ftp);
+			snprintf(Values[8], 50, "%llu", Stats->http);
+			snprintf(Values[9], 50, "%llu", Stats->p2p);
+
+			res = PQexecParams(conn, "INSERT INTO bd_tx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);",
+				10,       /* nine param */
+	            NULL,    /* let the backend deduce param type */
+    	        paramValues,
+        	    NULL,    /* don't need param lengths since text */
+            	NULL,    /* default to all text params */
+	            1);      /* ask for binary results */
+
+    		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        		{
+	        	printf("Postresql INSERT failed: %s\n", PQerrorMessage(conn));
+	    	    PQclear(res);
+    	    	PQfinish(conn);
+	    	    conn = NULL;
+        		return;
+		        }
+			}
+		Stats = &(IPData->Receive);
+		if (Stats->total) // Don't log empty sets
+			{
+			snprintf(Values[3], 50, "%llu", Stats->total);
+			snprintf(Values[4], 50, "%llu", Stats->icmp);
+			snprintf(Values[5], 50, "%llu", Stats->udp);
+			snprintf(Values[6], 50, "%llu", Stats->tcp);
+			snprintf(Values[7], 50, "%llu", Stats->ftp);
+			snprintf(Values[8], 50, "%llu", Stats->http);
+			snprintf(Values[9], 50, "%llu", Stats->p2p);
+
+			res = PQexecParams(conn, "INSERT INTO bd_rx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);",
+				10,       /* seven param */
+            	NULL,    /* let the backend deduce param type */
+	            paramValues,
+    	        NULL,    /* don't need param lengths since text */
+        	    NULL,    /* default to all text params */
+            	1);      /* ask for binary results */
+
+	    	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    	    	{
+	    	    printf("Postresql INSERT failed: %s\n", PQerrorMessage(conn));
+    	    	PQclear(res);
+	        	PQfinish(conn);
+		        conn = NULL;
+        		return;
+	        	}
+			}		
+		}
+#else
+	printf("Postgresql logging selected but postgresql support is not compiled into binary.  Please check the documentation in README, distributed with this software.\n");
+#endif
+	}
+
+void StoreIPDataInDatabase(struct IPData IncData[])
+	{
+	if (config.output_database == DB_PGSQL)
+		StoreIPDataInPostgresql(IncData);
+	}
+
 void StoreIPDataInCDF(struct IPData IncData[])
 	{
 	struct IPData *IPData;
@@ -558,16 +658,11 @@ void StoreIPDataInCDF(struct IPData IncData[])
 	FILE *cdf;
 	struct Statistics *Stats;
 	char IPBuffer[50];
-	char logfile[] = "log1.cdf";
+	char logfile[] = "log.1.0.cdf";
 	
+	logfile[4] = config.tag;	
 
-	if (config.tag != '1')
-		{ 
-		logfile[3] = config.tag;
-    	cdf = fopen(logfile, "a");
-		}
-	else
-		cdf = fopen("log.cdf", "a");
+   	cdf = fopen(logfile, "a");
 
 	for (counter=0; counter < IpCount; counter++)
 		{
@@ -581,8 +676,6 @@ void StoreIPDataInCDF(struct IPData IncData[])
 		}
 	fclose(cdf);
 	}
-
-
 
 void _StoreIPDataInRam(struct IPData *IPData)
 	{
@@ -682,52 +775,77 @@ void CommitData(long int timestamp)
 	static int MayGraph = TRUE;
     unsigned int counter;
 	struct stat StatBuf;
-
+	char logname1[] = "log.1.5.cdf";
+	char logname2[] = "log.1.4.cdf";
 	// Set the timestamps
 	for (counter=0; counter < IpCount; counter++)
         IpTable[counter].timestamp = timestamp;
 
 	// Output modules
-	StoreIPDataInRam(IpTable);
-	// TODO: This needs to be moved into the forked section, but I don't want to 
-	//	deal with that right now (Heavy disk io may make us drop packets)
-	if (config.output_cdf) StoreIPDataInCDF(IpTable);
+	// Only call this from first thread
+	if (config.output_database && config.tag == '1')
+		StoreIPDataInDatabase(IpTable);
 
-	if (RotateLogs) // We set this to true on HUP
+	if (config.output_cdf)
 		{
-		if (!stat("log.5.cdf", &StatBuf)) // File exists
-			unlink("log.5.cdf");
-		if (!stat("log.4.cdf", &StatBuf)) // File exists
-			rename("log.4.cdf", "log.5.cdf");
-		if (!stat("log.3.cdf", &StatBuf)) // File exists
-			rename("log.3.cdf", "log.4.cdf");
-		if (!stat("log.2.cdf", &StatBuf)) // File exists
-			rename("log.2.cdf", "log.3.cdf");
-		if (!stat("log.1.cdf", &StatBuf)) // File exists
-			rename("log.1.cdf", "log.2.cdf");
-		if (!stat("log.cdf", &StatBuf)) // File exists
-			rename("log.cdf", "log.1.cdf");					
-		fclose(fopen("log.cdf", "a")); // Touch file
-		RotateLogs = FALSE;
+		// TODO: This needs to be moved into the forked section, but I don't want to 
+		//	deal with that right now (Heavy disk io may make us drop packets)
+		StoreIPDataInCDF(IpTable);
+
+		if (RotateLogs >= config.range/RANGE1) // We set this++ on HUP
+			{
+			logname1[4] = config.tag;
+			logname2[4] = config.tag;
+			logname2[6] = '5';
+
+			if (!stat(logname2, &StatBuf)) // File exists
+				unlink(logname2);
+			logname1[6] = '4';
+			if (!stat(logname1, &StatBuf)) // File exists
+				rename(logname1, logname2);
+			logname1[6] = '3';
+			logname2[6] = '4';			
+			if (!stat(logname1, &StatBuf)) // File exists
+				rename(logname1, logname2);
+            logname1[6] = '2';
+            logname2[6] = '3';			
+			if (!stat(logname1, &StatBuf)) // File exists
+				rename(logname1, logname2);
+            logname1[6] = '1';
+            logname2[6] = '2';			
+			if (!stat(logname1, &StatBuf)) // File exists
+				rename(logname1, logname2);
+            logname1[6] = '0';
+            logname2[6] = '1';			
+			if (!stat(logname1, &StatBuf)) // File exists
+				rename(logname1, logname2); 
+			fclose(fopen(logname1, "a")); // Touch file
+			RotateLogs = FALSE;
+			}
 		}
 
-	// Reap a couple zombies
-	if (waitpid(-1, NULL, WNOHANG))  // A child was reaped
-		MayGraph = TRUE;
-
-	if (GraphIntervalCount%config.skip_intervals == 0 && MayGraph)
+	if (config.graph)
 		{
-		MayGraph = FALSE;
-		/* If WriteOutWebpages fails, reenable graphing since there won't
-		 * be any children to reap.
-		 */
-		if (WriteOutWebpages(timestamp))
+		StoreIPDataInRam(IpTable);
+
+		// Reap a couple zombies
+		if (waitpid(-1, NULL, WNOHANG))  // A child was reaped
 			MayGraph = TRUE;
-		}
-	else if (GraphIntervalCount%config.skip_intervals == 0)
-		printf("Previouse graphing run not complete... Skipping current run\n");
 
-	DropOldData(timestamp);
+		if (GraphIntervalCount%config.skip_intervals == 0 && MayGraph)
+			{
+			MayGraph = FALSE;
+			/* If WriteOutWebpages fails, reenable graphing since there won't
+			 * be any children to reap.
+			 */
+			if (WriteOutWebpages(timestamp))
+				MayGraph = TRUE;
+			}
+		else if (GraphIntervalCount%config.skip_intervals == 0)
+			printf("Previouse graphing run not complete... Skipping current run\n");
+
+		DropOldData(timestamp);
+		}
     }
 
 
@@ -739,12 +857,14 @@ int RCDF_Test(char *filename)
 	char ipaddrBuffer[16];
 	time_t timestamp;
 
-	if (!(cdf = fopen(filename, "r"))) return FALSE;
+	if (!(cdf = fopen(filename, "r"))) 
+		return FALSE;
 	if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2) return FALSE;
+	fclose(cdf);
 	if (timestamp > time(NULL) - config.range)
-		return FALSE; // Keep looking
+		return FALSE; // There is no data in this file from before cutoff
 	else
-		return TRUE; // Start with this file
+		return TRUE; // This file has data from before cutoff
 	}
 
 
@@ -832,114 +952,36 @@ End_RecoverDataFromCdf:
 void RecoverDataFromCDF(void)
 	{
 	FILE *cdf;
-    struct stat StatBuf;
-	char filename[] = "log2.cdf";
+	char index[] = "012345";
+    char logname1[] = "log.1.0.cdf";
+    char logname2[] = "log.1.1.cdf";
+	int Counter;
+	int First = FALSE;
 
-	if (config.tag != '1') // We don't rotate weekly and monthly logs right now
-		{
-		filename[3] = config.tag;
-		if (stat(filename, &StatBuf))
-			return;
-		
-        // Just recover the log2.cdf and return
-        if (!(cdf = fopen(filename, "r"))) return;
-        printf("Recovering from %s...\n", filename);
-        RCDF_PositionStream(cdf);
-        RCDF_Load(cdf);
-        return;						
-		}
+	logname1[4] = config.tag;
+	logname2[4] = config.tag;
 
-	if (stat("log.cdf", &StatBuf))
-		return;	
-
-	if (RCDF_Test("log.cdf") || stat("log.1.cdf", &StatBuf))  
+	for (Counter = 5; Counter >= 0; Counter--)
 		{
-		// Simple case, just recover the log.cdf and return
-		if (!(cdf = fopen("log.cdf", "r"))) return;
-		printf("Recovering from log.cdf...\n");
-		RCDF_PositionStream(cdf);
-		RCDF_Load(cdf);
-		return;
-		}	
-	else if (RCDF_Test("log.1.cdf") || stat("log.2.cdf", &StatBuf))
-		{
-		if (!(cdf = fopen("log.1.cdf", "r"))) return;
-		printf("Recovering from log.1.cdf...\n");
-		RCDF_PositionStream(cdf);
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.cdf", "r"))) return;		
-		printf("Recovering from log.cdf...\n");
-		RCDF_Load(cdf);
+		logname1[6] = index[Counter];
+		if (RCDF_Test(logname1))
+			break;
 		}
-	else if (RCDF_Test("log.2.cdf") || stat("log.3.cdf", &StatBuf))
+	
+	First = TRUE;
+	for (; Counter >= 0; Counter--)
 		{
-		if (!(cdf = fopen("log.2.cdf", "r"))) return;
-		printf("Recovering from log.2.cdf...\n");
-		RCDF_PositionStream(cdf);
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.1.cdf", "r"))) return;		
-		printf("Recovering from log.1.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.cdf", "r"))) return;		
-		printf("Recovering from log.cdf...\n");
-		RCDF_Load(cdf);
-		}
-	else if (RCDF_Test("log.3.cdf") || stat("log.4.cdf", &StatBuf))
-		{
-		if (!(cdf = fopen("log.3.cdf", "r"))) return;
-		printf("Recovering from log.3.cdf...\n");
-		RCDF_PositionStream(cdf);
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.2.cdf", "r"))) return;		
-		printf("Recovering from log.2.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.1.cdf", "r"))) return;		
-		printf("Recovering from log.1.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.cdf", "r"))) return;		
-		printf("Recovering from log.cdf...\n");
-		RCDF_Load(cdf);
-		}
-	else if (RCDF_Test("log.4.cdf") || stat("log.5.cdf", &StatBuf))
-		{
-		if (!(cdf = fopen("log.4.cdf", "r"))) return;
-		printf("Recovering from log.4.cdf...\n");
-		RCDF_PositionStream(cdf);
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.3.cdf", "r"))) return;		
-		printf("Recovering from log.3.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.2.cdf", "r"))) return;		
-		printf("Recovering from log.2.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.1.cdf", "r"))) return;		
-		printf("Recovering from log.1.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.cdf", "r"))) return;		
-		printf("Recovering from log.cdf...\n");
-		RCDF_Load(cdf);
-		}
-	else
-		{
-		if (!(cdf = fopen("log.5.cdf", "r"))) return;
-		printf("Recovering from log.5.cdf...\n");
-		RCDF_PositionStream(cdf);
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.4.cdf", "r"))) return;		
-		printf("Recovering from log.4.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.3.cdf", "r"))) return;		
-		printf("Recovering from log.3.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.2.cdf", "r"))) return;		
-		printf("Recovering from log.2.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.1.cdf", "r"))) return;		
-		printf("Recovering from log.1.cdf...\n");
-		RCDF_Load(cdf);
-		if (!(cdf = fopen("log.cdf", "r"))) return;		
-		printf("Recovering from log.cdf...\n");
-		RCDF_Load(cdf);
+		logname1[6] = index[Counter];
+		if ((cdf = fopen(logname1, "r")))
+			{
+			printf("Recovering from %s...\n", logname1);
+			if (First)
+				{
+				RCDF_PositionStream(cdf);
+				First = FALSE;
+				}
+			RCDF_Load(cdf);
+			}
 		}
 	}
 

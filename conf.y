@@ -38,7 +38,7 @@ int yywrap()
 
 %token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF 
 %token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE TOKFILTER
-%token TOKMETAREFRESH
+%token TOKMETAREFRESH TOKPGSQLCONNECTSTRING TOKSENSORID
 %union
 {
     int number;
@@ -78,6 +78,10 @@ command:
 	filter
 	|
 	meta_refresh
+	|
+	pgsql_connect_string
+	|
+	sensor_id
 	;
 
 subnet:
@@ -190,3 +194,18 @@ graph:
 	{
 	config.graph = $2;
 	}
+
+pgsql_connect_string:
+    TOKPGSQLCONNECTSTRING string
+    {
+    config.db_connect_string = $2;
+	config.output_database = DB_PGSQL;
+    }
+    ;
+
+sensor_id:
+    TOKSENSORID string
+    {
+    config.sensor_id = $2;
+    }
+    ;

@@ -25,5 +25,7 @@ recover_cdf				{ return TOKRECOVERCDF; }
 graph					{ return TOKGRAPH; }
 filter					{ return TOKFILTER; }
 meta_refresh			{ return TOKMETAREFRESH; }
+pgsql_connect_string	{ return TOKPGSQLCONNECTSTRING; }
+sensor_id				{ return TOKSENSORID; }
 .						{ return TOKJUNK; }
 %%

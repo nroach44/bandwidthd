@@ -1,0 +1,26 @@
+CREATE TABLE bd_rx_log
+(sensor_id varchar,
+ip inet,
+timestamp timestamp with time zone DEFAULT now(),
+sample_duration int,
+total int,
+icmp int,
+udp int,
+tcp int,
+ftp int,
+http int,
+p2p int);
+
+CREATE TABLE bd_tx_log
+(sensor_id varchar,
+ip inet,
+timestamp timestamp with time zone DEFAULT now(),
+sample_duration int,
+total int,
+icmp int,
+udp int,
+tcp int,
+ftp int,
+http int,
+p2p int);
+

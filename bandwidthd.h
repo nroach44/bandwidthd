@@ -60,6 +60,8 @@
 
 #define PERMIS 1
 
+#define DB_PGSQL 1
+
 struct config
 	{
 	char *dev;
@@ -74,6 +76,9 @@ struct config
 	unsigned long long interval;
 	char tag;
 	unsigned int meta_refresh;
+	int output_database;
+	char *db_connect_string;
+	char *sensor_id;
 	};
 
 struct SubnetData
@@ -103,7 +108,7 @@ struct IPData
     struct Statistics Receive;
     } IpTable[IP_NUM];
 
-struct IPCData
+struct SummaryData
 	{
 	uint32_t IP;
 	int Graph;  // TRUE or FALSE, Did we write out a graph for this ip
@@ -165,12 +170,12 @@ inline struct IPData *FindIp(uint32_t ipaddr);
 void            CommitData(long int timestamp);
 
 // ************ Creates our Graphs
-void            GraphIp(struct IPDataStore *DataStore, struct IPCData *IPCData, long int timestamp);
+void            GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, long int timestamp);
 void            PrepareXAxis(gdImagePtr im, long int timestamp);
 void            PrepareYAxis(gdImagePtr im, long long int YMax);
-long int        GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp,  struct IPCData *IPCData);
+long int        GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, long int timestamp,  struct SummaryData *SummaryData);
 
 
 // ************ Misc
 inline void     DstCredit(uint32_t ipaddr, unsigned int psize);
-void			MakeIndexPages(int NumGraphs);
+void			MakeIndexPages(int NumGraphs, struct SummaryData *SummaryData[]);

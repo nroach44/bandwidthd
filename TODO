@@ -1,6 +1,11 @@
 Print error messages to syslog instead of console
-Move StoreIPDataInCDF to forked section
-Make graphing section multi-threadable, or remove un-needed sysVipc
+Move output modules to forked section
+Lots of ram could be saved by not storing empty send or receive structures in ram
+	(Happens when a ip receives packets but does not send them during an interval for example,
+	happens alot due to ping scan traffic, broadcast traffic, etc, initial investigations indecate
+	this could cut ram usage in direct graphing mode in half)
+Config switches for sample intervals and graphing ranges
+
 
 # Features requested by people, I make a note of them here in case myself
 # or someone else wants to come along and implement them.
@@ -10,7 +15,5 @@ Switch to put name reverses at the top of the page in the table
 Switch to hide all ip addresses
 
 Me:
-Add more pretty colors for more types of traffic.
-Log rotation for weekly,monthly,yearly logs
 Switch to only graph traffic not to and from the local network (internet
 	traffic only)

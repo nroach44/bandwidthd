@@ -71,6 +71,17 @@ log.cdf.1, log.cdf.2 etc...  log2.cdf is the same data with a 10 minute
 interval for the weekly graph, log3.cdf is an hourly interval for the monthly
 graph, and log4.cdf is a 12 hour interval for the yearly graph.
 
+root@manage:/usr/local/bandwidthd# mv log.cdf log.1.0.cdf
+root@manage:/usr/local/bandwidthd# mv log.1.cdf log.1.1.cdf
+root@manage:/usr/local/bandwidthd# mv log.2.cdf log.1.2.cdf
+root@manage:/usr/local/bandwidthd# mv log.3.cdf log.1.3.cdf
+root@manage:/usr/local/bandwidthd# mv log.4.cdf log.1.4.cdf
+root@manage:/usr/local/bandwidthd# mv log.5.cdf log.1.5.cdf
+root@manage:/usr/local/bandwidthd# mv log2.cdf log.2.1.cdf
+root@manage:/usr/local/bandwidthd# mv log3.cdf log.3.1.cdf
+root@manage:/usr/local/bandwidthd# mv log4.cdf log.4.1.cdf
+
+
 The log format is best documented in the "StoreIPDataInCDF" function in 
 bandwidthd.c.  As of this writing, it consists of one line for each ip address
 for each interval.  The line contains only data for the previouse interval.
