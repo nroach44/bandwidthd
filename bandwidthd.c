@@ -261,6 +261,9 @@ int main(int argc, char **argv)
 	int Counter;
 	char *bd_conf = NULL;
 
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+
 	for(Counter = 1; Counter < argc; Counter++)
 		{
 		if (argv[Counter][0] == '-')
@@ -357,8 +360,6 @@ int main(int argc, char **argv)
 		exit(1);
 	*/
 
-
-
 #ifdef HAVE_PCAP_FINDALLDEVS
 	pcap_findalldevs(&Devices, Error);
 	if (config.dev == NULL && Devices->name)
@@ -416,10 +417,13 @@ int main(int argc, char **argv)
 				continue;
 				}
 			}
-
-	    if(config.recover_cdf)
-		    RecoverDataFromCDF();
 		}	
+
+	signal(SIGHUP, signal_handler);
+	signal(SIGTERM, signal_handler);
+
+    if(config.recover_cdf)
+	    RecoverDataFromCDF();
 
     IntervalStart = time(NULL);
 
@@ -483,8 +487,7 @@ int main(int argc, char **argv)
 		fclose(stderr);
 		}
 
-	signal(SIGHUP, signal_handler);
-	signal(SIGTERM, signal_handler);
+
 
 	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
 		{

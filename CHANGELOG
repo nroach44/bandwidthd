@@ -4,6 +4,8 @@ Optional htdocs and log file locations specified at configure time
 Optional bandwidthd.conf entries to specify htdocs and log file locations
 Command line option help
 Command line option for specifying a bandwidthd.conf file
+Changed signal handling to avoid the parent thread dying from a hup during 
+	CDF recovery
 
 2.0.1 
 Big Feature - Added optional postgresql database logging mode and php for dynamic graph creation from 
