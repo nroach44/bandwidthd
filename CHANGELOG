@@ -1,3 +1,6 @@
+1.1.8b
+Fixed bug in support for linux cooked socket DLT_LINUX_SLL (PPPOE, T1, etc) - Christian Laubscher
+
 1.1.8
 Wrapped DLT_EN10MB in an ifdef for platforms that don't supply it
 Fixed bandwidthd crashing when brought up on an ip addressless interface

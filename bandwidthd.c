@@ -169,6 +169,7 @@ int main(int argc, char **argv)
 		case DLT_LINUX_SLL:
 			printf("Packet Encoding:\n\tLinux Cooked Socket\n");
 			IP_Offset = 16;
+			break;
 #endif
 #ifdef DLT_RAW
 		case DLT_RAW:
