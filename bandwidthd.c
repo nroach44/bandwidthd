@@ -753,15 +753,16 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
         HostIp2CharIp(IPData->ip, Values[2]);
 
 		Stats = &(IPData->Send);
-		if (Stats->total) // Don't log empty sets
+		if (Stats->total > 512) // Don't log empty sets
 			{
-			snprintf(Values[3], 50, "%llu", Stats->total);
-			snprintf(Values[4], 50, "%llu", Stats->icmp);
-			snprintf(Values[5], 50, "%llu", Stats->udp);
-			snprintf(Values[6], 50, "%llu", Stats->tcp);
-			snprintf(Values[7], 50, "%llu", Stats->ftp);
-			snprintf(Values[8], 50, "%llu", Stats->http);
-			snprintf(Values[9], 50, "%llu", Stats->p2p);
+			// Log data in kilobytes
+			snprintf(Values[3], 50, "%llu", (long long unsigned int)((((double)Stats->total)/1024.0) + 0.5));
+			snprintf(Values[4], 50, "%llu", (long long unsigned int)((((double)Stats->icmp)/1024.0) + 0.5));
+			snprintf(Values[5], 50, "%llu", (long long unsigned int)((((double)Stats->udp)/1024.0) + 0.5));
+			snprintf(Values[6], 50, "%llu", (long long unsigned int)((((double)Stats->tcp)/1024.0) + 0.5));
+			snprintf(Values[7], 50, "%llu", (long long unsigned int)((((double)Stats->ftp)/1024.0) + 0.5));
+			snprintf(Values[8], 50, "%llu", (long long unsigned int)((((double)Stats->http)/1024.0) + 0.5));
+			snprintf(Values[9], 50, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
 
 			res = PQexecParams(conn, sql1,
 				10,       /* nine param */
@@ -782,15 +783,15 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 			PQclear(res);
 			}
 		Stats = &(IPData->Receive);
-		if (Stats->total) // Don't log empty sets
+		if (Stats->total > 512) // Don't log empty sets
 			{
-			snprintf(Values[3], 50, "%llu", Stats->total);
-			snprintf(Values[4], 50, "%llu", Stats->icmp);
-			snprintf(Values[5], 50, "%llu", Stats->udp);
-			snprintf(Values[6], 50, "%llu", Stats->tcp);
-			snprintf(Values[7], 50, "%llu", Stats->ftp);
-			snprintf(Values[8], 50, "%llu", Stats->http);
-			snprintf(Values[9], 50, "%llu", Stats->p2p);
+			snprintf(Values[3], 50, "%llu", (long long unsigned int)((((double)Stats->total)/1024.0) + 0.5));
+			snprintf(Values[4], 50, "%llu", (long long unsigned int)((((double)Stats->icmp)/1024.0) + 0.5));
+			snprintf(Values[5], 50, "%llu", (long long unsigned int)((((double)Stats->udp)/1024.0) + 0.5));
+			snprintf(Values[6], 50, "%llu", (long long unsigned int)((((double)Stats->tcp)/1024.0) + 0.5));
+			snprintf(Values[7], 50, "%llu", (long long unsigned int)((((double)Stats->ftp)/1024.0) + 0.5));
+			snprintf(Values[8], 50, "%llu", (long long unsigned int)((((double)Stats->http)/1024.0) + 0.5));
+			snprintf(Values[9], 50, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
 
 			res = PQexecParams(conn, sql2,
 				10,       /* seven param */

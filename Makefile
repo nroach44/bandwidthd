@@ -1,6 +1,6 @@
 #Possible optimizations -fomit-frame-pointer -ffast-math
 OBS= bandwidthd.o graph.o conf.tab.o conf.l.o
-LIBS= -L/usr/local/lib -lgd -lpng -lpcap 
+LIBS= -L/usr/local/lib -lgd -lpng -lpcap
 CFLAGS= -I/usr/local/include -O3 -Wall
 NONWALLCFLAGS= -O3 #-g -DDEBUG
 
@@ -9,8 +9,8 @@ CFLAGS += -DPGSQL -I/usr/local/pgsql/include
 LIBS += -L/usr/local/pgsql/lib -lpq
 
 # Debugging stuff
-#CFLAGS += -pg -DPROFILE
-#CFLAGS += -g 
+#CFLAGS += -Wall -pg -DPROFILE
+#CFLAGS += -Wall -g -DDEBUG 
 
 OS=$(shell uname -s)
 ifeq ("$(OS)","Solaris")

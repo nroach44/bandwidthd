@@ -225,7 +225,7 @@ graph false
 recover_cdf false
 
 4. Simply start bandwidthd, and after a few minutes data should start appearing in your 
-   database.
+   database.  If not, check syslog for error messages.
 
 Web Server Setup:
 1. Copy the contents of phphtdocs into your web tree some where.

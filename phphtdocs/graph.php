@@ -221,18 +221,18 @@ for($Counter=XOFFSET+1; $Counter < $width; $Counter++)
 
 // Margin Text
 if ($SentPeak < 1024/8)
-	$txtPeakSendRate = sprintf("Peak Send Rate: %.1f Bits/sec", $SentPeak*8);
+	$txtPeakSendRate = sprintf("Peak Send Rate: %.1f KBits/sec", $SentPeak*8);
 else if ($SentPeak < (1024*1024)/8)
-    $txtPeakSendRate = sprintf("Peak Send Rate: %.1f KBits/sec", ($SentPeak*8.0)/1024.0);
+    $txtPeakSendRate = sprintf("Peak Send Rate: %.1f MBits/sec", ($SentPeak*8.0)/1024.0);
 else 
-	$txtPeakSendRate = sprintf("Peak Send Rate: %.1f MBits/sec", ($SentPeak*8.0)/(1024.0*1024.0));
+	$txtPeakSendRate = sprintf("Peak Send Rate: %.1f GBits/sec", ($SentPeak*8.0)/(1024.0*1024.0));
                                                                                                                              
 if ($TotalSent < 1024)
-	$txtTotalSent = sprintf("Sent %.1f Bytes", $TotalSent);
+	$txtTotalSent = sprintf("Sent %.1f KBytes", $TotalSent);
 else if ($TotalSent < 1024*1024)
-	$txtTotalSent = sprintf("Sent %.1f KBytes", $TotalSent/1024.0);
+	$txtTotalSent = sprintf("Sent %.1f MBytes", $TotalSent/1024.0);
 else 
-	$txtTotalSent = sprintf("Sent %.1f MBytes", $TotalSent/(1024.0*1024.0));
+	$txtTotalSent = sprintf("Sent %.1f GBytes", $TotalSent/(1024.0*1024.0));
                                                                                                                              
 ImageString($im, 2, XOFFSET+5,  $height-20, $txtTotalSent, $black);
 ImageString($im, 2, $width/2+XOFFSET/2,  $height-20, $txtPeakSendRate, $black);
@@ -419,24 +419,24 @@ if ($MarkTimeStep)
 // Draw Y Axis
 ImageLine($im, XOFFSET, 0, XOFFSET, $height, $black);
 
-$YLegend = ' ';
+$YLegend = 'k';
 $Divisor = 1;
 if ($YMax*8 > 1024*2)
 	{
-    $Divisor = 1024;    // Display in K
-    $YLegend = 'k';
+    $Divisor = 1024;    // Display in m
+    $YLegend = 'm';
     }
 
 if ($YMax*8 > 1024*1024*2)
 	{
-    $Divisor = 1024*1024; // Display in M
-    $YLegend = 'm';
+    $Divisor = 1024*1024; // Display in g
+    $YLegend = 'g';
 	}
 
 if ($YMax*8 > 1024*1024*1024*2)
 	{
-    $Divisor = 1024*1024*1024; // Display in G
-    $YLegend = 'g';
+    $Divisor = 1024*1024*1024; // Display in t
+    $YLegend = 't';
     }
                                                                                                                              
 $YStep = $YMax/10;

@@ -1,3 +1,11 @@
+Makefile fixes for .BSD and .Solaris
+Fixed variouse bugs in php graphing system
+Decided to store data in database in kilobytes instead of bytes
+Renamed report.php to index.php
+Keep navigation form settings between navigations
+Added config.conf for php application configuration
+
+2.0.0 beta cvs on Jan 8, 2005
 Added bd_pgsql_purge.sh to keep database from becomming unmanagable
 Bug fix geting sensor_id if sensor is already registered
 Wrapped inserts in a transaction so all now() times are the same

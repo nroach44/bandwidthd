@@ -1,20 +1,19 @@
 <?
-define("DFLT_WIDTH", 900);
-define("DFLT_HEIGHT", 256);
-
 define("INT_DAILY", 60*60*24*2);
 define("INT_WEEKLY", 60*60*24*8);
 define("INT_MONTHLY", 60*60*24*35);
 define("INT_YEARLY", 60*60*24*400);
 
-define("DFLT_INTERVAL", INT_DAILY); 
-
 define("XOFFSET", 90);
 define("YOFFSET", 45);
 
+require("config.conf");
+
 function ConnectDb()
     {
-    $db = pg_pconnect("user = derby dbname = bandwidthd");
+	global $db_connect_string;
+
+    $db = pg_pconnect($db_connect_string);
     if (!$db)
         {
         printf("DB Error, could not connect to database");
@@ -23,16 +22,11 @@ function ConnectDb()
     return($db);
     }
                                                                                                                              
-function fmtb($bytes)
+function fmtb($kbytes)
 	{
 	$Max = 1024;
-	$Output = $bytes;
-
-	if ($Output > $Max)
-		{
-		$Output /= 1024;
-		$Suffix = 'K';
-		}
+	$Output = $kbytes;
+	$Suffix = 'K';
 
 	if ($Output > $Max)
 		{
@@ -44,6 +38,12 @@ function fmtb($bytes)
 		{
 		$Output /= 1024;
 		$Suffix = 'G';
+		}
+
+	if ($Output > $Max)
+		{
+		$Output /= 1024;
+		$Suffix = 'T';
 		}
 
 	return(sprintf("<td align=right><tt>%.1f%s</td>", $Output, $Suffix));
