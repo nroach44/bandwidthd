@@ -467,7 +467,6 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
     uint32_t srcip;
     uint32_t dstip;
 
-
     struct IPData *ptrIPData;
 
     if (h->ts.tv_sec > IntervalStart + config.interval)  // Then write out this intervals data and possibly kick off the grapher
