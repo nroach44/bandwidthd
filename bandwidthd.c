@@ -123,6 +123,7 @@ int main(int argc, char **argv)
     struct shmid_ds shmstatus;
 	char Error[PCAP_ERRBUF_SIZE];
 	char CurrentDirWarning[] = "bandwidthd always works out of the current directory, cd to some place with a ./etc/bandwidthd.conf and a ./htdocs/ then run it";
+	unsigned long long graph_cutoff;
 
 	config.dev = NULL;
 	config.skip_intervals = CONFIG_GRAPHINTERVALS;
@@ -155,6 +156,7 @@ int main(int argc, char **argv)
 	config.range = RANGE1;
 	config.interval = INTERVAL1;
 	config.tag = '1';
+	graph_cutoff = config.graph_cutoff;
 
 	if (fork())  // Fork into seperate process for day, week, and month
 		{
@@ -162,16 +164,19 @@ int main(int argc, char **argv)
 		config.range = RANGE2;
 		config.interval = INTERVAL2;
 		config.tag = '2';
+		config.graph_cutoff = graph_cutoff*(RANGE2/RANGE1);	
 		if (fork())
 			{
 			config.range = RANGE3;
 			config.interval = INTERVAL3;
 			config.tag = '3';
+			config.graph_cutoff = graph_cutoff*(RANGE3/RANGE1);
 			if (fork())
 				{
 	            config.range = RANGE4;
     	        config.interval = INTERVAL4;
         	    config.tag = '4';
+				config.graph_cutoff = graph_cutoff*(RANGE4/RANGE1);
             	if (fork())
                 	exit(0);
 				}
