@@ -197,9 +197,9 @@ echo "</a>";
 echo "Send:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table&yscale=$scale><br>";
 echo "<img src=legend.gif><br>";
 if ($subnet == "0.0.0.0/0")
-	$total_table = "bd_tx_total_log";
+	$total_table = "bd_rx_total_log";
 else
-	$total_table = "bd_tx_log";
+	$total_table = "bd_rx_log";
 echo "Receive:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table&yscale=$scale><br>";
 echo "<img src=legend.gif><br>";
 
