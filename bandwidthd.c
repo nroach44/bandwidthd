@@ -77,7 +77,7 @@ void bd_CollectingData(char *filename)
 	{
 	FILE *index;
 
-	index = fopen(filename, "w");	
+	index = fopen(filename, "wt");	
 	if (index)
 		{
 		fprintf(index, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
@@ -208,7 +208,7 @@ void setchildconfig (int level) {
 void makepidfile(pid_t pid) {
 	FILE *pidfile;
 
-	pidfile = fopen("/var/run/bandwidthd.pid", "w");
+	pidfile = fopen("/var/run/bandwidthd.pid", "wt");
 	if (pidfile) {
 		if (fprintf(pidfile, "%d\n", pid) >= 0) {
 			fclose(pidfile);
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-	bdconfig_in = fopen("./etc/bandwidthd.conf", "r");
+	bdconfig_in = fopen("./etc/bandwidthd.conf", "rt");
 	if (!bdconfig_in)
 		{
 		syslog(LOG_ERR, "Cannot open bandwidthd.conf");
@@ -889,7 +889,7 @@ void StoreIPDataInCDF(struct IPData IncData[])
 	
 	logfile[4] = config.tag;	
 
-   	cdf = fopen(logfile, "a");
+   	cdf = fopen(logfile, "at");
 
 	for (counter=0; counter < IpCount; counter++)
 		{
@@ -1045,7 +1045,7 @@ void CommitData(time_t timestamp)
             logname2[6] = '1';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2); 
-			fclose(fopen(logname1, "a")); // Touch file
+			fclose(fopen(logname1, "at")); // Touch file
 			RotateLogs = FALSE;
 			}
 		}
@@ -1083,7 +1083,7 @@ int RCDF_Test(char *filename)
 	char ipaddrBuffer[16];
 	time_t timestamp;
 
-	if (!(cdf = fopen(filename, "r"))) 
+	if (!(cdf = fopen(filename, "rt"))) 
 		return FALSE;
 	fseek(cdf, 10, SEEK_END); // fseek to near end of file
 	while (fgetc(cdf) != '\n') // rewind to last newline
@@ -1205,7 +1205,7 @@ void RecoverDataFromCDF(void)
 	for (; Counter >= 0; Counter--)
 		{
 		logname1[6] = index[Counter];
-		if ((cdf = fopen(logname1, "r")))
+		if ((cdf = fopen(logname1, "rt")))
 			{
 			syslog(LOG_INFO, "Recovering from %s", logname1);
 			if (First)

@@ -217,7 +217,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	
 	if (config.tag == '1')
 		{
-		if ((file = fopen("./htdocs/index.html", "w")) == NULL)
+		if ((file = fopen("./htdocs/index.html", "wt")) == NULL)
 			{
 			syslog(LOG_ERR, "Failed to open ./htdocs/index.html");
 			exit(1);
@@ -226,7 +226,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 	else
 		{
 		filename[14] = config.tag;
-		if ((file = fopen(filename, "w")) == NULL)
+		if ((file = fopen(filename, "wt")) == NULL)
 			{
 			syslog(LOG_ERR, "Failed to open %s", filename);
 			exit(1);
@@ -308,7 +308,7 @@ void MakeIndexPages(int NumIps, struct SummaryData *SummaryData[])
 		{
 		HostIp2CharIp(SubnetTable[SubnetCounter].ip, Buffer1);
 		sprintf(Buffer2, "./htdocs/Subnet-%c-%s.html", config.tag, Buffer1);
-		file = fopen(Buffer2, "w");
+		file = fopen(Buffer2, "wt");
 		fprintf(file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 		fprintf(file, "<HTML>\n<HEAD><TITLE>Bandwidthd - Subnet %s</TITLE>\n", Buffer1);
 
