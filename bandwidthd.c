@@ -578,8 +578,8 @@ void StoreIPDataInRam(struct IPData IncData[])
 
 void CommitData(long int timestamp)
     {
+	static int MayGraph = TRUE;
     unsigned int counter;
-
 	struct stat StatBuf;
 
 	// Set the timestamps
@@ -611,11 +611,16 @@ void CommitData(long int timestamp)
 		}
 
 	// Reap a couple zombies
-	waitpid(-1, NULL, WNOHANG);
-	waitpid(-1, NULL, WNOHANG);
+	if (waitpid(-1, NULL, WNOHANG))  // A child was reaped
+		MayGraph = TRUE;
 
-	if (GraphIntervalCount%config.skip_intervals == 0)
+	if (GraphIntervalCount%config.skip_intervals == 0 && MayGraph)
+		{
+		MayGraph = FALSE;
 		WriteOutWebpages(timestamp);
+		}
+	else if (GraphIntervalCount%config.skip_intervals == 0)
+		printf("Previouse graphing run not complete... Skipping current run\n");
 
 	DropOldData(timestamp);
     }
