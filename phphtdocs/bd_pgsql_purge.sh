@@ -1,4 +1,3 @@
-#!/bin/bash
 echo "SET sort_mem TO 45000;"
 echo -e "bd_rx_log \n bd_tx_log \n bd_rx_total_log \n bd_tx_total_log" | while read TABLE; 
 do
@@ -46,7 +45,7 @@ and timestamp < now() - interval '2 days'
 group by sensor_id, ip, 
 date_trunc('hour', timestamp) + (interval '1 minute' * trunc(EXTRACT(MINUTE FROM timestamp)::numeric,-1));
 
-delete from $TABLE where sample_duration < 10*60 and timestamp < now() - interval '2 days'
+delete from $TABLE where sample_duration < 10*60 and timestamp < now() - interval '2 days';
 COMMIT;
 EOF
 done
