@@ -192,7 +192,8 @@ void MakeIndexPages(int NumIps)
 	int Counter, tCounter;
 	time_t WriteTime;
 	char filename[] = "./htdocs/index2.html";
-		
+	char *PeriodDesc;
+	
 	FILE *file;
 	struct IPCData **IPCData;
 
@@ -234,12 +235,21 @@ void MakeIndexPages(int NumIps)
 			exit(1);
 			}
 		}
+
+	switch (config.tag)
+		{
+		case '1': PeriodDesc = "Daily"; break;
+		case '2': PeriodDesc = "Weekly"; break;
+		case '3': PeriodDesc = "Monthly"; break;
+		case '4': PeriodDesc = "Yearly"; break;
+		default: PeriodDesc = ""; break;
+		}
 	
 	fprintf(file, "<HTML><HEAD>\n<META HTTP-EQUIV=\"REFRESH\" content=\"150\">\n<META HTTP-EQUIV=\"EXPIRES\" content=\"-1\">\n");
 	fprintf(file, "<META HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\">\n");
 	fprintf(file, "</HEAD><BODY vlink=blue>\n%s<br>\n<center><img src=\"logo.gif\"><BR>\n", ctime(&WriteTime));
 	fprintf(file, "<BR>\n - <a href=index.html>Daily</a> -- <a href=index2.html>Weekly</a> -- ");
-	fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a><BR>\n");
+	fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a> - <BR>\n");
 
 	fprintf(file, "<BR>\nPick a Subnet:<BR>\n");	
 	if (config.tag == '1')
@@ -255,7 +265,7 @@ void MakeIndexPages(int NumIps)
 
 	/////  TOP 20
 
-	fprintf(file, "<H1>Top 20 IPs by Traffic</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR><center>\n<table width=100%% border=1 cellspacing=0>\n");
+	fprintf(file, "<H1>Top 20 IPs by Traffic - %s</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR><center>\n<table width=100%% border=1 cellspacing=0>\n", PeriodDesc);
 
     // PASS 1:  Write out the table
 
@@ -299,7 +309,7 @@ void MakeIndexPages(int NumIps)
 		fprintf(file, "<img src=\"logo.gif\"><BR>");
 
 		fprintf(file, "<BR>\n - <a href=index.html>Daily</a> -- <a href=index2.html>Weekly</a> -- ");
-		fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a><BR>\n");
+		fprintf(file, "<a href=index3.html>Monthly</a> -- <a href=index4.html>Yearly</a> - <BR>\n");
 
 		fprintf(file, "<BR>\nPick a Subnet:<BR>\n");
 		if (config.tag == '1')
@@ -313,7 +323,7 @@ void MakeIndexPages(int NumIps)
 			fprintf(file, "- <a href=Subnet-%c-%s.html>%s</a> -", config.tag, Buffer2, Buffer2);
 			}
 
-		fprintf(file, "<H1>%s</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR></center>\n<table width=100%% border=1 cellspacing=0>\n", Buffer1);
+		fprintf(file, "<H1>%s - %s</H1></center>Programmed by David Hinkle, Commissioned by <a href=http://www.derbytech.com>DerbyTech</a> wireless networking.<BR></center>\n<table width=100%% border=1 cellspacing=0>\n", Buffer1, PeriodDesc);
 
         // PASS 1:  Write out the table
 
