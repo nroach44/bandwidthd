@@ -122,6 +122,13 @@ that don't use so much bandwidth.  These ip addresses will still have their
 data displayed in the table at the top of the page, so you can still see
 what's going on with them.
 
+Alternativly, you can choose to graph less often.  Bandwidthd automatickly 
+skips a graphing run if the last one is still going when the new one is 
+scheduled to start.  If you'd like to graph less often than your server is 
+capeable of, you can edit skip_intervals in bandwidthd.conf.  A value of 1
+means to skip every other interval, 3 would mean to skip three intervals 
+between each run.  This doesn't disable bandwidthd's automatic skipping.
+
 # KNOWN BUGS AND TROUBLESHOOTING #
 
 Bandwidthd doesn't do a very good job of tracking ftp.  This is because only
