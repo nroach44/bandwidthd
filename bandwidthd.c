@@ -487,8 +487,6 @@ int main(int argc, char **argv)
 		fclose(stderr);
 		}
 
-
-
 	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
 		{
 		syslog(LOG_INFO, "Drawing initial graphs");
@@ -1163,8 +1161,9 @@ void RCDF_PositionStream(FILE *cdf)
 	while (timestamp > current_timestamp - config.range)
 		{
 		// What happenes if we seek past the beginning of the file?
-		if (fseek(cdf, -512*1024,SEEK_CUR) == -1)
+		if (fseek(cdf, -512*1024,SEEK_CUR) == -1 || ferror(cdf))
 			{ // fseek returned error, just seek to beginning
+			clearerr(cdf);
 			fseek(cdf, 0, SEEK_SET);
 			return;
 			}
