@@ -6,6 +6,9 @@ Command line option help
 Command line option for specifying a bandwidthd.conf file
 Changed signal handling to avoid the parent thread dying from a hup during 
 	CDF recovery
+Fixed bug that could cause segfault if no devices exist that can be captured
+	from and no device is specified in the bandwidthd.conf
+Fixed bug in CDF recovery that may have been affecting recovery on FreeBSD systems.
 
 2.0.1 
 Big Feature - Added optional postgresql database logging mode and php for dynamic graph creation from 

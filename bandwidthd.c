@@ -362,7 +362,7 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_PCAP_FINDALLDEVS
 	pcap_findalldevs(&Devices, Error);
-	if (config.dev == NULL && Devices->name)
+	if (config.dev == NULL && Devices && Devices->name)
 		config.dev = strdup(Devices->name);
 	if (ListDevices)
 		{	
@@ -1144,9 +1144,9 @@ int RCDF_Test(char *filename)
 		}
 	fclose(cdf);
 	if (timestamp < time(NULL) - config.range)
-		return FALSE; // There is no data in this file from before cutoff
+		return FALSE; // There is no data in this file from after the cutoff
 	else
-		return TRUE; // This file has data from before cutoff
+		return TRUE; // This file has data from after the cutoff
 	}
 
 
@@ -1163,7 +1163,7 @@ void RCDF_PositionStream(FILE *cdf)
 	while (timestamp > current_timestamp - config.range)
 		{
 		// What happenes if we seek past the beginning of the file?
-		if (fseek(cdf, -IP_NUM*75*(config.range/config.interval)/20,SEEK_CUR))
+		if (fseek(cdf, -512*1024,SEEK_CUR) == -1)
 			{ // fseek returned error, just seek to beginning
 			fseek(cdf, 0, SEEK_SET);
 			return;
