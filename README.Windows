@@ -1,4 +1,4 @@
-*************************** INSTALATION *************************************
+*************************** INSTALLATION *************************************
 Unzip bandwidthd to the folder of your choice, double click "Install Service" to install the 
 service.   You can now start the service from the control panel after you have edited 
 etc/bandwidthd.conf to suit your environment.  Stopping the service from the
