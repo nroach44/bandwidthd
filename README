@@ -49,9 +49,9 @@ with "./bandwidthd".  If you run it with "/usr/local/bandwidthd" it will not
 work.
 
 # GRAPHING INTERVAL #
-Bandwidthd defaults to graph up to 3000 local ip's every 2.5 minutes.  If you 
+Bandwidthd defaults to graph up to 4000 local ip's every 2.5 minutes.  If you 
 need to track more ip's, change IP_NUM in bandwidthd.h.  More ip addresses 
-require more system V shared memory. 3000 ip addresses uses 216k.
+require more system V shared memory. 3000 ip addresses uses 216k*4.
 
 If your machine just doesn't have the power to graph all those ip addresses
 every 2.5 minutes, increase the graphing interval.
@@ -59,7 +59,9 @@ every 2.5 minutes, increase the graphing interval.
 To change the graphing interval modify the "skip_intervals" line in 
 bandwidthd.conf in bandwidthd.h.  This is how many intervals to skip between 
 graph runs.  "skip_interval" of 1 graphs every 5 minutes, 2 graphs every 7.5
-minutes.
+minutes.  Only the daily graph obeys the skip_intervals parameters.  The 
+weekly graph updates every 10 minutes, monthly every hour, and yearly every
+12 hours.
 
 Also note that bandwidthd does not bother to graph an ip that has trasmited
 less than 1Mbit of data.  It does however, include that ip in the table of ip's
@@ -74,6 +76,11 @@ or implement 95 percentile billing, for example.  Sending bandwidthd a HUP
 will cause it to rotate it's logs.  It will rotate out 5 times before deleting
 the oldest log file.  The fields in the cdf output file are in the same order
 they are in on the web page.
+
+Only the 2.5 minute interval logs rotate at this time.  These logs are log.cdf,
+log.cdf.1, log.cdf.2 etc...  log2.cdf is the same data with a 10 minute 
+interval for the weekly graph, log3.cdf is an hourly interval for the monthly
+graph, and log4.cdf is a 12 hour interval for the yearly graph.
 
 Graphing can be disabled by setting "graph" to false. This will still log, and
 still build the table of ip's, but the graph section will be omited.
@@ -147,7 +154,8 @@ for that matter, wherever you want to put it) before you run it.
 Bandwidthd forks to perform it's graphing functions.  After this fork finishes 
 it remains as a zombie until the next interval, at which time it is reaped by 
 the main process.  This zombie is nothing to worry about, it's just an entry 
-in the process table waiting to be deleted.
+in the process table waiting to be deleted.  With the new weekly, monthly, 
+yearly graphs you'll have up to 4 zombies now.  
 
 By default, bandwidthd now runs in promiscuous mode.  This means it can be used
 to monitor traffic not routing through it's host.  Just make sure that the host
@@ -163,8 +171,8 @@ redirects cause it to ultimatly end up going from one port on a switch to anothe
 never touching your hub. If you want bandwidthd to only see traffic actually going 
 into and out of the host set "promiscuous" to false in bandwidthd.conf.
 
-Bandwidthd supports ethernet and linux cooked socket packet encapsulation.  If 
-you get an "Unknown Datalink Type" error, bandwidthd has not been programed to 
-handle the physical encapsulation of the ip packets on that interface.  If 
-you send me a sample capture and a copy past of the error message I'll see if
-I can't make bandwidthd work for you.
+Bandwidthd supports ethernet, linux cooked sockets, raw, and token ring, and 
+most ppp packet encapsulation.  If you get an "Unknown Datalink Type" error, 
+bandwidthd has not been programed to handle the physical encapsulation of the 
+ip packets on that interface.  If you send me a sample capture and a copy past 
+of the error message I'll see if I can make bandwidthd work for you.
