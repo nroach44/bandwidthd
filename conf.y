@@ -145,54 +145,63 @@ device:
 	{
 	config.dev = $2;
 	}
+	;
 
 filter:
 	TOKFILTER string
 	{
 	config.filter = $2;
 	}
+	;
 
 meta_refresh:
 	TOKMETAREFRESH NUMBER
 	{
 	config.meta_refresh = $2;
 	}
+	;
 
 skip_intervals:
 	TOKSKIPINTERVALS NUMBER
 	{
 	config.skip_intervals = $2+1;
 	}
+	;
 
 graph_cutoff:
 	TOKGRAPHCUTOFF NUMBER
 	{
 	config.graph_cutoff = $2*1024;
 	}
+	;
 
 promisc:
 	TOKPROMISC STATE
 	{
 	config.promisc = $2;
 	}
+	;
 
 output_cdf:
 	TOKOUTPUTCDF STATE
 	{
 	config.output_cdf = $2;
 	}
+	;
 
 recover_cdf:
 	TOKRECOVERCDF STATE
 	{
 	config.recover_cdf = $2;
 	}
+	;
 
 graph:
 	TOKGRAPH STATE
 	{
 	config.graph = $2;
 	}
+	;
 
 pgsql_connect_string:
     TOKPGSQLCONNECTSTRING string
