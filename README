@@ -192,15 +192,11 @@ INSTRUCTIONS
 As a prerequisite for these instructions, you must have Postgresql installed and working, 
 as well as a web server that supports php.
 
-Database Setup:
+Setup:
 1. Create a database for Bandwidthd.  You will need to create users that can access the 
 database remotely if you want remote sensors.
 
-2. Bandwidthd's schema is in "schema.postgresql".  "psql mydb username < schema.postgresql" 
-should load it and create the 2 tables and 4 indexes.
-
-Bandwidthd Setup:
-1. Add the following lines to your bandwidthd.conf file:
+2. Add the following lines to your bandwidthd.conf file:
 
 # Standard postgres connect string, just like php, see postgres docs for
 # details
@@ -216,7 +212,7 @@ graph false
 # certain records into the database.
 recover_cdf false
 
-4. Simply start bandwidthd, and after a few minutes data should start appearing in 
+3. Start bandwidthd, and after a few minutes data should start appearing in 
 your database.  If not, check syslog for error messages.
 
 Web Server Setup:
