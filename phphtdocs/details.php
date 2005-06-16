@@ -1,8 +1,7 @@
-<?include("include.php");?>
-<html>
-<center>
-<img src=logo.gif>
 <?
+include("include.php");
+include("header.php");
+
 if (isset($_GET['sensor_name']))
     $sensor_name = $_GET['sensor_name'];
 else

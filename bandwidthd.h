@@ -66,7 +66,7 @@ typedef u_int16_t uint16_t;
 
 #include <syslog.h>
 
-#define IP_NUM 4000			// TODO: Do this dynamicly to save ram and/or scale bigger
+#define IP_NUM 10000			// TODO: Do this dynamicly to save ram and/or scale bigger
 #define SUBNET_NUM 100
 
 #define XWIDTH 900
@@ -197,6 +197,9 @@ void            PacketCallback(u_char *user, const struct pcap_pkthdr *h, const 
 
 // ************ Reads a CDF file from a previous run
 void RecoverDataFromCDF(void);
+
+// ************ Adds subnets to the list of subnets that are monitored
+void MonitorSubnet(unsigned int ip, unsigned int mask);
 
 // ************ This function converts and IP to a char string
 char inline 	*HostIp2CharIp(unsigned long ipaddr, char *buffer);

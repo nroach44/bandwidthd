@@ -1,4 +1,18 @@
 <?
+// Emulate register_globals off
+if (ini_get('register_globals')) {
+   $superglobals = array($_SERVER, $_ENV,
+       $_FILES, $_COOKIE, $_POST, $_GET);
+   if (isset($_SESSION)) {
+       array_unshift($superglobals, $_SESSION);
+   }
+   foreach ($superglobals as $superglobal) {
+       foreach ($superglobal as $global => $value) {
+           unset($GLOBALS[$global]);
+       }
+   }
+}
+
 define("INT_DAILY", 60*60*24*2);
 define("INT_WEEKLY", 60*60*24*8);
 define("INT_MONTHLY", 60*60*24*35);

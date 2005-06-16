@@ -99,14 +99,18 @@ newline:
 subneta:
 	TOKSUBNET IPADDR IPADDR
 	{
-	struct in_addr addr, addr2;
+	//struct in_addr addr, addr2;
 	
+	MonitorSubnet(inet_network($2), inet_network($3));
+
+	/*
 	SubnetTable[SubnetCount].ip = inet_network($2) & inet_network($3);
     	SubnetTable[SubnetCount].mask = inet_network($3);	
 
 	addr.s_addr = ntohl(SubnetTable[SubnetCount].ip);
 	addr2.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
 	syslog(LOG_INFO, "Monitoring subnet %s with netmask %s", inet_ntoa(addr), inet_ntoa(addr2));
+	*/
 	}
 	;
 
@@ -114,7 +118,7 @@ subnetb:
 	TOKSUBNET IPADDR TOKSLASH NUMBER
 	{
 	unsigned int Subnet, Counter, Mask;
-	struct in_addr addr, addr2;
+	//struct in_addr addr, addr2;
 
 	Mask = 1; Mask <<= 31;
 	for (Counter = 0, Subnet = 0; Counter < $4; Counter++)
@@ -122,11 +126,16 @@ subnetb:
 		Subnet >>= 1;
 		Subnet |= Mask;
 		}
+
+	MonitorSubnet(inet_network($2), Subnet);
+
+	/*
  	SubnetTable[SubnetCount].mask = Subnet; 
 	SubnetTable[SubnetCount].ip = inet_network($2) & Subnet;
 	addr.s_addr = ntohl(SubnetTable[SubnetCount].ip);
 	addr2.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
 	syslog(LOG_INFO, "Monitoring subnet %s with netmask %s", inet_ntoa(addr), inet_ntoa(addr2));
+	*/
 	}
 	;
 

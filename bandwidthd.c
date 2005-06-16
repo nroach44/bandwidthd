@@ -260,6 +260,7 @@ int main(int argc, char **argv)
 	int ListDevices = FALSE;
 	int Counter;
 	char *bd_conf = NULL;
+	struct in_addr addr, addr2;
 
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
@@ -343,22 +344,14 @@ int main(int argc, char **argv)
 		exit(1);
 		}
 	bdconfig_parse();
-	/*
-	// Scary
-	printf("Estimated max ram utilization\nDataPoints = %.0f/%ld = %.0f\nIPData = %d * DataPoints = %.1f (%.2fKBytes) per IP\nIP_NUM = %d\nTotal = %.1fMBytes * 4 to 8 = %.1fMBytes to %.1fMBytes\n", 
-		RANGE1, INTERVAL1, RANGE1/INTERVAL1,		
-		sizeof(struct IPData), 
-		(float) sizeof(struct IPData)*(RANGE1/INTERVAL1), 
-		(float) (sizeof(struct IPData)*(RANGE1/INTERVAL1))/1024.0,
-		IP_NUM, 
-		(float)((sizeof(struct IPData)*(RANGE1/INTERVAL1)*IP_NUM)/1024.0)/1024.0,
-		(float)4*((sizeof(struct IPData)*(RANGE1/INTERVAL1)*IP_NUM)/1024.0)/1024.0,
-		(float)8*((sizeof(struct IPData)*(RANGE1/INTERVAL1)*IP_NUM)/1024.0)/1024.0);
-	printf("Sizeof unsigned long: %d, sizeof unsigned long long: %d\n%lu, %llu\n",
-		sizeof(unsigned long), sizeof (unsigned long long),
-		(unsigned long) (0-1), (unsigned long long) (0-1));
-		exit(1);
-	*/
+
+	// Log list of monitored subnets
+	for (Counter = 0; Counter < SubnetCount; Counter++)
+		{
+		addr.s_addr = ntohl(SubnetTable[Counter].ip);
+		addr2.s_addr = ntohl(SubnetTable[Counter].mask);
+		syslog(LOG_INFO, "Monitoring subnet %s with netmask %s", inet_ntoa(addr), inet_ntoa(addr2));
+		}
 
 #ifdef HAVE_PCAP_FINDALLDEVS
 	pcap_findalldevs(&Devices, Error);
@@ -504,7 +497,7 @@ int main(int argc, char **argv)
    
 void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
     {
-    unsigned int counter;
+    unsigned int Counter;
 
     u_int caplen = h->caplen;
     const struct ip *ip;
@@ -533,12 +526,12 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
     srcip = ntohl(*(uint32_t *) (&ip->ip_src));
     dstip = ntohl(*(uint32_t *) (&ip->ip_dst));
 	
-    for (counter = 0; counter < SubnetCount; counter++)
+    for (Counter = 0; Counter < SubnetCount; Counter++)
         {	 
 		// Packets from a monitored subnet to a monitored subnet will be
 		// credited to both ip's
 
-        if (SubnetTable[counter].ip == (srcip & SubnetTable[counter].mask))
+        if (SubnetTable[Counter].ip == (srcip & SubnetTable[Counter].mask))
             {
             ptrIPData = FindIp(srcip);  // Return or create this ip's data structure
 			if (ptrIPData)
@@ -549,7 +542,7 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 	            Credit(&(ptrIPData->Send), ip);
             }
     
-        if (SubnetTable[counter].ip == (dstip & SubnetTable[counter].mask))
+        if (SubnetTable[Counter].ip == (dstip & SubnetTable[Counter].mask))
             {
             ptrIPData = FindIp(dstip);
     		if (ptrIPData)
@@ -561,6 +554,57 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
             }                        
         }
     }
+
+
+// Eliminates duplicate entries and fully included subnets so packets don't get
+// counted multiple times
+void MonitorSubnet(unsigned int ip, unsigned int mask)
+	{
+	unsigned int subnet = ip & mask;
+	int Counter, Counter2;
+	struct in_addr addr, addr2;
+
+    addr.s_addr = ntohl(subnet);
+    addr2.s_addr = ntohl(mask);
+
+	for (Counter = 0; Counter < SubnetCount; Counter++)
+		{
+		if ((SubnetTable[Counter].ip == subnet) && (SubnetTable[Counter].mask == mask))
+			{
+			syslog(LOG_ERR, "Subnet %s/%s already exists, skipping.", inet_ntoa(addr), inet_ntoa(addr2));
+			return; 
+			}
+		}
+
+	for (Counter = 0; Counter < SubnetCount; Counter++)
+		{
+		if ((SubnetTable[Counter].ip == (ip & SubnetTable[Counter].mask)) && (SubnetTable[Counter].mask < mask))
+			{
+			syslog(LOG_ERR, "Subnet %s/%s is already included, skipping.", inet_ntoa(addr), inet_ntoa(addr2));
+			return; 
+			}
+		}
+	
+	for (Counter = 0; Counter < SubnetCount; Counter++)
+		{
+		if (((SubnetTable[Counter].ip & mask) == subnet) && (SubnetTable[Counter].mask > mask))
+			{
+			syslog(LOG_ERR, "Subnet %s/%s includes already listed subnet, removing smaller entry", inet_ntoa(addr), inet_ntoa(addr2));
+			// Shift everything down
+			for (Counter2 = Counter; Counter2 < SubnetCount-1; Counter2++)
+				{
+				SubnetTable[Counter2].ip = SubnetTable[Counter2+1].ip;
+				SubnetTable[Counter2].mask = SubnetTable[Counter2+1].mask;
+				}
+			SubnetCount--;
+			Counter--; // Retest this entry because we replaced it 
+			}
+		}
+		
+	SubnetTable[SubnetCount].mask = mask;
+	SubnetTable[SubnetCount].ip = subnet;
+	SubnetCount++;
+	}
 
 inline void Credit(struct Statistics *Stats, const struct ip *ip)
     {
@@ -664,11 +708,87 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 		}
 	}
 
+#ifdef HAVE_LIBPQ
+// Check that tables exist and create them if not
+PGconn *CheckPgsqlTables(PGconn *conn)
+	{
+	PGresult   *res;
+	
+    res = PQexec(conn, "select tablename from pg_tables where tablename='sensors';");
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+        {
+        syslog(LOG_ERR, "Postresql Select failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        PQfinish(conn);
+        return(NULL);
+        }
+
+    if (PQntuples(res) != 1)
+		{
+		PQclear(res);
+		res = PQexec(conn,  "CREATE TABLE bd_rx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp); create index bd_rx_log_sensor_id_timestamp_idx on bd_rx_log(sensor_id, timestamp);");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+            {
+            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
+            PQclear(res);
+            PQfinish(conn);
+            return(NULL);
+            }
+        PQclear(res);
+		
+		res = PQexec(conn, "CREATE TABLE bd_tx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_tx_log_sensor_id_ip_timestamp_idx on bd_tx_log (sensor_id, ip, timestamp); create index bd_tx_log_sensor_id_timestamp_idx on bd_tx_log(sensor_id, timestamp);");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+            {
+            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
+            PQclear(res);
+            PQfinish(conn);
+            return(NULL);
+            }
+        PQclear(res);
+
+		res = PQexec(conn, "CREATE TABLE bd_rx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_rx_total_log_sensor_id_timestamp_ip_idx on bd_rx_total_log (sensor_id, timestamp);");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+            {
+            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
+            PQclear(res);
+            PQfinish(conn);
+            return(NULL);
+            }
+        PQclear(res);
+
+		res = PQexec(conn, "CREATE TABLE bd_tx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_tx_total_log_sensor_id_timestamp_ip_idx on bd_tx_total_log (sensor_id, timestamp);");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+            {
+            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
+            PQclear(res);
+            PQfinish(conn);
+            return(NULL);
+            }
+        PQclear(res);
+
+		res = PQexec(conn, "CREATE TABLE sensors ( sensor_id serial PRIMARY KEY, sensor_name varchar, last_connection timestamp with time zone );");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+            {
+            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
+            PQclear(res);
+            PQfinish(conn);
+            return(NULL);
+            }
+        PQclear(res);
+		}
+	else
+		PQclear(res);
+	
+	return(conn);
+	}
+#endif
+
 void StoreIPDataInPostgresql(struct IPData IncData[])
 	{
 #ifdef HAVE_LIBPQ
 	struct IPData *IPData;
-	unsigned int counter;
+	unsigned int Counter;
 	struct Statistics *Stats;
     PGresult   *res;
 	static PGconn *conn = NULL;
@@ -707,6 +827,10 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 	        return;
     	    }
 
+		conn = CheckPgsqlTables(conn);
+		if (!conn)
+			return;
+
 		strncpy(Values[0], config.sensor_id, 50);
 		res = PQexecParams(conn, "select sensor_id from sensors where sensor_name = $1;",
 			1,       /* one param */
@@ -732,10 +856,23 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 			}
 		else
 			{
+		    res = PQexec(conn, "select nextval('sensors_sensor_id_seq'::Text);");
+	    	if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    	    	{
+		        syslog(LOG_ERR, "Postresql select failed: %s", PQerrorMessage(conn));
+        		PQclear(res);
+		        PQfinish(conn);
+        		conn = NULL;
+        		return;
+		        }
+
+			strncpy(sensor_id, PQgetvalue(res, 0, 0), 50);
+		    PQclear(res);
+
+			strncpy(Values[1], sensor_id, 50);
 			// Insert new sensor id
-			PQclear(res);
-			res = PQexecParams(conn, "insert into sensors (sensor_name, last_connection) VALUES ($1, now());",
-				1,       /* one param */
+			res = PQexecParams(conn, "insert into sensors (sensor_name, last_connection, sensor_id) VALUES ($1, now(), $2);",
+				2,       /* two param */
     	        NULL,    /* let the backend deduce param type */
    	    	    paramValues,
        	    	NULL,    /* don't need param lengths since text */
@@ -751,26 +888,9 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
         		return;
 		        }
 			PQclear(res);
-			res = PQexecParams(conn, "select sensor_id from sensors where sensor_name = $1;",
-				1,       /* one param */
-        	    NULL,    /* let the backend deduce param type */
-   	        	paramValues,
-	       	    NULL,    /* don't need param lengths since text */
-    	       	NULL,    /* default to all text params */
-        	    0);      /* ask for binary results */
-		
-	   		if (PQresultStatus(res) != PGRES_TUPLES_OK)
-    	   		{
-        		syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
-    	    	PQclear(res);
-	   	    	PQfinish(conn);
-    		    conn = NULL;
-       			return;
-	        	}
-			strncpy(sensor_id, PQgetvalue(res, 0, 0), 50);
-			PQclear(res);
 			}	
 		}
+
 
 	// Begin transaction
 
@@ -815,9 +935,9 @@ void StoreIPDataInPostgresql(struct IPData IncData[])
 
 	Values[0][49] = '\0';
 	snprintf(Values[1], 50, "%llu", config.interval);
-	for (counter=0; counter < IpCount; counter++)
+	for (Counter=0; Counter < IpCount; Counter++)
 		{
-        IPData = &IncData[counter];
+        IPData = &IncData[Counter];
 
 		if (IPData->ip == 0)
 			{
@@ -925,7 +1045,7 @@ void StoreIPDataInDatabase(struct IPData IncData[])
 void StoreIPDataInCDF(struct IPData IncData[])
 	{
 	struct IPData *IPData;
-	unsigned int counter;
+	unsigned int Counter;
 	FILE *cdf;
 	struct Statistics *Stats;
 	char IPBuffer[50];
@@ -935,9 +1055,9 @@ void StoreIPDataInCDF(struct IPData IncData[])
 
    	cdf = fopen(logfile, "at");
 
-	for (counter=0; counter < IpCount; counter++)
+	for (Counter=0; Counter < IpCount; Counter++)
 		{
-		IPData = &IncData[counter];
+		IPData = &IncData[Counter];
 		HostIp2CharIp(IPData->ip, IPBuffer);
 		fprintf(cdf, "%s,%lu,", IPBuffer, IPData->timestamp);
 		Stats = &(IPData->Send);
@@ -1034,23 +1154,23 @@ void _StoreIPDataInRam(struct IPData *IPData)
 
 void StoreIPDataInRam(struct IPData IncData[])
 	{
-	unsigned int counter;
+	unsigned int Counter;
 
-    for (counter=0; counter < IpCount; counter++)
-		_StoreIPDataInRam(&IncData[counter]);
+    for (Counter=0; Counter < IpCount; Counter++)
+		_StoreIPDataInRam(&IncData[Counter]);
 	}
 
 void CommitData(time_t timestamp)
     {
 	static int MayGraph = TRUE;
-    unsigned int counter;
+    unsigned int Counter;
 	struct stat StatBuf;
 	char logname1[MAX_FILENAME];
 	char logname2[MAX_FILENAME];
 	int offset;
 	// Set the timestamps
-	for (counter=0; counter < IpCount; counter++)
-        IpTable[counter].timestamp = timestamp;
+	for (Counter=0; Counter < IpCount; Counter++)
+        IpTable[Counter].timestamp = timestamp;
 
 	// Output modules
 	// Only call this from first thread
@@ -1223,7 +1343,7 @@ End_RecoverDataFromCdf:
 	DropOldData(time(NULL)); // Dump the extra data
     if(!feof(cdf))
        syslog(LOG_ERR, "Failed to parse part of log file. Giving up on the file");
-	IpCount = 0; // Reset traffic counters
+	IpCount = 0; // Reset traffic Counters
     fclose(cdf);
 	}
 
@@ -1267,11 +1387,11 @@ void RecoverDataFromCDF(void)
 
 inline struct IPData *FindIp(uint32_t ipaddr)
     {
-    unsigned int counter;
+    unsigned int Counter;
     
-    for (counter=0; counter < IpCount; counter++)
-        if (IpTable[counter].ip == ipaddr)
-            return (&IpTable[counter]);
+    for (Counter=0; Counter < IpCount; Counter++)
+        if (IpTable[Counter].ip == ipaddr)
+            return (&IpTable[Counter]);
     
     if (IpCount >= IP_NUM)
         {

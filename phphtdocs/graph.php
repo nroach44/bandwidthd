@@ -164,8 +164,11 @@ $YMax += $YMax*0.05;    // Add an extra 5%
 if (isset($yscale))
     $YMax = $yscale/8;
 
-// Plot the data
+// Avoid divide by zero
+if ($YMax == 0)
+	$YMax = 1;
 
+// Plot the data
 header("Content-type: image/png");
 
 $im = imagecreate($width, $height);
