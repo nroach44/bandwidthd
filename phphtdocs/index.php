@@ -25,12 +25,19 @@ $db = ConnectDb();
 <FORM name="navigation" method=get action=<?=$PHP_SELF?>>
 <table width=100% cellspacing=0 cellpadding=5 border=1>
 <tr>
-<td><SELECT name="sensor_name">
-
-<OPTION value="none">--Select A Sensor--
+<td>
 <?
 $sql = "SELECT sensor_name from sensors order by sensor_name;";
-$result = pg_query($sql);
+$result = @pg_query($sql);
+if (!$result)
+	{
+	echo "<center>Collecting data...</center>";
+	exit;
+	}
+?>
+<SELECT name="sensor_name">
+<OPTION value="none">--Select A Sensor--
+<?
 while ($r = pg_fetch_array($result))
     echo "<option value=\"".$r['sensor_name']."\" ".($sensor_name==$r['sensor_name']?"SELECTED":"").">".$r['sensor_name']."\n";
 ?>
