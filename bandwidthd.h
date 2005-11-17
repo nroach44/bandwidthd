@@ -66,6 +66,8 @@ typedef u_int16_t uint16_t;
 
 #include <syslog.h>
 
+#define BUILD 17
+
 #define IP_NUM 10000			// TODO: Do this dynamicly to save ram and/or scale bigger
 #define SUBNET_NUM 100
 
@@ -111,6 +113,7 @@ struct config
 	unsigned int skip_intervals;
 	unsigned long long graph_cutoff;
 	int promisc;
+	int extensions;
 	int output_cdf;
 	int recover_cdf;
 	int graph;
@@ -120,9 +123,11 @@ struct config
 	unsigned int meta_refresh;
 	int output_database;
 	char *db_connect_string;
-	char *sensor_id;
+	char *sensor_name;
 	char *log_dir;
 	char *htdocs_dir;
+	char *description;
+	char *management_url;
 	};
 
 struct SubnetData
@@ -133,6 +138,7 @@ struct SubnetData
 
 struct Statistics
     {
+	unsigned long long packet_count;
     unsigned long long total;
 
     unsigned long long icmp;
@@ -185,6 +191,21 @@ struct DataStoreBlock
 	struct DataStoreBlock *Next;
 	};
 
+struct Broadcast 
+	{
+	char *sensor_name;
+	char *interface;
+	time_t received;
+
+	struct Broadcast *next;
+	};
+
+struct extensions {
+    char *name;
+    char *value;
+    struct extensions *next;
+};
+
 // ****************************************************************************************
 // ** Function Prototypes
 // ****************************************************************************************
@@ -226,3 +247,11 @@ unsigned long long GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *
 // ************ Misc
 inline void     DstCredit(uint32_t ipaddr, unsigned int psize);
 void			MakeIndexPages(int NumGraphs, struct SummaryData *SummaryData[]);
+
+// ************ Pgsql
+void pgsqlStoreIPData(struct IPData IncData[], struct extensions *);
+
+// ************ Extensions
+struct extensions *execute_extensions(void);
+void destroy_extension_data(struct extensions *ext);
+

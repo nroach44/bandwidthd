@@ -31,9 +31,9 @@ int bdconfig_wrap()
 	}
 %}
 
-%token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF 
-%token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE TOKFILTER
-%token TOKMETAREFRESH TOKPGSQLCONNECTSTRING TOKSENSORID TOKHTDOCSDIR TOKLOGDIR
+%token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF TOKDESCRIPTION
+%token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE TOKFILTER TOKMANAGEMENTURL
+%token TOKMETAREFRESH TOKPGSQLCONNECTSTRING TOKSENSORID TOKHTDOCSDIR TOKLOGDIR TOKEXTENSIONS
 %union
 {
     int number;
@@ -62,6 +62,8 @@ command:
 	|
 	promisc
 	|
+	extensions
+	|
 	output_cdf
 	|
 	recover_cdf
@@ -76,11 +78,15 @@ command:
 	|
 	pgsql_connect_string
 	|
-	sensor_id
+	sensor_name
 	|
 	htdocs_dir
 	|
 	log_dir
+	|
+	description
+	|
+	management_url;
 	;
 
 subnet:
@@ -129,8 +135,7 @@ subnetb:
 
 	MonitorSubnet(inet_network($2), Subnet);
 
-	/*
- 	SubnetTable[SubnetCount].mask = Subnet; 
+	/* 	SubnetTable[SubnetCount].mask = Subnet; 
 	SubnetTable[SubnetCount].ip = inet_network($2) & Subnet;
 	addr.s_addr = ntohl(SubnetTable[SubnetCount].ip);
 	addr2.s_addr = ntohl(SubnetTable[SubnetCount++].mask);
@@ -151,6 +156,20 @@ device:
 	TOKDEV string
 	{
 	config.dev = $2;
+	}
+	;
+
+management_url:
+	TOKMANAGEMENTURL string
+	{
+	config.management_url = $2;
+	}
+	;
+
+description:
+	TOKDESCRIPTION string
+	{
+	config.description = $2;
 	}
 	;
 
@@ -203,6 +222,13 @@ promisc:
 	}
 	;
 
+extensions:
+	TOKEXTENSIONS STATE
+	{
+	config.extensions = $2;
+	}
+	;
+
 output_cdf:
 	TOKOUTPUTCDF STATE
 	{
@@ -232,9 +258,9 @@ pgsql_connect_string:
     }
     ;
 
-sensor_id:
+sensor_name:
     TOKSENSORID string
     {
-    config.sensor_id = $2;
+    config.sensor_name = $2;
     }
     ;

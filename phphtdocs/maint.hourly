@@ -1,0 +1,3 @@
+echo "vacuum ANALYZE sensors;"
+echo "vacuum analyze links;"
+echo "vacuum analyze extension_log;"

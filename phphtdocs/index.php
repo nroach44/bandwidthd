@@ -1,201 +1,292 @@
 <?
 include("include.php");
-include("header.php");
 
-// Get variables from url
-
-if (isset($_GET['sensor_name']) && $_GET['sensor_name'] != "none")
-    $sensor_name = $_GET['sensor_name'];
-
-if (isset($_GET['interval']) && $_GET['interval'] != "none")
-    $interval = $_GET['interval'];
-
-if (isset($_GET['timestamp']) && $_GET['timestamp'] != "none")
-    $timestamp = $_GET['timestamp'];
-
-if (isset($_GET['subnet']) && $_GET['subnet'] != "none")
-    $subnet = $_GET['subnet'];
-
-if (isset($_GET['limit']) && $_GET['limit'] != "none")
-	$limit = $_GET['limit'];
-
+if (isset($_GET['group_id']))
+	$group_id = $_GET['group_id'];
 
 $db = ConnectDb();
 ?>
-<FORM name="navigation" method=get action=<?=$PHP_SELF?>>
-<table width=100% cellspacing=0 cellpadding=5 border=1>
-<tr>
-<td>
-<?
-$sql = "SELECT sensor_name from sensors order by sensor_name;";
-$result = @pg_query($sql);
-if (!$result)
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+<style type="text/css">
+v\:* {
+  behavior:url(#default#VML);
+  }
+</style>
+<title>DerbyTech Wireless Network</title>
+<script src="http://maps.google.com/maps?file=api&v=1&key=ABQIAAAANV8M8s128eP55wUqCqvWyBQVMYhLIeywhJ0puM4BK8Tp-d4myhTvfxey30oeLPqs-t72AGpR7hBa9w" type="text/javascript"></script>
+<link href="bandwidthd.css" rel="stylesheet" type="text/css">
+<script type="text/javascript">
+//<![CDATA[
+
+var request;  	// XML Request
+var map; 		// Our google map
+
+function drawCircle(map,lng,lat,radius) 
 	{
-	echo "<center>Collecting data...</center>";
-	exit;
-	}
-?>
-<SELECT name="sensor_name">
-<OPTION value="none">--Select A Sensor--
-<?
-while ($r = pg_fetch_array($result))
-    echo "<option value=\"".$r['sensor_name']."\" ".($sensor_name==$r['sensor_name']?"SELECTED":"").">".$r['sensor_name']."\n";
-?>
-</SELECT>
-<td><SELECT name="interval">
-<OPTION value="none">--Select An Interval--
-<OPTION value=<?=INT_DAILY?> <?=$interval==INT_DAILY?"SELECTED":""?>>Daily
-<OPTION value=<?=INT_WEEKLY?> <?=$interval==INT_WEEKLY?"SELECTED":""?>>Weekly
-<OPTION value=<?=INT_MONTHLY?> <?=$interval==INT_MONTHLY?"SELECTED":""?>>Monthly
-<OPTION value=<?=INT_YEARLY?> <?=$interval==INT_YEARLY?"SELECTED":""?>>Yearly
-<OPTION value=<?=24*60*60?> <?=$interval==24*60*60?"SELECTED":""?>>24hrs
-<OPTION value=<?=30*24*60*60?> <?=$interval==30*24*60*60?"SELECTED":""?>>30days
-</select>
-
-<td><SELECT name="limit">
-<OPTION value="none">--How Many Results--
-<OPTION value=20 <?=$limit==20?"SELECTED":""?>>20
-<OPTION value=50 <?=$limit==50?"SELECTED":""?>>50
-<OPTION value=100 <?=$limit==100?"SELECTED":""?>>100
-<OPTION value=all <?=$limit=="all"?"SELECTED":""?>>All
-</select>
-
-<td>Subnet Filter:<input name=subnet value="<?=isset($subnet)?$subnet:"0.0.0.0/0"?>"> 
-<input type=submit value="Go">
-</table>
-</FORM>
-<?
-// Set defaults
-if (!isset($interval))
-	$interval = DFLT_INTERVAL;
-
-if (!isset($timestamp))
-	$timestamp = time() - $interval + (0.05*$interval);
-
-if (!isset($limit))
-	$limit = 20;
-
-// Validation
-if (!isset($sensor_name))
-	exit(0);
-
-// Print Title
-
-if (isset($limit))
-	echo "<h2>Top $limit - $sensor_name</h2>";
-else
-	echo "<h2>All Records - $sensor_name</h2>";
-
-// Sqlize the incomming variables
-if (isset($subnet))
-	$sql_subnet = "and ip <<= '$subnet'";
-
-// Sql Statement
-$sql = "select tx.ip, rx.scale as rxscale, tx.scale as txscale, tx.total+rx.total as total, tx.total as sent, 
-rx.total as received, tx.tcp+rx.tcp as tcp, tx.udp+rx.udp as udp,
-tx.icmp+rx.icmp as icmp, tx.http+rx.http as http,
-tx.p2p+rx.p2p as p2p, tx.ftp+rx.ftp as ftp
-from
-
-(SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
-sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from sensors, bd_tx_log
-where sensor_name = '$sensor_name'
-and sensors.sensor_id = bd_tx_log.sensor_id
-$sql_subnet
-and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime
-group by ip) as tx,
-
-(SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
-sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
-from sensors, bd_rx_log
-where sensor_name = '$sensor_name'
-and sensors.sensor_id = bd_rx_log.sensor_id
-$sql_subnet
-and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime
-group by ip) as rx
-
-where tx.ip = rx.ip
-order by total desc;";
-
-//echo "</center><pre>$sql</pre><center>"; exit(0);
-pg_query("SET sort_mem TO 30000;");
-$result = pg_query($sql);
-pg_query("set sort_mem to default;");
-
-if ($limit == "all")
-	$limit = pg_num_rows($result);
-
-echo "<table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
-
-if (!isset($subnet)) // Set this now for total graphs
-	$subnet = "0.0.0.0/0";
-
-// Output Total Line
-echo "<TR><TD><a href=Total>Total</a><TD>$subnet";
-foreach (array("total", "sent", "received", "tcp", "udp", "icmp", "http", "p2p", "ftp") as $key)
-	{
-	for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
+	var color = '#0000ff';    // color blue
+	var width = 1;             // width pixels
+	var d2r = Math.PI/180;   // degrees to radians
+	var r2d = 180/Math.PI;   // radians to degrees
+	var Clat = (radius/3963)*r2d;   //  using 3963 as earth's radius
+	
+	var Clng = Clat/Math.cos(lat*d2r);
+   	var Cpoints = [];
+   	for (var i=0; i < 65; i++) 
 		{
-		$r = pg_fetch_array($result, $Counter);
-		$Total += $r[$key];
+		var theta = Math.PI * (i/32);
+      	Cx = lng + (Clng * Math.cos(theta));
+      	Cy = lat + (Clat * Math.sin(theta));
+      	Cpoints.push(new GPoint(Cx,Cy));
+   		};
+   	map.addOverlay(new GPolyline(Cpoints,color,width));
+	}
+
+function drawSlice(map,lng,lat,orientation,degrees,radius) 
+	{
+	if (degrees == 360)
+		{
+		drawCircle(map,lng,lat,radius);
+		return;
 		}
-	echo fmtb($Total);
-	}
-echo "\n";
 
-// Output Other Lines
-for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++)
+	var color = '#0000ff';    // color blue
+	var width = 1;             // width pixels
+
+	var d2r = Math.PI/180;   // degrees to radians
+	var r2d = 180/Math.PI;   // radians to degrees
+
+	var Clat = (radius/3963)*r2d;   //  using 3963 as earth's radius	
+	var Clng = Clat/Math.cos(lat*d2r);
+
+	var start = (90-orientation-degrees/2)*d2r;
+	var end = (90-orientation+degrees/2)*d2r;
+
+   	var Cpoints = [];
+	Cpoints.push(new GPoint(lng,lat));
+
+	theta = 1/64;
+	for (var deg=start; deg < end; deg += theta)
+		{
+		Cx = lng + (Clng * Math.cos(deg));
+		Cy = lat + (Clat * Math.sin(deg));
+		Cpoints.push(new GPoint(Cx,Cy));
+		}
+
+	deg = end;
+	Cx = lng + (Clng * Math.cos(deg));
+    Cy = lat + (Clat * Math.sin(deg));
+    Cpoints.push(new GPoint(Cx,Cy));
+
+	Cpoints.push(new GPoint(lng,lat));
+
+   	map.addOverlay(new GPolyline(Cpoints,color,width));
+	}
+
+// Creates a marker whith tower info
+function createTower(point, text, icon) 
 	{
-	$r = pg_fetch_array($result, $Counter);
-	echo "<tr><td><a href=#".$r['ip'].">";
-	echo $r['ip']."<td>".gethostbyaddr($r['ip']);
-	echo "</a>";
-	echo fmtb($r['total']).fmtb($r['sent']).fmtb($r['received']).
-		fmtb($r['tcp']).fmtb($r['udp']).fmtb($r['icmp']).fmtb($r['http']).
-		fmtb($r['p2p']).fmtb($r['ftp'])."\n";
-	}
-echo "</table></center>";
+ 	var marker = new GMarker(point, icon);
 
-// Output Total Graph
-for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
-	{
-	$r = pg_fetch_array($result, $Counter);
-	$scale = max($r['txscale'], $scale);
-	$scale = max($r['rxscale'], $scale);
+  	// Show this marker's index in the info window when it is clicked
+  	GEvent.addListener(marker, "click", function() { marker.openInfoWindowHtml(text); });
+
+  	return marker;
 	}
 
-if ($subnet == "0.0.0.0/0")
-	$total_table = "bd_tx_total_log";
+var polylines = new Array();
+
+<?
+if (isset($group_id))
+	$xml_url = "xml.php?group_id=$group_id";
 else
-	$total_table = "bd_tx_log";
-echo "<a name=Total><h3><a href=details.php?sensor_name=$sensor_name&ip=$subnet>";
-echo "Total - Total of $subnet</h3>";
-echo "</a>";
-echo "Send:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_name=".$sensor_name."&table=$total_table><br>";
-echo "<img src=legend.gif><br>\n";
-if ($subnet == "0.0.0.0/0")
-	$total_table = "bd_rx_total_log";
-else
-	$total_table = "bd_rx_log";
-echo "Receive:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_name=".$sensor_name."&table=$total_table><br>";
-echo "<img src=legend.gif><br>\n";
+	$xml_url = "xml.php";
+?>
 
-
-// Output Other Graphs
-for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++) 
+function LoadLines()
 	{
-	$r = pg_fetch_array($result, $Counter);
-	echo "<a name=".$r['ip']."><h3><a href=details.php?sensor_name=$sensor_name&ip=".$r['ip'].">";
-	if ($r['ip'] == "0.0.0.0")
-		echo "Total - Total of all subnets</h3>";
-	else
-		echo $r['ip']." - ".gethostbyaddr($r['ip'])."</h3>";
-	echo "</a>";
-	echo "Send:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_name=".$sensor_name."&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
-	echo "<img src=legend.gif><br>\n";
-	echo "Receive:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_name=".$sensor_name."&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
-	echo "<img src=legend.gif><br>\n";
+    request = GXmlHttp.create();
+    request.open("GET", "<?=$xml_url?>", true);
+    request.onreadystatechange = ProcessXml;
+    request.send(null);
 	}
 
-include('footer.php');
+function ProcessXml() 
+		{
+	  	if (request.readyState == 4) 
+			{
+			if (request.status == 200) 
+				{
+				while(polylines.length > 0)
+					{
+					polyline = polylines.pop();
+					map.removeOverlay(polyline);
+					delete polyline;
+					}
+
+	 		   	//var xmlDoc = request.responseXML;
+    			//var links = xmlDoc.documentElement.getElementsByTagName("link");
+				var links = request.responseXML.getElementsByTagName("link");
+    			for (var i = 0; i < links.length; i++) 
+					{
+					a_lng = parseFloat(links[i].getAttribute("a_lng"));
+					a_lat = parseFloat(links[i].getAttribute("a_lat"));
+					b_lng = parseFloat(links[i].getAttribute("b_lng"));
+					b_lat = parseFloat(links[i].getAttribute("b_lat"));
+					color = links[i].getAttribute("color");				
+					var polyline = new GPolyline([new GPoint(a_lng, a_lat), new GPoint(b_lng, b_lat)], color, 5);
+					map.addOverlay(polyline);
+					polylines.push(polyline);
+    				}
+				}
+			else
+				alert("There was a problem retrieving the XML data:\n" + request.statusText);
+
+			window.setTimeout('LoadLines()', 120000);
+  			}
+		}
+
+function OnLoad() 
+	{
+	//if (!GBrowserIsCompatible()) 
+	//	return;
+	//var pntDerbyTech = new GPoint(-90.44474244117737, 41.5146750885744);
+	//var pntDerbyTech = new GPoint(-90.44466733932495, 41.51341380076779);
+
+	// Build Icon
+	var icon_base = new GIcon();
+	icon_base.shadow = "http://labs.google.com/ridefinder/images/mm_20_shadow.png";
+	icon_base.iconSize = new GSize(12, 20);
+	icon_base.shadowSize = new GSize(22, 20);
+	icon_base.iconAnchor = new GPoint(6, 20);
+	icon_base.infoWindowAnchor = new GPoint(5, 1);
+
+	icon_green = new GIcon(icon_base);
+	icon_green.image = "http://labs.google.com/ridefinder/images/mm_20_green.png";
+
+	icon_blue = new GIcon(icon_base);
+	icon_blue.image = "http://labs.google.com/ridefinder/images/mm_20_blue.png";
+
+	icon_red = new GIcon(icon_base);
+	icon_red.image = "http://labs.google.com/ridefinder/images/mm_20_red.png";
+	
+	// Display Map
+
+	map = new GMap(document.getElementById("map"));
+	//map.setMapType(G_SATELLITE_TYPE)
+	map.addControl(new GLargeMapControl());
+	map.addControl(new GMapTypeControl());
+	map.centerAndZoom(new GPoint(-90.5832839012146, 40.90443124892882), 9);
+
+	LoadLines();
+
+// Displays Towers
+<?
+$sql = "SELECT locations.*, groups.color from locations, groups where locations.group_id = groups.group_id";
+if (isset($group_id))
+	$sql .= " and locations.group_id = $group_id";
+
+$locations = pg_query($sql);
+
+while ($r = @pg_fetch_array($locations))
+    {
+	$Statistics = "window.open(\'location_statistics.php?location_id=".$r['id']."\',\'statistics\',\'scrollbars=yes,height=\'+screen.height+\',width=550,resizable=yes,top=0 \')"; 
+	$html = $r['name']."<BR><a href=# onclick=\"$Statistics\">Statistics</a><BR>Management<BR>";
+
+	$sensors = pg_query("select distinct on (sensor_name) sensor_name, management_url from sensors where location = ".$r['id'].";");
+	while ($sensor = @pg_fetch_array($sensors))
+		{
+		//$html .= "<a href=".$sensor['management_url'].">X</a> - <a href=# onclick=\"window.open(\'".$sensor['management_url']."\')\">".$sensor['sensor_name']."</a><BR>";
+		$html .= "<a target=".$sensor['management_url']." href=".$sensor['management_url'].">".$sensor['sensor_name']."</a><BR>";
+		}
+	$html .= "</TABLE>";
+	echo("map.addOverlay(createTower(new GPoint(".$r['longitude'].", ".$r['latitude']."), '$html', icon_".$r['color']."));\n");
+    }
+
+// Display Coverage Slices
+$sql = "SELECT longitude, latitude, direction, angle, radius from slices, sensors, locations where slices.sensor_id = sensors.sensor_id and sensors.location = locations.id";
+if (isset($group_id))
+    $sql .= " and locations.group_id = $group_id";
+
+$res = pg_query($sql);
+
+while ($r = @pg_fetch_array($res))
+    {
+	echo("drawSlice(map, ".$r['longitude'].", ".$r['latitude'].", ".$r['direction'].", ".$r['angle'].", ".$r['radius'].");\n");	
+	}
+
+// Implement Search
+if (isset($_GET['search']))
+	{
+	//$locations = pg_query("SELECT id, name, longitude, latitude, count(sensors.sensor_name) from sensors, locations where sensors.location = locations.id and sensor_name ~* '".$_GET['search']."' group by id, name, longitude, latitude order by count desc limit 1;");
+	// Very wierd query... Pulls all towers that have sensors who's name matches the query and pulls towers who's name matches the query and artificially ranks the towers very high, right now limit 1 but in future can be used to create a weighted list of matches
+	$locations = pg_query("SELECT id, name, longitude, latitude, count(sensors.sensor_name) from sensors, locations where locations.id = sensors.location and sensor_name ~* '".$_GET['search']."' or name ~* '".$_GET['search']."' group by id, name, longitude, latitude order by count desc limit 1;");
+	while ($r = @pg_fetch_array($locations))
+	    {
+		$Statistics = "window.open(\'location_statistics.php?location_id=".$r['id']."\',\'statistics\',\'scrollbars=yes,height=800,width=550\')"; 
+		$html = $r['name']."<BR><a href=# onclick=\"$Statistics\">Statistics</a><BR>Management<BR>";
+
+		$sensors = pg_query("select distinct on (sensor_name) sensor_name, management_url from sensors where location = ".$r['id'].";");
+		while ($sensor = @pg_fetch_array($sensors))
+			{
+			$html .= "<a href=# onclick=\"window.open(\'".$sensor['management_url']."\')\">".$sensor['sensor_name']."</a><BR>";
+			}
+		echo("map.centerAndZoom(new GPoint(".$r['longitude'].", ".$r['latitude']."), 7);\n");
+		echo("var marker;\n");
+		echo("marker = createTower(new GPoint(".$r['longitude'].", ".$r['latitude']."), '$html', icon_green);\n");
+		echo("map.addOverlay(marker);\n");
+		echo("marker.openInfoWindowHtml('$html');\n");
+   	 	}	
+	}
+	
+?>
+	}
+
+
+
+                          
+//]]></script>
+
+</head>
+<body onload="OnLoad()">
+<FORM name=search method=get action=<?=$_SERVER['PHP_SELF']?>>
+
+<?
+$locations = pg_query("SELECT count(name) as num from locations");
+$r = @pg_fetch_array($locations);
+echo("Monitoring: ".$r['num']." Towers");
+
+$locations = pg_query("SELECT count(sensor_name) as num from (select distinct sensor_name from sensors) as sens;");
+$r = @pg_fetch_array($locations);
+echo(" ".$r['num']." Routers");
+
+$locations = pg_query("SELECT count(interface) as num from sensors;");
+$r = @pg_fetch_array($locations);
+echo(" ".$r['num']." Interfaces");
+
+$locations = pg_query("SELECT count(id1) as num from links;");
+$r = @pg_fetch_array($locations);
+echo(" ".$r['num']." Links");
+
+?><BR>
+<a href=# onclick="document.search.submit()" class=text-button>Search</a> &nbsp <INPUT name=search size=50 value="<?=$_GET['search']?>"><br>
+<a href=# onclick="window.open('sensors.php', 'sensors')" class=text-button>Usage Reports</a>
+<a href=# onclick="window.open('failures.php', 'failures')" class=text-button>Failure Report</a>
+<a href=# onclick="window.open('uptime.php', 'uptime')" class=text-button>Uptime Report</a>
+<a href=# onclick="window.open('manage/manage.php', 'manage')" class=text-button>Management</a>
+<a href=<?=$_SERVER['PHP_SELF']?> class=text-button>All Towers</a>
+<?
+$locations = pg_query("SELECT * from groups");
+                                                                                                                                               
+while ($r = @pg_fetch_array($locations))
+    {
+	echo("<a href=".$_SERVER['PHP_SELF']."?group_id=".$r['group_id']." class=text-button color=".$r['color'].">".$r['name']."</a> ");
+	}
+?>
+
+
+<center><div id="map" style="width: 1024px; height: 600px"></div>
+</body>
+</html>

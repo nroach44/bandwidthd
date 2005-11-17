@@ -76,8 +76,8 @@ if (isset($_GET['ip']))
 else
 	exit(1);
 
-if (isset($_GET['sensor_name']))
-	$sensor_name = $_GET['sensor_name'];
+if (isset($_GET['sensor_id']))
+	$sensor_id = $_GET['sensor_id'];
 else
 	exit(1);
 
@@ -112,7 +112,7 @@ $a_ftp = array();
 $a_http = array();
 $a_p2p = array();
 
-$sql = "select *, extract(epoch from timestamp) as ts from sensors, $table where sensors.sensor_id = ".$table.".sensor_id and ip <<= '$ip' and sensor_name = '$sensor_name' and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime order by ip;";
+$sql = "select *, extract(epoch from timestamp) as ts from $table where ip <<= '$ip' and sensor_id = '$sensor_id' and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::abstime order by ip;";
 //echo $sql."<br>"; exit(1);
 $result = pg_query($sql);
 
@@ -137,6 +137,7 @@ while ($row = pg_fetch_array($result))
 	if ($row['total']/$row['sample_duration'] > $SentPeak)
 		$SentPeak = $row['total']/$row['sample_duration'];
 	$TotalSent += $row['total'];
+	$TotalPackets += $row['packet_count'];
 	$total[$xint] += $row['total']/$row['sample_duration'];
 	$icmp[$xint] += $row['icmp']/$row['sample_duration'];
 	$udp[$xint] += $row['udp']/$row['sample_duration'];
@@ -164,12 +165,20 @@ $YMax += $YMax*0.05;    // Add an extra 5%
 if (isset($yscale))
     $YMax = $yscale/8;
 
-// Avoid divide by zero
-if ($YMax == 0)
-	$YMax = 1;
-
 // Plot the data
 header("Content-type: image/png");
+
+// Not enough data to graph
+if ($YMax <= 1.1)
+	{
+	$im = imagecreate($width, 20);
+	$white = imagecolorallocate($im, 255, 255, 255);
+	$black  = ImageColorAllocate($im, 0, 0, 0);
+	ImageString($im, 2, $width/2,  0, "No Data", $black);
+	imagepng($im);
+	imagedestroy($im);
+	exit(0);
+	}
 
 $im = imagecreate($width, $height);
 $white = imagecolorallocate($im, 255, 255, 255);
@@ -224,11 +233,11 @@ for($Counter=XOFFSET+1; $Counter < $width; $Counter++)
 
 // Margin Text
 if ($SentPeak < 1024/8)
-	$txtPeakSendRate = sprintf("Peak Rate: %.1f KBits/sec", $SentPeak*8);
+	$txtPeakSendRate = sprintf("Peak: %.1f KBits/sec", $SentPeak*8);
 else if ($SentPeak < (1024*1024)/8)
-    $txtPeakSendRate = sprintf("Peak Rate: %.1f MBits/sec", ($SentPeak*8.0)/1024.0);
+    $txtPeakSendRate = sprintf("Peak: %.1f MBits/sec", ($SentPeak*8.0)/1024.0);
 else 
-	$txtPeakSendRate = sprintf("Peak Rate: %.1f GBits/sec", ($SentPeak*8.0)/(1024.0*1024.0));
+	$txtPeakSendRate = sprintf("Peak: %.1f GBits/sec", ($SentPeak*8.0)/(1024.0*1024.0));
                                                                                                                              
 if ($TotalSent < 1024)
 	$txtTotalSent = sprintf("Total %.1f KBytes", $TotalSent);
@@ -236,9 +245,12 @@ else if ($TotalSent < 1024*1024)
 	$txtTotalSent = sprintf("Total %.1f MBytes", $TotalSent/1024.0);
 else 
 	$txtTotalSent = sprintf("Total %.1f GBytes", $TotalSent/(1024.0*1024.0));
+
+$txtPacketsPerMtu = sprintf("%.1f Packets/MTU", $TotalPackets/(($TotalSent*1024)/1500));
                                                                                                                              
 ImageString($im, 2, XOFFSET+5,  $height-20, $txtTotalSent, $black);
-ImageString($im, 2, $width/2+XOFFSET/2,  $height-20, $txtPeakSendRate, $black);
+ImageString($im, 2, ($width-XOFFSET)/3+XOFFSET,  $height-20, $txtPeakSendRate, $black);
+ImageString($im, 2, 2*(($width-XOFFSET)/3)+XOFFSET,  $height-20, $txtPacketsPerMtu, $black);
 
 // Draw X Axis
 
@@ -441,13 +453,18 @@ if ($YMax*8 > 1024*1024*1024*2)
     $Divisor = 1024*1024*1024; // Display in t
     $YLegend = 't';
     }
+
+if ($height/10 > 15)
+	$YMarks = 10;
+else
+	$YMarks = 5;
                                                                                                                              
-$YStep = $YMax/10;
+$YStep = $YMax/$YMarks;
 if ($YStep < 1)
 	$YStep=1;
 $YTic=$YStep;
                                                                                                                              
-while ($YTic <= ($YMax - $YMax/10))
+while ($YTic <= ($YMax - $YMax/$YMarks))
 	{
     $y = ($height-YOFFSET)-(($YTic*($height-YOFFSET))/$YMax);
 	ImageLine($im, XOFFSET, $y, $width, $y, $black);

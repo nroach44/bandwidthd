@@ -3,16 +3,20 @@ prefix = @prefix@
 bindir = @bindir@
 sysconfdir = @sysconfdir@
 localstatedir = @localstatedir@
+extensiondir = @extensiondir@
 
 CC = @CC@
 LDFLAGS = @LDFLAGS@ @LIBS@
-OBS= bandwidthd.o graph.o conf.tab.o conf.l.o
+OBS= bandwidthd.o graph.o conf.tab.o conf.l.o pgsql.o extensions.o
 
 CFLAGS= -Wall @CFLAGS@ @CPPFLAGS@ @DEFS@
 NONWALLCFLAGS= @CFLAGS@ @CPPFLAGS@ @DEFS@
 
-# Debugging stuff
+# Profiling 
 #CFLAGS += -Wall -pg -DPROFILE
+#LDFLAGS += -pg
+
+# Debugging
 #CFLAGS += -Wall -g -DDEBUG 
 
 all: bandwidthd

@@ -29,5 +29,8 @@ pgsql_connect_string	{ return TOKPGSQLCONNECTSTRING; }
 sensor_id				{ return TOKSENSORID; }
 htdocs_dir				{ return TOKHTDOCSDIR; }
 log_dir					{ return TOKLOGDIR; }
+description				{ return TOKDESCRIPTION; }
+management_url			{ return TOKMANAGEMENTURL; }
+extensions				{ return TOKEXTENSIONS; }
 .						{ return TOKJUNK; }
 %%

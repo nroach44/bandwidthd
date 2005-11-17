@@ -1,8 +1,5 @@
 #include "bandwidthd.h"
-
-#ifdef HAVE_LIBPQ
-#include <libpq-fe.h>
-#endif
+#include  <netinet/if_ether.h>
 
 // We must call regular exit to write out profile data, but child forks are supposed to usually
 // call _exit?
@@ -20,14 +17,20 @@
 // ** Global Variables
 // ****************************************************************************************
 
+#define SNAPLEN 100
+
 static pcap_t *pd;
 
 unsigned int GraphIntervalCount = 0;
 unsigned int IpCount = 0;
 unsigned int SubnetCount = 0;
+int IntervalFinished = FALSE;
 time_t IntervalStart;
+time_t ProgramStart;
 int RotateLogs = FALSE;
-    
+int PacketCallbackLock = 0;
+pid_t pidGraphingChild = 0;
+
 struct SubnetData SubnetTable[SUBNET_NUM];
 struct IPData IpTable[IP_NUM];
 
@@ -36,11 +39,17 @@ int IP_Offset;
 
 struct IPDataStore *IPDataStore = NULL;
 extern int bdconfig_parse(void);
+void BroadcastState(int fd);
 extern FILE *bdconfig_in;
 
 struct config config;
 
+struct Broadcast *Broadcasts = NULL;
+
 pid_t workerchildpids[NR_WORKER_CHILDS];
+
+void ResetTrafficCounters(void);
+void CloseInterval(void);
 
 void signal_handler(int sig)
 	{
@@ -55,7 +64,8 @@ void signal_handler(int sig)
 
 				/* signal children */
 				for (i=0; i < NR_WORKER_CHILDS; i++) 
-					kill(workerchildpids[i], SIGHUP);
+					if (workerchildpids[i]) // this is a child
+						kill(workerchildpids[i], SIGHUP);
 				}
 			break;
 		case SIGTERM:
@@ -65,7 +75,8 @@ void signal_handler(int sig)
 
 				/* send term signal to children */
 				for (i=0; i < NR_WORKER_CHILDS; i++) 
-					kill(workerchildpids[i], SIGTERM);
+					if (workerchildpids[i])
+						kill(workerchildpids[i], SIGTERM);
 				}
 			// TODO: Might want to make sure we're not in the middle of wrighting out a log file
 			exit(0);
@@ -112,7 +123,7 @@ void bd_CollectingData()
 		}
 	}
 
-int WriteOutWebpages(long int timestamp)
+pid_t WriteOutWebpages(long int timestamp)
 {
 	struct IPDataStore *DataStore = IPDataStore;
 	struct SummaryData **SummaryData;
@@ -121,7 +132,8 @@ int WriteOutWebpages(long int timestamp)
 	int Counter;
 
 	/* Did we catch any packets since last time? */
-	if (!DataStore) return -1;
+	if (!DataStore) 
+		return -2;
 
 	// break off from the main line so we don't miss any packets while we graph
 	graphpid = fork();
@@ -165,11 +177,11 @@ int WriteOutWebpages(long int timestamp)
 
 		case -1:
 			syslog(LOG_ERR, "Forking grapher child failed!");
-			return -2;
+			return -1;
 		break;
 
 		default: /* parent + successful fork, assume graph success */
-			return 0;
+			return(graphpid);
 		break;
 	}
 }
@@ -246,6 +258,14 @@ void PrintHelp(void)
 	exit(0);
 	}
 
+static void handle_interval(int signal)
+	{
+	if (!PacketCallbackLock)
+		CloseInterval();
+	else // Set flag to have main loop close interval
+		IntervalFinished = TRUE;
+	}
+
 int main(int argc, char **argv)
     {
     struct bpf_program fcode;
@@ -264,6 +284,12 @@ int main(int argc, char **argv)
 
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
+
+	ProgramStart = time(NULL);
+
+	// Init worker child pids to zero so we don't kill random things when we shut down
+	for (Counter = 0; Counter < NR_WORKER_CHILDS; Counter++)
+		workerchildpids[Counter] = 0;
 
 	for(Counter = 1; Counter < argc; Counter++)
 		{
@@ -295,17 +321,21 @@ int main(int argc, char **argv)
 		}
 
 	config.dev = NULL;
-	config.filter = "ip";
+	config.description = "No Description";
+	config.management_url = "https://127.0.0.1";
+	config.filter = "ip or ether proto 1537";
+	//config.filter = "ip";
 	config.skip_intervals = CONFIG_GRAPHINTERVALS;
 	config.graph_cutoff = CONFIG_GRAPHCUTOFF;
 	config.promisc = TRUE;
+	config.extensions = FALSE;
 	config.graph = TRUE;
 	config.output_cdf = FALSE;
 	config.recover_cdf = FALSE;
 	config.meta_refresh = CONFIG_METAREFRESH;
 	config.output_database = FALSE;
 	config.db_connect_string = NULL;
-	config.sensor_id = "unset";  
+	config.sensor_name = "unset";  
 	config.log_dir = LOG_DIR;
 	config.htdocs_dir = HTDOCS_DIR;
 
@@ -421,12 +451,12 @@ int main(int argc, char **argv)
     IntervalStart = time(NULL);
 
 	syslog(LOG_INFO, "Opening %s", config.dev);	
-	pd = pcap_open_live(config.dev, 100, config.promisc, 1000, Error);
-        if (pd == NULL) 
-			{
-			syslog(LOG_ERR, "%s", Error);
-			exit(0);
-			}
+	pd = pcap_open_live(config.dev, SNAPLEN, config.promisc, 1000, Error);
+    if (pd == NULL) 
+		{
+		syslog(LOG_ERR, "%s", Error);
+		exit(0);
+		}
 
     if (pcap_compile(pd, &fcode, config.filter, 1, 0) < 0)
 		{
@@ -483,23 +513,147 @@ int main(int argc, char **argv)
 	if (IPDataStore)  // If there is data in the datastore draw some initial graphs
 		{
 		syslog(LOG_INFO, "Drawing initial graphs");
-		WriteOutWebpages(IntervalStart+config.interval);
+		pidGraphingChild = WriteOutWebpages(IntervalStart+config.interval);
 		}
 
-    if (pcap_loop(pd, -1, PacketCallback, pcap_userdata) < 0) {
-        syslog(LOG_ERR, "Bandwidthd: pcap_loop: %s",  pcap_geterr(pd));
-        exit(1);
-        }
+	ResetTrafficCounters();
+	// This is also set in CloseInterval because it gets overwritten in some commit modules
+	signal(SIGALRM, handle_interval);
+	alarm(config.interval);
+	nice(1);
+	while (1)
+		{
+		// Bookeeping
+	    if (IntervalFinished)  // Then write out this intervals data and possibly kick off the grapher
+			CloseInterval();
+
+		// Process 1 buffer full of data
+    	if (pcap_dispatch(pd, -1, PacketCallback, pcap_userdata) == -1) 
+			{
+        	syslog(LOG_ERR, "Bandwidthd: pcap_dispatch: %s",  pcap_geterr(pd));
+        	exit(1);
+        	}
+		}
 
     pcap_close(pd);
     exit(0);        
     }
    
+void CloseInterval(void)
+    {
+	time_t current_time;
+
+#ifdef PROFILE
+	// Exit and write out profiling information before we commit the data
+	exit(0);
+#endif
+	current_time = time(NULL);
+
+	// Sanity check for time getting set forward
+	if ((current_time > IntervalStart+(config.interval*100)) || (current_time < IntervalStart-(config.interval*100)))
+		{
+		IntervalStart = current_time-config.interval;
+		ProgramStart = current_time;	
+		}
+
+    GraphIntervalCount++;
+    CommitData(IntervalStart+config.interval);
+	BroadcastState(pcap_fileno(pd));  
+	ResetTrafficCounters();
+	// Make sure the signal hasn't been overwritten by one of our CommitData modules
+	// pgsql module does overwrite it
+    signal(SIGALRM, handle_interval);
+	alarm(config.interval);
+    }
+
+// Write an ethernet packet describing us out the given socket
+void BroadcastState(int fd)
+	{
+	char buf[SNAPLEN];
+	char    enet_broadcast[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	struct ether_header *eptr;
+
+	if (DataLink != DLT_EN10MB)
+		return;
+
+	if ((14+strlen(config.sensor_name)+strlen(config.dev)) > SNAPLEN)
+		{
+		syslog(LOG_ERR, "Sensor and device name too long for broadcast");
+		return;
+		}
+
+	bzero(buf, sizeof(buf));
+    eptr = (struct ether_header *) buf;         /* start of 16-byte Ethernet header */
+
+    // Always broadcast
+    memcpy(&buf[0], enet_broadcast, 6);
+    memcpy(&buf[6], enet_broadcast, 6); // Would rather use our own mac address
+
+	eptr->ether_type = htons(1537);	// Random packet type we'll use for bandwidthd	
+	
+	memcpy(buf+14, config.sensor_name, strlen(config.sensor_name)+1);
+	memcpy(buf+14+strlen(config.sensor_name)+1, config.dev, strlen(config.dev)+1);
+
+    if (write(fd, buf, SNAPLEN) != SNAPLEN)
+    	syslog(LOG_ERR, "Write error during bandwidthd broadcast");
+	}
+
+void ParseBroadcast(const u_char *in)
+	{
+	char *p = (char *)in+14; // Skip ethernet header
+	struct Broadcast *bc;
+	struct Broadcast *bc2;
+	char *sensor_name;
+	char *interface;
+
+	sensor_name = p;
+	interface = p+strlen(p)+1;
+
+	// Sanity check
+	if (strlen(sensor_name) > SNAPLEN || strlen(interface) > SNAPLEN)
+		{
+		syslog(LOG_ERR, "Bandwidthd broadcast packet failed sanity check, discarding");
+		return;
+		}
+
+	if ((!strcmp(sensor_name, config.sensor_name)) && (!strcmp(interface, config.dev)))
+		return; // Our own packet
+
+	for (bc = Broadcasts; bc; bc = bc->next)
+		{
+		if ((!strcmp(sensor_name, bc->sensor_name)) && (!strcmp(interface, bc->interface)))
+			{
+			// Found this link
+			bc->received = time(NULL); 
+			return;
+			}
+		}
+
+	bc2 = malloc(sizeof(struct Broadcast));
+	bc2->sensor_name = strdup(sensor_name);
+	bc2->interface = strdup(interface); 
+	bc2->received = time(NULL);
+	bc2->next = NULL;
+				
+	if (Broadcasts == NULL)
+		{
+		Broadcasts = bc2;
+		return;
+		}
+	else
+		{
+		for (bc = Broadcasts; bc->next; bc = bc->next);
+		bc->next = bc2;
+		return;
+		}
+	}
+
 void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
     {
     unsigned int Counter;
 
     u_int caplen = h->caplen;
+	struct ether_header *eptr;
     const struct ip *ip;
 
     uint32_t srcip;
@@ -507,13 +661,12 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 
     struct IPData *ptrIPData;
 
-    if (h->ts.tv_sec > IntervalStart + config.interval)  // Then write out this intervals data and possibly kick off the grapher
-        {
-        GraphIntervalCount++;
-        CommitData(IntervalStart+config.interval);
-		IpCount = 0;
-        IntervalStart=h->ts.tv_sec;
-        }
+	int AlreadyTotaled = FALSE;
+	PacketCallbackLock = TRUE;
+
+	eptr = (struct ether_header *) p;
+	if (eptr->ether_type == htons(1537))
+		ParseBroadcast(p);
 
     caplen -= IP_Offset;  // We're only measuring ip size, so pull off the ethernet header
     p += IP_Offset; // Move the pointer past the datalink header
@@ -531,28 +684,35 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		// Packets from a monitored subnet to a monitored subnet will be
 		// credited to both ip's
 
+		// Totals are checked for first to speed up FindIp in the total case
+		// That way the 0 entry is always first in the FindIp table
         if (SubnetTable[Counter].ip == (srcip & SubnetTable[Counter].mask))
             {
-            ptrIPData = FindIp(srcip);  // Return or create this ip's data structure
-			if (ptrIPData)
-	            Credit(&(ptrIPData->Send), ip);
+			if (!AlreadyTotaled)
+				{
+            	Credit(&(IpTable[0].Send), ip);
+				AlreadyTotaled = TRUE;
+				}
 
-            ptrIPData = FindIp(0);  // Totals
+            ptrIPData = FindIp(srcip);  // Return or create this ip's data structure
 			if (ptrIPData)
 	            Credit(&(ptrIPData->Send), ip);
             }
     
         if (SubnetTable[Counter].ip == (dstip & SubnetTable[Counter].mask))
             {
-            ptrIPData = FindIp(dstip);
-    		if (ptrIPData)
-		        Credit(&(ptrIPData->Receive), ip);
+			if (!AlreadyTotaled)
+				{
+		        Credit(&(IpTable[0].Receive), ip);
+				AlreadyTotaled = TRUE;
+				}
 
-            ptrIPData = FindIp(0);
+            ptrIPData = FindIp(dstip);
     		if (ptrIPData)
 		        Credit(&(ptrIPData->Receive), ip);
             }                        
         }
+	PacketCallbackLock = FALSE;
     }
 
 
@@ -610,11 +770,13 @@ inline void Credit(struct Statistics *Stats, const struct ip *ip)
     {
     unsigned long size;
     const struct tcphdr *tcp;
-    uint16_t sport, dport;
+    uint16_t port;
+	int Counter;
 
     size = ntohs(ip->ip_len);
 
     Stats->total += size;
+	Stats->packet_count++;
     
     switch(ip->ip_p)
         {
@@ -622,42 +784,51 @@ inline void Credit(struct Statistics *Stats, const struct ip *ip)
             tcp = (struct tcphdr *)(ip+1);
 			tcp = (struct tcphdr *) ( ((char *)tcp) + ((ip->ip_hl-5)*4) ); // Compensate for IP Options
             Stats->tcp += size;
-            sport = ntohs(tcp->TCPHDR_SPORT);
-            dport = ntohs(tcp->TCPHDR_DPORT);			
-            if (sport == 80 || dport == 80 || sport == 443 || dport == 443)
-                Stats->http += size;
-	
-			if (sport == 20 || dport == 20 || sport == 21 || dport == 21)
-				Stats->ftp += size;
 
-            if (sport == 1044|| dport == 1044||		// Direct File Express
-				sport == 1045|| dport == 1045|| 	// ''  <- Dito Marks
-                sport == 1214|| dport == 1214||		// Grokster, Kaza, Morpheus
-				sport == 4661|| dport == 4661||		// EDonkey 2000
-				sport == 4662|| dport == 4662||     // ''
-				sport == 4665|| dport == 4665||     // ''
-				sport == 5190|| dport == 5190||		// Song Spy
-				sport == 5500|| dport == 5500||		// Hotline Connect
-				sport == 5501|| dport == 5501||		// ''
-				sport == 5502|| dport == 5502||		// ''
-				sport == 5503|| dport == 5503||		// ''
-				sport == 6346|| dport == 6346||		// Gnutella Engine
-				sport == 6347|| dport == 6347||		// ''
-				sport == 6666|| dport == 6666||		// Yoink
-				sport == 6667|| dport == 6667||		// ''
-				sport == 7788|| dport == 7788||		// Budy Share
-				sport == 8888|| dport == 8888||		// AudioGnome, OpenNap, Swaptor
-				sport == 8889|| dport == 8889||		// AudioGnome, OpenNap
-				sport == 28864|| dport == 28864||	// hotComm				
-				sport == 28865|| dport == 28865)	// hotComm
-                Stats->p2p += size;
-            break;
+			// This is a wierd way to do this, I know, but the old "if/then" structure burned alot more CPU
+			for (port = ntohs(tcp->TCPHDR_DPORT), Counter=2 ; Counter ; port = ntohs(tcp->TCPHDR_SPORT), Counter--)
+				{
+				switch(port)
+					{
+					case 80:
+					case 443:
+						Stats->http += size;
+						return;
+					case 20:
+					case 21:
+						Stats->ftp += size;
+						return;					
+					case 1044: 	// Direct File Express
+					case 1045:	// ''  <- Dito Marks
+					case 1214:	// Grokster, Kaza, Morpheus
+					case 4661:  // EDonkey 2000
+					case 4662:  // ''
+					case 4665:  // ''
+					case 5190:  // Song Spy
+					case 5500:  // Hotline Connect
+					case 5501:  // ''
+					case 5502:  // ''
+					case 5503:  // ''
+					case 6346:  // Gnutella Engine
+					case 6347:  // ''
+					case 6666:  // Yoink
+					case 6667:  // ''
+					case 7788:  // Budy Share
+					case 8888:  // AudioGnome, OpenNap, Swaptor
+					case 8889:  // AudioGnome, OpenNap
+					case 28864: // hotComm				
+					case 28865: // hotComm
+						Stats->p2p += size;
+						return;	
+					}
+				}
+           	return;
         case 17:
             Stats->udp += size;
-            break;
+            return;
         case 1: 
             Stats->icmp += size;
-            break;
+            return;
         }
     }
 
@@ -708,338 +879,10 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 		}
 	}
 
-#ifdef HAVE_LIBPQ
-// Check that tables exist and create them if not
-PGconn *CheckPgsqlTables(PGconn *conn)
-	{
-	PGresult   *res;
-	
-    res = PQexec(conn, "select tablename from pg_tables where tablename='sensors';");
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK)
-        {
-        syslog(LOG_ERR, "Postresql Select failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-        PQfinish(conn);
-        return(NULL);
-        }
-
-    if (PQntuples(res) != 1)
-		{
-		PQclear(res);
-		res = PQexec(conn,  "CREATE TABLE bd_rx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp); create index bd_rx_log_sensor_id_timestamp_idx on bd_rx_log(sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
-		
-		res = PQexec(conn, "CREATE TABLE bd_tx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_tx_log_sensor_id_ip_timestamp_idx on bd_tx_log (sensor_id, ip, timestamp); create index bd_tx_log_sensor_id_timestamp_idx on bd_tx_log(sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
-
-		res = PQexec(conn, "CREATE TABLE bd_rx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_rx_total_log_sensor_id_timestamp_ip_idx on bd_rx_total_log (sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
-
-		res = PQexec(conn, "CREATE TABLE bd_tx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_tx_total_log_sensor_id_timestamp_ip_idx on bd_tx_total_log (sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
-
-		res = PQexec(conn, "CREATE TABLE sensors ( sensor_id serial PRIMARY KEY, sensor_name varchar, last_connection timestamp with time zone );");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
-		}
-	else
-		PQclear(res);
-	
-	return(conn);
-	}
-#endif
-
-void StoreIPDataInPostgresql(struct IPData IncData[])
-	{
-#ifdef HAVE_LIBPQ
-	struct IPData *IPData;
-	unsigned int Counter;
-	struct Statistics *Stats;
-    PGresult   *res;
-	static PGconn *conn = NULL;
-	static char sensor_id[50];
-	const char *paramValues[10];
-	char *sql1; 
-	char *sql2;
-	char Values[10][50];
-
-	if (!config.output_database == DB_PGSQL)
-		return;
-
-	paramValues[0] = Values[0];
-	paramValues[1] = Values[1];
-	paramValues[2] = Values[2];
-	paramValues[3] = Values[3];	
-	paramValues[4] = Values[4];
-	paramValues[5] = Values[5];
-	paramValues[6] = Values[6];
-	paramValues[7] = Values[7];
-	paramValues[8] = Values[8];
-	paramValues[9] = Values[9];
-
-	// ************ Inititialize the db if it's not already
-	if (!conn)
-		{
-		/* Connect to the database */
-    	conn = PQconnectdb(config.db_connect_string);
-
-	    /* Check to see that the backend connection was successfully made */
-    	if (PQstatus(conn) != CONNECTION_OK)
-        	{
-	       	syslog(LOG_ERR, "Connection to database '%s' failed: %s", config.db_connect_string, PQerrorMessage(conn));
-    	    PQfinish(conn);
-        	conn = NULL;
-	        return;
-    	    }
-
-		conn = CheckPgsqlTables(conn);
-		if (!conn)
-			return;
-
-		strncpy(Values[0], config.sensor_id, 50);
-		res = PQexecParams(conn, "select sensor_id from sensors where sensor_name = $1;",
-			1,       /* one param */
-            NULL,    /* let the backend deduce param type */
-   	        paramValues,
-       	    NULL,    /* don't need param lengths since text */
-           	NULL,    /* default to all text params */
-            0);      /* ask for binary results */
-		
-   		if (PQresultStatus(res) != PGRES_TUPLES_OK)
-       		{
-        	syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
-    	    PQclear(res);
-   	    	PQfinish(conn);
-    	    conn = NULL;
-       		return;
-	        }
-
-		if (PQntuples(res))
-			{
-			strncpy(sensor_id, PQgetvalue(res, 0, 0), 50);
-			PQclear(res);
-			}
-		else
-			{
-		    res = PQexec(conn, "select nextval('sensors_sensor_id_seq'::Text);");
-	    	if (PQresultStatus(res) != PGRES_TUPLES_OK)
-    	    	{
-		        syslog(LOG_ERR, "Postresql select failed: %s", PQerrorMessage(conn));
-        		PQclear(res);
-		        PQfinish(conn);
-        		conn = NULL;
-        		return;
-		        }
-
-			strncpy(sensor_id, PQgetvalue(res, 0, 0), 50);
-		    PQclear(res);
-
-			strncpy(Values[1], sensor_id, 50);
-			// Insert new sensor id
-			res = PQexecParams(conn, "insert into sensors (sensor_name, last_connection, sensor_id) VALUES ($1, now(), $2);",
-				2,       /* two param */
-    	        NULL,    /* let the backend deduce param type */
-   	    	    paramValues,
-       	    	NULL,    /* don't need param lengths since text */
-				NULL,    /* default to all text params */
-            	0);      /* ask for binary results */
-
-    		if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        		{
-	        	syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
-	    	    PQclear(res);
-    	    	PQfinish(conn);
-	    	    conn = NULL;
-        		return;
-		        }
-			PQclear(res);
-			}	
-		}
-
-
-	// Begin transaction
-
-	// **** Perform inserts
-	res = PQexecParams(conn, "BEGIN;",
-			0,       /* zero param */
-    	    NULL,    /* let the backend deduce param type */
-   	    	NULL,
-	    	NULL,    /* don't need param lengths since text */
-			NULL,    /* default to all text params */
-       		0);      /* ask for binary results */
-
- 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    	{
-	    syslog(LOG_ERR, "Postresql BEGIN failed: %s", PQerrorMessage(conn));
-	    PQclear(res);
-    	PQfinish(conn);
-	    conn = NULL;
-        return;
-		}							
-	PQclear(res);
-
-	strncpy(Values[0], sensor_id, 50);
-
-	res = PQexecParams(conn, "update sensors set last_connection = now() where sensor_id = $1;",
-			1,       /* one param */
-    	    NULL,    /* let the backend deduce param type */
-   	    	paramValues,
-	    	NULL,    /* don't need param lengths since text */
-			NULL,    /* default to all text params */
-       		0);      /* ask for binary results */
-
- 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    	{
-	    syslog(LOG_ERR, "Postresql UPDATE failed: %s", PQerrorMessage(conn));
-	    PQclear(res);
-    	PQfinish(conn);
-	    conn = NULL;
-        return;
-		}							
-	PQclear(res);
-
-	Values[0][49] = '\0';
-	snprintf(Values[1], 50, "%llu", config.interval);
-	for (Counter=0; Counter < IpCount; Counter++)
-		{
-        IPData = &IncData[Counter];
-
-		if (IPData->ip == 0)
-			{
-			// This optimization allows us to quickly draw totals graphs for a sensor
-			sql1 = "INSERT INTO bd_tx_total_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);";
-			sql2 = "INSERT INTO bd_rx_total_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);";
-			}
-		else
-			{
-			sql1 = "INSERT INTO bd_tx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);";
-			sql2 = "INSERT INTO bd_rx_log (sensor_id, sample_duration, ip, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);"; 
-			}
-
-        HostIp2CharIp(IPData->ip, Values[2]);
-
-		Stats = &(IPData->Send);
-		if (Stats->total > 512) // Don't log empty sets
-			{
-			// Log data in kilobytes
-			snprintf(Values[3], 50, "%llu", (long long unsigned int)((((double)Stats->total)/1024.0) + 0.5));
-			snprintf(Values[4], 50, "%llu", (long long unsigned int)((((double)Stats->icmp)/1024.0) + 0.5));
-			snprintf(Values[5], 50, "%llu", (long long unsigned int)((((double)Stats->udp)/1024.0) + 0.5));
-			snprintf(Values[6], 50, "%llu", (long long unsigned int)((((double)Stats->tcp)/1024.0) + 0.5));
-			snprintf(Values[7], 50, "%llu", (long long unsigned int)((((double)Stats->ftp)/1024.0) + 0.5));
-			snprintf(Values[8], 50, "%llu", (long long unsigned int)((((double)Stats->http)/1024.0) + 0.5));
-			snprintf(Values[9], 50, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
-
-			res = PQexecParams(conn, sql1,
-				10,       /* nine param */
-	            NULL,    /* let the backend deduce param type */
-    	        paramValues,
-        	    NULL,    /* don't need param lengths since text */
-            	NULL,    /* default to all text params */
-	            1);      /* ask for binary results */
-
-    		if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        		{
-	        	syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
-	    	    PQclear(res);
-    	    	PQfinish(conn);
-	    	    conn = NULL;
-        		return;
-		        }
-			PQclear(res);
-			}
-		Stats = &(IPData->Receive);
-		if (Stats->total > 512) // Don't log empty sets
-			{
-			snprintf(Values[3], 50, "%llu", (long long unsigned int)((((double)Stats->total)/1024.0) + 0.5));
-			snprintf(Values[4], 50, "%llu", (long long unsigned int)((((double)Stats->icmp)/1024.0) + 0.5));
-			snprintf(Values[5], 50, "%llu", (long long unsigned int)((((double)Stats->udp)/1024.0) + 0.5));
-			snprintf(Values[6], 50, "%llu", (long long unsigned int)((((double)Stats->tcp)/1024.0) + 0.5));
-			snprintf(Values[7], 50, "%llu", (long long unsigned int)((((double)Stats->ftp)/1024.0) + 0.5));
-			snprintf(Values[8], 50, "%llu", (long long unsigned int)((((double)Stats->http)/1024.0) + 0.5));
-			snprintf(Values[9], 50, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
-
-			res = PQexecParams(conn, sql2,
-				10,       /* seven param */
-            	NULL,    /* let the backend deduce param type */
-	            paramValues,
-    	        NULL,    /* don't need param lengths since text */
-        	    NULL,    /* default to all text params */
-            	1);      /* ask for binary results */
-
-	    	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    	    	{
-	    	    syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
-    	    	PQclear(res);
-	        	PQfinish(conn);
-		        conn = NULL;
-        		return;
-	        	}
-			PQclear(res);
-			}		
-		}
-	// Commit transaction
-	res = PQexecParams(conn, "COMMIT;",
-			0,       /* zero param */
-    	    NULL,    /* let the backend deduce param type */
-   	    	NULL,
-	    	NULL,    /* don't need param lengths since text */
-			NULL,    /* default to all text params */
-       		0);      /* ask for binary results */
-
- 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    	{
-	    syslog(LOG_ERR, "Postresql COMMIT failed: %s", PQerrorMessage(conn));
-	    PQclear(res);
-    	PQfinish(conn);
-	    conn = NULL;
-        return;
-		}							
-	PQclear(res);
-#else
-	syslog(LOG_ERR, "Postgresql logging selected but postgresql support is not compiled into binary.  Please check the documentation in README, distributed with this software.");
-#endif
-	}
-
-void StoreIPDataInDatabase(struct IPData IncData[])
+void StoreIPDataInDatabase(struct IPData IncData[], struct extensions *extension_data)
 	{
 	if (config.output_database == DB_PGSQL)
-		StoreIPDataInPostgresql(IncData);
+		pgsqlStoreIPData(IncData, extension_data);
 	}
 
 void StoreIPDataInCDF(struct IPData IncData[])
@@ -1162,20 +1005,29 @@ void StoreIPDataInRam(struct IPData IncData[])
 
 void CommitData(time_t timestamp)
     {
-	static int MayGraph = TRUE;
+	int MayGraph = FALSE;
     unsigned int Counter;
 	struct stat StatBuf;
 	char logname1[MAX_FILENAME];
 	char logname2[MAX_FILENAME];
 	int offset;
+	struct extensions *extension_data;
+
+
 	// Set the timestamps
 	for (Counter=0; Counter < IpCount; Counter++)
         IpTable[Counter].timestamp = timestamp;
 
+	// Call extensions
+	if (config.extensions)
+		extension_data = execute_extensions();
+	else
+		extension_data = NULL;
+
 	// Output modules
 	// Only call this from first thread
 	if (config.output_database && config.tag == '1')
-		StoreIPDataInDatabase(IpTable);
+		StoreIPDataInDatabase(IpTable, extension_data);
 
 	if (config.output_cdf)
 		{
@@ -1218,24 +1070,19 @@ void CommitData(time_t timestamp)
 		{
 		StoreIPDataInRam(IpTable);
 
-		// Reap a couple zombies
-		if (waitpid(-1, NULL, WNOHANG))  // A child was reaped
-			MayGraph = TRUE;
+		// If there is no child to wait on or child returned or waitpid produced an error
+		if (pidGraphingChild < 1 || waitpid(pidGraphingChild, NULL, WNOHANG))
+			MayGraph = TRUE;				
 
 		if (GraphIntervalCount%config.skip_intervals == 0 && MayGraph)
-			{
-			MayGraph = FALSE;
-			/* If WriteOutWebpages fails, reenable graphing since there won't
-			 * be any children to reap.
-			 */
-			if (WriteOutWebpages(timestamp))
-				MayGraph = TRUE;
-			}
+			pidGraphingChild = WriteOutWebpages(timestamp);
 		else if (GraphIntervalCount%config.skip_intervals == 0)
 			syslog(LOG_INFO, "Previouse graphing run not complete... Skipping current run");
 
 		DropOldData(timestamp);
 		}
+
+	destroy_extension_data(extension_data);
     }
 
 
@@ -1299,6 +1146,15 @@ void RCDF_PositionStream(FILE *cdf)
 	ungetc('\n', cdf); 
 	}
 
+void ResetTrafficCounters(void)
+	{
+	// Set to 1 because "totals" are the 0 slot
+	IpCount = 1;
+    IntervalStart=time(NULL);
+    IntervalFinished = FALSE;
+	memset(IpTable, 0, sizeof(struct IPData)*IP_NUM);
+	}
+
 void RCDF_Load(FILE *cdf)
 	{
     time_t timestamp;
@@ -1320,7 +1176,7 @@ void RCDF_Load(FILE *cdf)
 		if (timestamp != current_timestamp)
 			{ // Dump to datastore
 			StoreIPDataInRam(IpTable);
-			IpCount = 0; // Reset Traffic Counters
+			IpCount = 0;
 			current_timestamp = timestamp;
 			IntervalsRead++;
 			}    		
@@ -1399,8 +1255,6 @@ inline struct IPData *FindIp(uint32_t ipaddr)
        	return(NULL);
         }
 	
-    memset(&IpTable[IpCount], 0, sizeof(struct IPData));
-
     IpTable[IpCount].ip = ipaddr;
     return (&IpTable[IpCount++]);
     }
@@ -1423,8 +1277,8 @@ char inline *HostIp2CharIp(unsigned long ipaddr, char *buffer)
 */
     }
 
-// Add better error checking
 
+// Add better error checking
 int fork2()
     {
     pid_t pid;
