@@ -71,7 +71,7 @@ while ($sensor = @pg_fetch_array($sensors))
 		if ($extension['errors'] != "")
 			echo "<PRE>".$extension['errors']."</PRE>\n";	
 		if ($extension['wireless'] != "")
-			echo "<PRE>".$extension['wireless']."</PRE>\n";
+			echo "<PRE>".preg_replace("/Encryption key:[0-9A-F-]*/", "Encryption key:HIDDEN", $extension['wireless'])."</PRE>\n";
 		echo "Transmit<br><img src=graph.php?ip=0.0.0.0/0&sensor_id=".$interface['sensor_id']."&table=bd_tx_total_log&width=525&height=150><BR>";
 		echo "Receive<BR><img src=graph.php?ip=0.0.0.0/0&sensor_id=".$interface['sensor_id']."&table=bd_rx_total_log&width=525&height=150><BR>";
 		}

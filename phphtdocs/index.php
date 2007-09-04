@@ -150,6 +150,18 @@ function ProcessXml()
 
 function OnLoad() 
 	{
+	if (parseInt(navigator.appVersion)>3) 
+		{
+	 	if (navigator.appName=="Netscape") 
+			{
+			document.getElementById("map").style.height = (window.innerHeight-75)+"px";
+	 		}
+ 		if (navigator.appName.indexOf("Microsoft")!=-1) 
+			{
+			document.getElementById("map").style.height = (document.body.document.documentElement.clientHeight-90)+"px";
+			}
+		}
+	
 	//if (!GBrowserIsCompatible()) 
 	//	return;
 	//var pntDerbyTech = new GPoint(-90.44474244117737, 41.5146750885744);
@@ -178,7 +190,7 @@ function OnLoad()
 	//map.setMapType(G_SATELLITE_TYPE)
 	map.addControl(new GLargeMapControl());
 	map.addControl(new GMapTypeControl());
-	map.centerAndZoom(new GPoint(-90.5832839012146, 40.90443124892882), 9);
+	map.centerAndZoom(new GPoint(<?=ZOOM_LONG?>, <?=ZOOM_LAT?>), <?=ZOOM_LEVEL?>);
 
 	LoadLines();
 
@@ -225,7 +237,7 @@ if (isset($_GET['search']))
 	$locations = pg_query("SELECT id, name, longitude, latitude, count(sensors.sensor_name) from sensors, locations where locations.id = sensors.location and sensor_name ~* '".$_GET['search']."' or name ~* '".$_GET['search']."' group by id, name, longitude, latitude order by count desc limit 1;");
 	while ($r = @pg_fetch_array($locations))
 	    {
-		$Statistics = "window.open(\'location_statistics.php?location_id=".$r['id']."\',\'statistics\',\'scrollbars=yes,height=800,width=550\')"; 
+		$Statistics = "window.open(\'location_statistics.php?location_id=".$r['id']."\',\'statistics\',\'scrollbars=yes,height=900,width=550\')"; 
 		$html = $r['name']."<BR><a href=# onclick=\"$Statistics\">Statistics</a><BR>Management<BR>";
 
 		$sensors = pg_query("select distinct on (sensor_name) sensor_name, management_url from sensors where location = ".$r['id'].";");
@@ -287,6 +299,6 @@ while ($r = @pg_fetch_array($locations))
 ?>
 
 
-<center><div id="map" style="width: 1024px; height: 600px"></div>
+<center><div id="map" style="width: 100%; height: 100px"></div>
 </body>
 </html>

@@ -73,5 +73,37 @@ while ($r = @pg_fetch_array($links))
     }
 ?>
 </table>
-
+<h3>Low Rates</h3>
+</CENTER>
+<?
+/*$res = pg_query("SELECT sensor_name, interface, management_url, signal, wireless from sensors, extension_log 
+	WHERE sensors.sensor_id = extension_log.sensor_id and wireless like '%Frequency:5.%'	
+		and wireless not like '%Bit Rate:0kb/s%' order by signal
+;");*/
+//		and wireless like '%Bit Rate:6Mb/s%'
+//;");
+$res = pg_query("SELECT sensor_name, interface, sensors.sensor_id, management_url, 95+avg(signal) as signal from sensors, extension_log 
+		WHERE sensors.sensor_id = extension_log.sensor_id 
+		and wireless like '%Frequency:5.%' 
+		and wireless not like '%Bit Rate:0kb/s%' 
+		group by sensor_name, interface, sensors.sensor_id, management_url order by signal;
+;");
+if (!$res)
+    echo "<TR><TD>No low rates on record</center>";
+else	
+{
+	echo "<TABLE>";
+	while ($r = @pg_fetch_array($res))
+    	{
+    	echo("<TR><TD><a href=".$r['management_url'].">".$r['sensor_name']."</A><TD>".$r['interface']."<TD>".$r['signal']);
+		$res2 = pg_query("SELECT timestamp, wireless from extension_log where sensor_id = ".$r['sensor_id']." order by timestamp desc limit 3"); 
+		echo("<TR><TD colspan=3><PRE>");
+		while($r2 = @pg_fetch_array($res2))
+			{
+			echo($r2['timestamp']."\n".preg_replace("/Encryption key:[0-9A-F-]+/", "Encryption key:HIDDEN", $r2['wireless']));
+			}
+    	}
+	echo "</TABLE>";
+	}
+?>
 </BODY>

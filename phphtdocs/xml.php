@@ -58,9 +58,9 @@ while ($link = @pg_fetch_array($links))
 			$color = $lnk_colors[0];		
 		elseif ($rate < 1500)
 			$color = $lnk_colors[1];
-		elseif ($rate < 4500)
+		elseif ($rate < 3000)
 			$color = $lnk_colors[2];
-		elseif ($rate < 8000)
+		elseif ($rate < 4500)
 			$color = $lnk_colors[3];
 		else 
 			$color = $lnk_colors[4];

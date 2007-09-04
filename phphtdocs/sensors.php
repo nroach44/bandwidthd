@@ -19,6 +19,8 @@ if (isset($_GET['subnet']) && $_GET['subnet'] != "none")
 if (isset($_GET['limit']) && $_GET['limit'] != "none")
 	$limit = $_GET['limit'];
 
+if (isset($_GET['graphs']))
+	$graphs = $_GET['graphs'];
 
 $db = ConnectDb();
 ?>
@@ -62,6 +64,9 @@ while ($r = pg_fetch_array($result))
 <OPTION value=100 <?=$limit==100?"SELECTED":""?>>100
 <OPTION value=all <?=$limit=="all"?"SELECTED":""?>>All
 </select>
+
+<? if ($graphs != "") $GraphsChecked = "Checked"; else $GraphsChecked = ""; ?>
+<td><input type="checkbox" name="graphs" <?=$GraphsChecked?>>Display Graphs</a>
 
 <td>Subnet Filter:<input name=subnet value="<?=isset($subnet)?$subnet:"0.0.0.0/0"?>"> 
 <input type=submit value="Go">
@@ -129,19 +134,39 @@ order by total desc;";
 
 //echo "</center><pre>$sql</pre><center>"; exit(0);
 pg_query("SET sort_mem TO 30000;");
-$result = pg_query($sql);
+
+pg_send_query($db, $sql);
+
+$query_start = time();
+Echo "<strong>Query In Progress.";
+flush();
+while (pg_connection_busy($db)) {
+	sleep(2);
+    Echo ".";
+    flush();
+    }
+
+echo((time()-$query_start)." seconds </strong>");
+
+$result = pg_get_result($db);
+
 pg_query("set sort_mem to default;");
 
 if ($limit == "all")
 	$limit = pg_num_rows($result);
 
-echo "<table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
+echo "<a name=top><table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
 
 if (!isset($subnet)) // Set this now for total graphs
 	$subnet = "0.0.0.0/0";
 
 // Output Total Line
-echo "<TR><TD><a href=#Total>Total</a><TD>$subnet";
+if ($graphs == "")
+	$url = "<a href=# onclick=\"window.open('details.php?sensor_id=$sensor_id&ip=$subnet','_blank', 'scrollbars=yes,width=930,height=768,resizable=yes,left=20,top=20')\">";
+else
+	$url = "<a href=#Total>";
+
+echo "\n<TR><TD>".$url."Total</a><TD>$subnet";
 foreach (array("total", "sent", "received", "tcp", "udp", "icmp", "http", "p2p", "ftp") as $key)
 	{
 	for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
@@ -157,7 +182,11 @@ echo "\n";
 for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++)
 	{
 	$r = pg_fetch_array($result, $Counter);
-	echo "<tr><td><a href=#".$r['ip'].">";
+	if ($graphs == "")
+		$url = "<a href=# onclick=\"window.open('details.php?sensor_id=$sensor_id&ip=".$r['ip']."','_blank', 'scrollbars=yes,width=930,height=768,resizable=yes,left=20,top=20')\">";
+	else
+		$url = "<a href=#".$r['ip'].">";
+	echo "<tr><td>".$url;
 	echo $r['ip']."<td>".gethostbyaddr($r['ip']);
 	echo "</a>";
 	echo fmtb($r['total']).fmtb($r['sent']).fmtb($r['received']).
@@ -165,6 +194,10 @@ for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++
 		fmtb($r['p2p']).fmtb($r['ftp'])."\n";
 	}
 echo "</table></center>";
+
+// Stop here
+if ($graphs == "")
+	exit();
 
 // Output Total Graph
 for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
@@ -189,7 +222,7 @@ else
 	$total_table = "bd_rx_log";
 echo "Receive:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table><br>";
 echo "<img src=legend.gif><br>\n";
-
+echo "<a href=#top>[Return to Top]</a>";
 
 // Output Other Graphs
 for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++) 
@@ -205,6 +238,7 @@ for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++
 	echo "<img src=legend.gif><br>\n";
 	echo "Receive:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_id=".$sensor_id."&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
 	echo "<img src=legend.gif><br>\n";
+	echo "<a href=#top>[Return to Top]</a>";
 	}
 
 include('footer.php');
