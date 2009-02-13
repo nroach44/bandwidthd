@@ -141,6 +141,7 @@ void PrintTableLine(FILE *stream, struct SummaryData *Data, int Counter)
 	char Buffer4b[50];
 	char Buffer5[50];
 	char Buffer5b[50];
+	char Buffer5c[50];
 	char Buffer6[50];
 	char Buffer7[50];
 	char Buffer8[50];
@@ -156,6 +157,7 @@ void PrintTableLine(FILE *stream, struct SummaryData *Data, int Counter)
 	FormatNum(Data->TotalReceived, Buffer4,  50);
 	FormatNum(Data->FTP, 		   Buffer4b, 50);
 	FormatNum(Data->HTTP,          Buffer5,  50);
+	FormatNum(Data->MAIL,		   Buffer5c, 50);
 	FormatNum(Data->P2P,           Buffer5b, 50);
 	FormatNum(Data->TCP,           Buffer6,  50);
 	FormatNum(Data->UDP,           Buffer7,  50);
@@ -167,7 +169,7 @@ void PrintTableLine(FILE *stream, struct SummaryData *Data, int Counter)
 		fprintf(stream, "<TR bgcolor=lightblue>");
 
 	if (Data->Graph)
-		fprintf(stream, "<TD><a href=\"#%s-%c\">%s</a></TD>%s%s%s%s%s%s%s%s%s</TR>\n",
+		fprintf(stream, "<TD><a href=\"#%s-%c\">%s</a></TD>%s%s%s%s%s%s%s%s%s%s</TR>\n",
 			Buffer1, // Ip
 			config.tag,
 			Buffer1, // Ip
@@ -176,18 +178,20 @@ void PrintTableLine(FILE *stream, struct SummaryData *Data, int Counter)
 			Buffer4, // TotalReceived
 			Buffer4b, // FTP
 			Buffer5, // HTTP
+			Buffer5c, // Mail
 			Buffer5b, // P2P
 			Buffer6, // TCP
 			Buffer7, // UDP
 			Buffer8); // ICMP
 	else
-		fprintf(stream, "<TD>%s</TD>%s%s%s%s%s%s%s%s%s</TR>\n",
+		fprintf(stream, "<TD>%s</TD>%s%s%s%s%s%s%s%s%s%s</TR>\n",
 			Buffer1, // Ip
 			Buffer2, // Total
 			Buffer3, // TotalSent
 			Buffer4, // TotalReceived
 			Buffer4b, // FTP
 			Buffer5, // HTTP
+			Buffer5c, // Mail
 			Buffer5b, // P2P		
 			Buffer6, // TCP
 			Buffer7, // UDP
@@ -464,6 +468,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
     unsigned long long tcp[XWIDTH];
 	unsigned long long ftp[XWIDTH];
     unsigned long long http[XWIDTH];
+	unsigned long long mail[XWIDTH];
     unsigned long long p2p[XWIDTH];
     int Count[XWIDTH];
 
@@ -472,6 +477,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
     unsigned long long udp2[XWIDTH];
     unsigned long long tcp2[XWIDTH];
 	unsigned long long ftp2[XWIDTH];
+	unsigned long long mail2[XWIDTH];
     unsigned long long http2[XWIDTH];
     unsigned long long p2p2[XWIDTH];
 
@@ -482,8 +488,8 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
     char Buffer[30];
     char Buffer2[50];
     
-    int blue, lblue, red, yellow, purple, green, brown, black;
-    int blue2, lblue2, red2, yellow2, purple2, green2, brown2, black2;
+    int blue, lblue, orange, red, yellow, purple, green, brown, black;
+    int blue2, lblue2, orange2, red2, yellow2, purple2, green2, brown2, black2;
 
 	unsigned long long int SentPeak = 0;
 	unsigned long long int ReceivedPeak = 0;
@@ -493,6 +499,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
     green    = gdImageColorAllocate(im, 0, 255, 0);
     blue     = gdImageColorAllocate(im, 0, 0, 255);
 	lblue	 = gdImageColorAllocate(im, 128, 128, 255);
+	orange   = gdImageColorAllocate(im, 255, 128, 0);
     brown    = gdImageColorAllocate(im, 128, 0, 0);
     red      = gdImageColorAllocate(im, 255, 0, 0);
     black 	 = gdImageColorAllocate(im, 0, 0, 0);
@@ -502,6 +509,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
     green2   = gdImageColorAllocate(im2, 0, 255, 0);
     blue2    = gdImageColorAllocate(im2, 0, 0, 255);
 	lblue2	 = gdImageColorAllocate(im2, 128, 128, 255);
+	orange2  = gdImageColorAllocate(im2, 255, 128, 0);
     brown2   = gdImageColorAllocate(im2, 128, 0, 0);
     red2     = gdImageColorAllocate(im2, 255, 0, 0);
     black2   = gdImageColorAllocate(im2, 0, 0, 0);
@@ -521,6 +529,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
     memset(tcp, 0, sizeof(total[0])*XWIDTH);
 	memset(ftp, 0, sizeof(total[0])*XWIDTH);
     memset(http, 0, sizeof(total[0])*XWIDTH);
+	memset(mail, 0, sizeof(total[0])*XWIDTH);
     memset(p2p, 0, sizeof(total[0])*XWIDTH);
 
     memset(total2, 0, sizeof(total[0])*XWIDTH);
@@ -529,6 +538,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
     memset(tcp2, 0, sizeof(total[0])*XWIDTH);
     memset(ftp2, 0, sizeof(total[0])*XWIDTH);
     memset(http2, 0, sizeof(total[0])*XWIDTH);
+	memset(mail2, 0, sizeof(total[0])*XWIDTH);
     memset(p2p2, 0, sizeof(total[0])*XWIDTH);
 
 	// Change this to just run through all the datapoints we have stored in ram
@@ -553,6 +563,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 tcp[xint] += Data[Counter].Send.tcp;
 				ftp[xint] += Data[Counter].Send.ftp;
        	        http[xint] += Data[Counter].Send.http;
+				mail[xint] += Data[Counter].Send.mail;
 				p2p[xint] += Data[Counter].Send.p2p;
 
                 if (Data[Counter].Receive.total > ReceivedPeak)
@@ -563,6 +574,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 tcp2[xint] += Data[Counter].Receive.tcp;
 				ftp2[xint] += Data[Counter].Receive.ftp;
        	        http2[xint] += Data[Counter].Receive.http;
+				mail2[xint] += Data[Counter].Receive.mail;
 				p2p2[xint] += Data[Counter].Receive.p2p;
                 }
             }
@@ -592,6 +604,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
 				SummaryData->TCP += tcp[Counter] + tcp2[Counter];
 				SummaryData->FTP += ftp[Counter] + ftp2[Counter];
 				SummaryData->HTTP += http[Counter] + http2[Counter];
+				SummaryData->MAIL += mail[Counter] + mail2[Counter];
 				SummaryData->P2P += p2p[Counter] + p2p2[Counter];
 				SummaryData->UDP += udp[Counter] + udp2[Counter];
 				SummaryData->ICMP += icmp[Counter] + icmp2[Counter];
@@ -601,6 +614,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 tcp[Counter] /= (Count[Counter]*config.interval);
                 ftp[Counter] /= (Count[Counter]*config.interval);
                 http[Counter] /= (Count[Counter]*config.interval);
+				mail[Counter] /= (Count[Counter]*config.interval);
 				p2p[Counter] /= (Count[Counter]*config.interval);
                 udp[Counter] /= (Count[Counter]*config.interval);
                 icmp[Counter] /= (Count[Counter]*config.interval);
@@ -609,6 +623,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 tcp2[Counter] /= (Count[Counter]*config.interval);
 				ftp2[Counter] /= (Count[Counter]*config.interval);
                 http2[Counter] /= (Count[Counter]*config.interval);
+				mail2[Counter] /= (Count[Counter]*config.interval);
 				p2p2[Counter] /= (Count[Counter]*config.interval);
                 udp2[Counter] /= (Count[Counter]*config.interval);
                 icmp2[Counter] /= (Count[Counter]*config.interval);
@@ -642,6 +657,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 tcp[Counter] = (tcp[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 ftp[Counter] = (ftp[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 http[Counter] = (http[Counter]*(YHEIGHT-YOFFSET))/YMax;
+				mail[Counter] = (mail[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 p2p[Counter] = (p2p[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 udp[Counter] = (udp[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 icmp[Counter] = (icmp[Counter]*(YHEIGHT-YOFFSET))/YMax;
@@ -650,6 +666,7 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 tcp2[Counter] = (tcp2[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 ftp2[Counter] = (ftp2[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 http2[Counter] = (http2[Counter]*(YHEIGHT-YOFFSET))/YMax;
+				mail2[Counter] = (mail2[Counter]*(YHEIGHT-YOFFSET))/YMax;
 				p2p2[Counter] = (p2p2[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 udp2[Counter] = (udp2[Counter]*(YHEIGHT-YOFFSET))/YMax;
                 icmp2[Counter] = (icmp2[Counter]*(YHEIGHT-YOFFSET))/YMax;
@@ -668,9 +685,12 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
 				// Http is stacked on top of p2p
                 http[Counter] += p2p[Counter];
                 http2[Counter] += p2p2[Counter];
-				// Ftp is stacked on top of http
-                ftp[Counter] += http[Counter];
-                ftp2[Counter] += http2[Counter];
+				// Mail is stacked on top of http
+                mail[Counter] += http[Counter];
+                mail2[Counter] += http2[Counter];				
+				// Ftp is stacked on top of mail
+                ftp[Counter] += mail[Counter];
+                ftp2[Counter] += mail2[Counter];
 
                 // Plot them!
 				// Sent
@@ -680,7 +700,8 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - tcp[Counter], Counter, (YHEIGHT-YOFFSET) - udp[Counter] - 1, green);
                 gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - p2p[Counter], Counter, (YHEIGHT-YOFFSET) - udp[Counter] - 1, purple);
                 gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - http[Counter], Counter, (YHEIGHT-YOFFSET) - p2p[Counter] - 1, blue);
-                gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - ftp[Counter], Counter, (YHEIGHT-YOFFSET) - http[Counter] - 1, lblue);
+				gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - mail[Counter], Counter, (YHEIGHT-YOFFSET) - http[Counter] - 1, orange);
+                gdImageLine(im, Counter, (YHEIGHT-YOFFSET) - ftp[Counter], Counter, (YHEIGHT-YOFFSET) - mail[Counter] - 1, lblue);
 								
 				// Receive
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - total2[Counter], Counter, YHEIGHT-YOFFSET-1, yellow2);
@@ -689,9 +710,8 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - tcp2[Counter], Counter, (YHEIGHT-YOFFSET) - udp2[Counter] - 1, green2);
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - p2p2[Counter], Counter, (YHEIGHT-YOFFSET) - udp2[Counter] - 1, purple2);
                 gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - http2[Counter], Counter, (YHEIGHT-YOFFSET) - p2p2[Counter] - 1, blue2);
-                gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - ftp2[Counter], Counter, (YHEIGHT-YOFFSET) - http2[Counter] - 1, lblue2);
-
-
+				gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - mail2[Counter], Counter, (YHEIGHT-YOFFSET) - http2[Counter] - 1, orange);
+                gdImageLine(im2, Counter, (YHEIGHT-YOFFSET) - ftp2[Counter], Counter, (YHEIGHT-YOFFSET) - mail2[Counter] - 1, lblue2);
                 }
             }
 

@@ -790,6 +790,12 @@ inline void Credit(struct Statistics *Stats, const struct ip *ip)
 				{
 				switch(port)
 					{
+					case 110:
+					case 25:
+					case 143:
+					case 587:
+						Stats->mail += size;
+						return;
 					case 80:
 					case 443:
 						Stats->http += size;
@@ -904,9 +910,9 @@ void StoreIPDataInCDF(struct IPData IncData[])
 		HostIp2CharIp(IPData->ip, IPBuffer);
 		fprintf(cdf, "%s,%lu,", IPBuffer, IPData->timestamp);
 		Stats = &(IPData->Send);
-		fprintf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,", Stats->total, Stats->icmp, Stats->udp, Stats->tcp, Stats->ftp, Stats->http, Stats->p2p); 
+		fprintf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu", Stats->total, Stats->icmp, Stats->udp, Stats->tcp, Stats->ftp, Stats->http, Stats->mail, Stats->p2p); 
 		Stats = &(IPData->Receive);
-		fprintf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu\n", Stats->total, Stats->icmp, Stats->udp, Stats->tcp, Stats->ftp, Stats->http, Stats->p2p); 		
+		fprintf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu\n", Stats->total, Stats->icmp, Stats->udp, Stats->tcp, Stats->ftp, Stats->http, Stats->mail, Stats->p2p); 		
 		}
 	fclose(cdf);
 	}
@@ -1184,12 +1190,12 @@ void RCDF_Load(FILE *cdf)
 		ip = FindIp(ntohl(ipaddr.s_addr));
 		ip->timestamp = timestamp;
 
-        if (fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,",
+        if (fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,",
             &ip->Send.total, &ip->Send.icmp, &ip->Send.udp,
-            &ip->Send.tcp, &ip->Send.ftp, &ip->Send.http, &ip->Send.p2p) != 7
-          || fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu",
+            &ip->Send.tcp, &ip->Send.ftp, &ip->Send.http, &ip->Send.mail, &ip->Send.p2p) != 7
+          || fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu",
             &ip->Receive.total, &ip->Receive.icmp, &ip->Receive.udp,
-            &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.p2p) != 7)
+            &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.mail, &ip->Receive.p2p) != 7)
 			goto End_RecoverDataFromCdf;		
 		}
 
@@ -1244,6 +1250,7 @@ void RecoverDataFromCDF(void)
 inline struct IPData *FindIp(uint32_t ipaddr)
     {
     unsigned int Counter;
+	static time_t last_error = 0;
     
     for (Counter=0; Counter < IpCount; Counter++)
         if (IpTable[Counter].ip == ipaddr)
@@ -1251,7 +1258,12 @@ inline struct IPData *FindIp(uint32_t ipaddr)
     
     if (IpCount >= IP_NUM)
         {
-        syslog(LOG_ERR, "IP_NUM is too low, dropping ip....");
+		time_t current_error = time(NULL);
+		if (current_error > last_error + 30)
+			{
+			last_error = current_error;
+	        syslog(LOG_ERR, "Maximum tracked IP's (%d) is too low, some ips will be ignored.  Possible network scan?", IP_NUM);
+			}
        	return(NULL);
         }
 	

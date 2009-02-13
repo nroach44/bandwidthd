@@ -147,6 +147,7 @@ struct Statistics
 
 	unsigned long long ftp;
     unsigned long long http;
+	unsigned long long mail;
 	unsigned long long p2p;
     };
 
@@ -169,7 +170,8 @@ struct SummaryData
     unsigned long long UDP;
     unsigned long long TCP;
 	unsigned long long FTP;
-    unsigned long long HTTP;	
+    unsigned long long HTTP;
+	unsigned long long MAIL;	
 	unsigned long long P2P;
 	};
 

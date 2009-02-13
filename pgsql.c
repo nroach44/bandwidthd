@@ -10,7 +10,7 @@ jmp_buf pgsqljmp;
 
 #ifdef HAVE_LIBPQ
 
-#include <libpq-fe.h>
+#include "postgresql/libpq-fe.h"
 
 #define MAX_PARAM_SIZE 200
 
@@ -32,7 +32,7 @@ PGconn *pgsqlCheckTables(PGconn *conn)
     if (PQntuples(res) != 1)
 		{
 		PQclear(res);
-		res = PQexec(conn,  "CREATE TABLE bd_rx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp); create index bd_rx_log_sensor_id_timestamp_idx on bd_rx_log(sensor_id, timestamp);");
+		res = PQexec(conn,  "CREATE TABLE bd_rx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp); create index bd_rx_log_sensor_id_timestamp_idx on bd_rx_log(sensor_id, timestamp);");
         if (PQresultStatus(res) != PGRES_COMMAND_OK)
             {
             syslog(LOG_ERR, "Postresql create table bd_rx_log failed: %s", PQerrorMessage(conn));
@@ -42,7 +42,7 @@ PGconn *pgsqlCheckTables(PGconn *conn)
             }
         PQclear(res);
 		
-		res = PQexec(conn, "CREATE TABLE bd_tx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_tx_log_sensor_id_ip_timestamp_idx on bd_tx_log (sensor_id, ip, timestamp); create index bd_tx_log_sensor_id_timestamp_idx on bd_tx_log(sensor_id, timestamp);");
+		res = PQexec(conn, "CREATE TABLE bd_tx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_tx_log_sensor_id_ip_timestamp_idx on bd_tx_log (sensor_id, ip, timestamp); create index bd_tx_log_sensor_id_timestamp_idx on bd_tx_log(sensor_id, timestamp);");
         if (PQresultStatus(res) != PGRES_COMMAND_OK)
             {
             syslog(LOG_ERR, "Postresql create table bd_tx_log failed: %s", PQerrorMessage(conn));
@@ -52,7 +52,7 @@ PGconn *pgsqlCheckTables(PGconn *conn)
             }
         PQclear(res);
 
-		res = PQexec(conn, "CREATE TABLE bd_rx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_rx_total_log_sensor_id_timestamp_ip_idx on bd_rx_total_log (sensor_id, timestamp);");
+		res = PQexec(conn, "CREATE TABLE bd_rx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_rx_total_log_sensor_id_timestamp_ip_idx on bd_rx_total_log (sensor_id, timestamp);");
         if (PQresultStatus(res) != PGRES_COMMAND_OK)
             {
             syslog(LOG_ERR, "Postresql create table bd_rx_total_log failed: %s", PQerrorMessage(conn));
@@ -62,7 +62,7 @@ PGconn *pgsqlCheckTables(PGconn *conn)
             }
         PQclear(res);
 
-		res = PQexec(conn, "CREATE TABLE bd_tx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, p2p int); create index bd_tx_total_log_sensor_id_timestamp_ip_idx on bd_tx_total_log (sensor_id, timestamp);");
+		res = PQexec(conn, "CREATE TABLE bd_tx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_tx_total_log_sensor_id_timestamp_ip_idx on bd_tx_total_log (sensor_id, timestamp);");
         if (PQresultStatus(res) != PGRES_COMMAND_OK)
             {
             syslog(LOG_ERR, "Postresql create table bd_tx_total_log failed: %s", PQerrorMessage(conn));
@@ -94,8 +94,69 @@ PGconn *pgsqlCheckTables(PGconn *conn)
 		return(conn);
 		}
 	else
-		{
+		{		
 		PQclear(res);
+
+		// Patch database to include mail column if it doesn't alread exist
+	    res = PQexec(conn, "SELECT table_name, column_name from information_schema.columns where table_name = 'bd_rx_log' and column_name = 'mail';");
+
+    	if (PQresultStatus(res) != PGRES_TUPLES_OK)
+        	{
+	        syslog(LOG_ERR, "Postresql Select failed: %s", PQerrorMessage(conn));
+    	    PQclear(res);
+        	PQfinish(conn);
+	        return(NULL);
+    	    }
+
+	    if (PQntuples(res) != 1)
+			{
+			PQclear(res);
+
+			res = PQexec(conn,  "alter table bd_rx_log add column mail int;");
+    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        	    {
+            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+	            PQclear(res);
+    	        PQfinish(conn);
+        	    return(NULL);
+	            }
+    	    PQclear(res);
+
+			res = PQexec(conn,  "alter table bd_tx_log add column mail int;");
+    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        	    {
+            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+	            PQclear(res);
+    	        PQfinish(conn);
+        	    return(NULL);
+	            }
+    	    PQclear(res);
+
+			res = PQexec(conn,  "alter table bd_rx_total_log add column mail int;");
+    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        	    {
+            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+	            PQclear(res);
+    	        PQfinish(conn);
+        	    return(NULL);
+	            }
+    	    PQclear(res);
+
+			res = PQexec(conn,  "alter table bd_tx_total_log add column mail int;");
+    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        	    {
+            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+	            PQclear(res);
+    	        PQfinish(conn);
+        	    return(NULL);
+	            }
+    	    PQclear(res);
+			}
+		else
+			{
+			PQclear(res);
+			}
+
 		return(conn);
 		}
 	}
@@ -375,7 +436,7 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 	const char *paramValues[22];
 	char *sql1; 
 	char *sql2;
-	char Values[12][MAX_PARAM_SIZE];
+	char Values[13][MAX_PARAM_SIZE];
 
 	if (!config.output_database == DB_PGSQL)
 		return;
@@ -393,6 +454,7 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 	paramValues[9] = Values[9];
 	paramValues[10] = Values[10];
 	paramValues[11] = Values[11];
+	paramValues[12] = Values[12];
 
 	// ************ Inititialize the db if it's not already
 
@@ -524,13 +586,13 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 		if (IPData->ip == 0)
 			{
 			// This optimization allows us to quickly draw totals graphs for a sensor
-			sql1 = "INSERT INTO bd_tx_total_log (sensor_id, timestamp, sample_duration, ip, packet_count,total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);";
-			sql2 = "INSERT INTO bd_rx_total_log (sensor_id, timestamp, sample_duration, ip, packet_count,total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);";
+			sql1 = "INSERT INTO bd_tx_total_log (sensor_id, timestamp, sample_duration, ip, packet_count,total, icmp, udp, tcp, ftp, http, mail, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);";
+			sql2 = "INSERT INTO bd_rx_total_log (sensor_id, timestamp, sample_duration, ip, packet_count,total, icmp, udp, tcp, ftp, http, mail, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);";
 			}
 		else
 			{
-			sql1 = "INSERT INTO bd_tx_log (sensor_id, timestamp, sample_duration, ip, packet_count, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);";
-			sql2 = "INSERT INTO bd_rx_log (sensor_id, timestamp, sample_duration, ip, packet_count, total, icmp, udp, tcp, ftp, http, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);"; 
+			sql1 = "INSERT INTO bd_tx_log (sensor_id, timestamp, sample_duration, ip, packet_count, total, icmp, udp, tcp, ftp, http, mail, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);";
+			sql2 = "INSERT INTO bd_rx_log (sensor_id, timestamp, sample_duration, ip, packet_count, total, icmp, udp, tcp, ftp, http, mail, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);"; 
 			}
 
         HostIp2CharIp(IPData->ip, Values[3]);
@@ -546,10 +608,11 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 			snprintf(Values[8], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->tcp)/1024.0) + 0.5));
 			snprintf(Values[9], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->ftp)/1024.0) + 0.5));
 			snprintf(Values[10], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->http)/1024.0) + 0.5));
-			snprintf(Values[11], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
+			snprintf(Values[11], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->mail)/1024.0) + 0.5));
+			snprintf(Values[12], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
 
 			res = PQexecParams(conn, sql1,
-				12,       
+				13,       
 	            NULL,    /* let the backend deduce param type */
     	        paramValues,
         	    NULL,    /* don't need param lengths since text */
@@ -576,10 +639,11 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 			snprintf(Values[8], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->tcp)/1024.0) + 0.5));
 			snprintf(Values[9], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->ftp)/1024.0) + 0.5));
 			snprintf(Values[10], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->http)/1024.0) + 0.5));
-			snprintf(Values[11], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
+			snprintf(Values[11], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->mail)/1024.0) + 0.5));
+			snprintf(Values[12], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
 
 			res = PQexecParams(conn, sql2,
-				12,       
+				13,       
             	NULL,    /* let the backend deduce param type */
 	            paramValues,
     	        NULL,    /* don't need param lengths since text */

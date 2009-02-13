@@ -11,8 +11,8 @@ function ts2x($ts)
 // If we have multiple IP's in a result set we need to total the average of each IP's samples
 function AverageAndAccumulate()
 	{
-	global $Count, $total, $icmp, $udp, $tcp, $ftp, $http, $p2p, $YMax;
-	global $a_total, $a_icmp, $a_udp, $a_tcp, $a_ftp, $a_http, $a_p2p;
+	global $Count, $total, $icmp, $udp, $tcp, $ftp, $http, $mail, $p2p, $YMax;
+	global $a_total, $a_icmp, $a_udp, $a_tcp, $a_ftp, $a_http, $a_mail, $a_p2p;
 	
 	foreach ($Count as $key => $number)
     	{
@@ -22,6 +22,7 @@ function AverageAndAccumulate()
     	$tcp[$key] /= $number;
     	$ftp[$key] /= $number;
     	$http[$key] /= $number;
+		$mail[$key] /= $number;
     	$p2p[$key] /= $number;
     	}
 
@@ -33,13 +34,14 @@ function AverageAndAccumulate()
 		$a_tcp[$key] += $tcp[$key];
 		$a_ftp[$key] += $ftp[$key];
 		$a_http[$key] += $http[$key];
+		$a_mail[$key] += $mail[$key];
 		$a_p2p[$key] += $p2p[$key];
 
 		if ($a_total[$key] > $YMax)
 			$YMax = $a_total[$key];
 		}
 	
-	unset($GLOBALS['total'], $GLOBALS['icmp'], $GLOBALS['udp'], $GLOBALS['tcp'], $GLOBALS['ftp'], $GLOBALS['http'], $GLOBALS['p2p'], $GLOBALS['Count']);
+	unset($GLOBALS['total'], $GLOBALS['icmp'], $GLOBALS['udp'], $GLOBALS['tcp'], $GLOBALS['ftp'], $GLOBALS['http'], $GLOBALS['mail'], $GLOBALS['p2p'], $GLOBALS['Count']);
 
 	$total = array();
 	$icmp = array();
@@ -47,6 +49,7 @@ function AverageAndAccumulate()
 	$tcp = array();
 	$ftp = array();
 	$http = array();
+	$mail = array();
 	$p2p = array();
 	$Count = array();
 	}
@@ -72,7 +75,11 @@ else
 	$interval = DFLT_INTERVAL;
 
 if (isset($_GET['ip']))
+	{
     $ip = $_GET['ip'];
+	#optionall call using underscore instead of slash to seperate subnet from bits
+	$ip = str_replace("_", "/", $ip);
+	}
 else
 	exit(1);
 
@@ -100,6 +107,7 @@ $udp = array();
 $tcp = array();
 $ftp = array();
 $http = array();
+$mail = array();
 $p2p = array();
 $Count = array();
 
@@ -109,6 +117,7 @@ $a_icmp = array();
 $a_udp = array();
 $a_tcp = array();
 $a_ftp = array();
+$a_http = array();
 $a_http = array();
 $a_p2p = array();
 
@@ -144,6 +153,7 @@ while ($row = pg_fetch_array($result))
 	$tcp[$xint] += $row['tcp']/$row['sample_duration'];
 	$ftp[$xint] += $row['ftp']/$row['sample_duration'];
 	$http[$xint] += $row['http']/$row['sample_duration'];
+	$mail[$xint] += $row['mail']/$row['sample_duration'];
 	$p2p[$xint] += $row['p2p']/$row['sample_duration'];                                                                                                                             
 	}
 
@@ -157,6 +167,7 @@ $udp = $a_udp;
 $tcp = $a_tcp;
 $ftp = $a_ftp;
 $http = $a_http;
+$mail = $a_mail;
 $p2p = $a_p2p;
 
 $YMax += $YMax*0.05;    // Add an extra 5%
@@ -186,6 +197,7 @@ $yellow = ImageColorAllocate($im, 255, 255, 0);
 $purple = ImageColorAllocate($im, 255, 0, 255);
 $green  = ImageColorAllocate($im, 0, 255, 0);
 $blue   = ImageColorAllocate($im, 0, 0, 255);
+$orange = ImageColorAllocate($im, 255, 128, 0);
 $lblue  = ImageColorAllocate($im, 128, 128, 255);
 $brown  = ImageColorAllocate($im, 128, 0, 0);
 $red    = ImageColorAllocate($im, 255, 0, 0);
@@ -200,6 +212,7 @@ for($Counter=XOFFSET+1; $Counter < $width; $Counter++)
 		$tcp[$Counter] = ($tcp[$Counter]*($height-YOFFSET))/$YMax;
         $ftp[$Counter] = ($ftp[$Counter]*($height-YOFFSET))/$YMax;
 		$http[$Counter] = ($http[$Counter]*($height-YOFFSET))/$YMax;
+		$mail[$Counter] = ($mail[$Counter]*($height-YOFFSET))/$YMax;
 		$p2p[$Counter] = ($p2p[$Counter]*($height-YOFFSET))/$YMax;
         $udp[$Counter] = ($udp[$Counter]*($height-YOFFSET))/$YMax;
 		$icmp[$Counter] = ($icmp[$Counter]*($height-YOFFSET))/$YMax;
@@ -214,8 +227,10 @@ for($Counter=XOFFSET+1; $Counter < $width; $Counter++)
 		$p2p[$Counter] += $udp[$Counter];
  		// Http is stacked on top of p2p
 		$http[$Counter] += $p2p[$Counter];
+		// Mail is stacked on top of http
+		$mail[$Counter] += $http[$Counter];
 		// Ftp is stacked on top of http
-        $ftp[$Counter] += $http[$Counter];
+        $ftp[$Counter] += $mail[$Counter];
 
 		// Plot them!
 		//echo "$Counter:".$Counter." (h-y)-t:".($height-YOFFSET) - $total[$Counter]." h-YO-1:".$height-YOFFSET-1;
@@ -225,7 +240,8 @@ for($Counter=XOFFSET+1; $Counter < $width; $Counter++)
         ImageLine($im, $Counter, ($height-YOFFSET) - $tcp[$Counter], $Counter, ($height-YOFFSET) - $udp[$Counter] - 1, $green);
         ImageLine($im, $Counter, ($height-YOFFSET) - $p2p[$Counter], $Counter, ($height-YOFFSET) - $udp[$Counter] - 1, $purple);
         ImageLine($im, $Counter, ($height-YOFFSET) - $http[$Counter], $Counter, ($height-YOFFSET) - $p2p[$Counter] - 1, $blue);
-        ImageLine($im, $Counter, ($height-YOFFSET) - $ftp[$Counter], $Counter, ($height-YOFFSET) - $http[$Counter] - 1, $lblue);
+        ImageLine($im, $Counter, ($height-YOFFSET) - $mail[$Counter], $Counter, ($height-YOFFSET) - $http[$Counter] - 1, $orange);
+        ImageLine($im, $Counter, ($height-YOFFSET) - $ftp[$Counter], $Counter, ($height-YOFFSET) - $mail[$Counter] - 1, $lblue);
 		}
 //	else
 //		echo $Counter." not set<br>";
@@ -233,11 +249,11 @@ for($Counter=XOFFSET+1; $Counter < $width; $Counter++)
 
 // Margin Text
 if ($SentPeak < 1024/8)
-	$txtPeakSendRate = sprintf("Peak: %.1f KBits/sec", $SentPeak*8);
+	$txtPeakSendRate = sprintf("Peak Rate: %.1f KBits/sec", $SentPeak*8);
 else if ($SentPeak < (1024*1024)/8)
-    $txtPeakSendRate = sprintf("Peak: %.1f MBits/sec", ($SentPeak*8.0)/1024.0);
+    $txtPeakSendRate = sprintf("Peak Rate: %.1f MBits/sec", ($SentPeak*8.0)/1024.0);
 else 
-	$txtPeakSendRate = sprintf("Peak: %.1f GBits/sec", ($SentPeak*8.0)/(1024.0*1024.0));
+	$txtPeakSendRate = sprintf("Peak Rate: %.1f GBits/sec", ($SentPeak*8.0)/(1024.0*1024.0));
                                                                                                                              
 if ($TotalSent < 1024)
 	$txtTotalSent = sprintf("Total %.1f KBytes", $TotalSent);
@@ -246,7 +262,7 @@ else if ($TotalSent < 1024*1024)
 else 
 	$txtTotalSent = sprintf("Total %.1f GBytes", $TotalSent/(1024.0*1024.0));
 
-$txtPacketsPerMtu = sprintf("%.1f Packets/MTU", $TotalPackets/(($TotalSent*1024)/1500));
+$txtPacketsPerMtu = sprintf("%dk Pkts, Avg Size: %.1f bytes", $TotalPackets/1000, ($TotalSent*1024.0)/$TotalPackets);
                                                                                                                              
 ImageString($im, 2, XOFFSET+5,  $height-20, $txtTotalSent, $black);
 ImageString($im, 2, ($width-XOFFSET)/3+XOFFSET,  $height-20, $txtPeakSendRate, $black);

@@ -108,11 +108,12 @@ if (isset($subnet))
 $sql = "select tx.ip, rx.scale as rxscale, tx.scale as txscale, tx.total+rx.total as total, tx.total as sent, 
 rx.total as received, tx.tcp+rx.tcp as tcp, tx.udp+rx.udp as udp,
 tx.icmp+rx.icmp as icmp, tx.http+rx.http as http,
+tx.mail+rx.mail as mail,
 tx.p2p+rx.p2p as p2p, tx.ftp+rx.ftp as ftp
 from
 
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
-sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
+sum(http) as http, sum(mail) as mail, sum(p2p) as p2p, sum(ftp) as ftp
 from sensors, bd_tx_log
 where sensors.sensor_id = '$sensor_id'
 and sensors.sensor_id = bd_tx_log.sensor_id
@@ -121,7 +122,7 @@ and timestamp > $timestamp::abstime and timestamp < ".($timestamp+$interval)."::
 group by ip) as tx,
 
 (SELECT ip, max(total/sample_duration)*8 as scale, sum(total) as total, sum(tcp) as tcp, sum(udp) as udp, sum(icmp) as icmp,
-sum(http) as http, sum(p2p) as p2p, sum(ftp) as ftp
+sum(http) as http, sum(mail) as mail, sum(p2p) as p2p, sum(ftp) as ftp
 from sensors, bd_rx_log
 where sensors.sensor_id = '$sensor_id'
 and sensors.sensor_id = bd_rx_log.sensor_id
@@ -155,7 +156,7 @@ pg_query("set sort_mem to default;");
 if ($limit == "all")
 	$limit = pg_num_rows($result);
 
-echo "<a name=top><table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>p2p<td>ftp";
+echo "<a name=top><table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>mail<td>p2p<td>ftp";
 
 if (!isset($subnet)) // Set this now for total graphs
 	$subnet = "0.0.0.0/0";
@@ -167,7 +168,7 @@ else
 	$url = "<a href=#Total>";
 
 echo "\n<TR><TD>".$url."Total</a><TD>$subnet";
-foreach (array("total", "sent", "received", "tcp", "udp", "icmp", "http", "p2p", "ftp") as $key)
+foreach (array("total", "sent", "received", "tcp", "udp", "icmp", "http", "mail", "p2p", "ftp") as $key)
 	{
 	for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
 		{
@@ -190,7 +191,7 @@ for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++
 	echo $r['ip']."<td>".gethostbyaddr($r['ip']);
 	echo "</a>";
 	echo fmtb($r['total']).fmtb($r['sent']).fmtb($r['received']).
-		fmtb($r['tcp']).fmtb($r['udp']).fmtb($r['icmp']).fmtb($r['http']).
+		fmtb($r['tcp']).fmtb($r['udp']).fmtb($r['icmp']).fmtb($r['http']).fmtb($r['mail']).
 		fmtb($r['p2p']).fmtb($r['ftp'])."\n";
 	}
 echo "</table></center>";
@@ -211,16 +212,19 @@ if ($subnet == "0.0.0.0/0")
 	$total_table = "bd_tx_total_log";
 else
 	$total_table = "bd_tx_log";
+
+$sn = str_replace("/", "_", $subnet);
+
 echo "<a name=Total><h3><a href=details.php?sensor_id=$sensor_id&ip=$subnet>";
 echo "Total - Total of $subnet</h3>";
 echo "</a>";
-echo "Send:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table><br>";
+echo "Send:<br><img src=graph.php?ip=$sn&interval=$interval&sensor_id=".$sensor_id."&table=$total_table><br>";
 echo "<img src=legend.gif><br>\n";
 if ($subnet == "0.0.0.0/0")
 	$total_table = "bd_rx_total_log";
 else
 	$total_table = "bd_rx_log";
-echo "Receive:<br><img src=graph.php?ip=$subnet&interval=$interval&sensor_id=".$sensor_id."&table=$total_table><br>";
+echo "Receive:<br><img src=graph.php?ip=$sn&interval=$interval&sensor_id=".$sensor_id."&table=$total_table><br>";
 echo "<img src=legend.gif><br>\n";
 echo "<a href=#top>[Return to Top]</a>";
 
