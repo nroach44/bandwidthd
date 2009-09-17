@@ -90,7 +90,7 @@ bandwidthd.c.  As of this writing, it consists of one line for each  IP address
 for each interval.  The line contains only data for the previous interval.
 
 Fields:
-IP Address,Timestamp,Total Sent,Icmp Sent,Udp Sent,Tcp Sent,Ftp Sent,Http Sent, P2P Sent,Total Received,Icmp Received,Udp Received,Tcp Received,Ftp Received,Http Received, P2P Received
+IP Address,Timestamp,Total Sent,Icmp Sent,Udp Sent,Tcp Sent,Ftp Sent,Http Sent,Mail Sent,P2P Sent,Total Received,Icmp Received,Udp Received,Tcp Received,Ftp Received,Http Received,Mail Received,P2P Received
 
 #### HOW TO KEEP YOUR GRAPHS BETWEEN REBOOTS #
 Following is the easy way to keep your graphs between reboots.  You can also opt 
@@ -134,6 +134,8 @@ YELLOW	IP ENCAPSULATED (IP over IP, IPSEC, most VPN's)
 BLUE 	HTTP (Port 80 TCP, actually)
 PURPLE	Peer2Peer (Lots of TCP ports generally used by P2P software)
 GREEN	TCP
+ORANGE	MAIL (pop3, smtp, ...)
+L.BLUE	FTP
 
 #### SPECIFYING THE LIBPCAP FILTER #
 if you'd like more control over what traffic is counted, you can specify a Manuel 
