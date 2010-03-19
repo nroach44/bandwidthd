@@ -727,8 +727,8 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
 		snprintf(Buffer, 30, "Sent %.1f KBytes", (double)SummaryData->TotalSent/1024.0);
 	else snprintf(Buffer, 30, "Sent %.1f MBytes", (double)SummaryData->TotalSent/(1024.0*1024.0));
 
-	gdImageString(im, gdFontSmall, XOFFSET+5,  YHEIGHT-20, Buffer, black);
-	gdImageString(im, gdFontSmall, XWIDTH/2+XOFFSET/2,	YHEIGHT-20, Buffer2, black);				
+	gdImageString(im, gdFontSmall, XOFFSET+5,  YHEIGHT-20, (unsigned char *) Buffer, black);
+	gdImageString(im, gdFontSmall, XWIDTH/2+XOFFSET/2,	YHEIGHT-20, (unsigned char *) Buffer2, black);				
 
 	if (ReceivedPeak < 1024/8)
 		snprintf(Buffer2, 50, "Peak Receive Rate: %.1f Bits/sec", (double)ReceivedPeak*8);
@@ -742,8 +742,8 @@ unsigned long long int GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataSto
 		snprintf(Buffer, 30, "Received %.1f KBytes", (double)SummaryData->TotalReceived/1024.0);
 	else snprintf(Buffer, 30, "Received %.1f MBytes", (double)SummaryData->TotalReceived/(1024.0*1024.0));
 																											  
-	gdImageString(im2, gdFontSmall, XOFFSET+5,	YHEIGHT-20, Buffer, black2);				
-	gdImageString(im2, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, Buffer2, black2);
+	gdImageString(im2, gdFontSmall, XOFFSET+5,	YHEIGHT-20, (unsigned char *) Buffer, black2);				
+	gdImageString(im2, gdFontSmall, XWIDTH/2+XOFFSET/2,  YHEIGHT-20, (unsigned char *) Buffer2, black2);
 
 	return(YMax);
 	}
@@ -792,7 +792,7 @@ void PrepareYAxis(gdImagePtr im, unsigned long long int YMax)
 
 		gdImageLine(im, XOFFSET, y, XWIDTH, y, black);		  
 		snprintf(buffer, 20, "%4.1f %cbits/s", (float)(8.0*YTic)/Divisor, YLegend);
-		gdImageString(im, gdFontSmall, 3, y-7, buffer, black);		  
+		gdImageString(im, gdFontSmall, 3, y-7, (unsigned char *) buffer, black);		  
 
 		YTic += YStep;
 		}
@@ -844,7 +844,7 @@ void PrepareXAxis(gdImagePtr im, time_t timestamp)
 	
 			timestruct = localtime((time_t *)&MarkTime);
 			strftime(buffer, 100, "%a, %b %d", timestruct);
-			gdImageString(im, gdFontSmall, x-30,  YHEIGHT-YOFFSET+10, buffer, black);		 
+			gdImageString(im, gdFontSmall, x-30,  YHEIGHT-YOFFSET+10, (unsigned char *) buffer, black);		 
 
 			// Calculate Next x
 			MarkTime += (24*60*60);
@@ -878,7 +878,7 @@ void PrepareXAxis(gdImagePtr im, time_t timestamp)
 	
 			timestruct = localtime((time_t *)&MarkTime);
 			strftime(buffer, 100, "%b", timestruct);
-			gdImageString(im, gdFontSmall, x-6,  YHEIGHT-YOFFSET+10, buffer, black);		
+			gdImageString(im, gdFontSmall, x-6,  YHEIGHT-YOFFSET+10, (unsigned char *) buffer, black);		
 
 			// Calculate Next x
 			timestruct->tm_mon++;
