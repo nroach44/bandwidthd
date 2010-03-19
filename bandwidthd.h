@@ -78,20 +78,20 @@ typedef u_int16_t uint16_t;
 
 #define NR_WORKER_CHILDS 3
 
-#define RANGE1 172800.0    	// 2 days
-#define RANGE2 604800.0    	// 7 days
-#define RANGE3 3024000.0    // 35 days
+#define RANGE1 172800.0	// 2 days
+#define RANGE2 604800.0	// 7 days
+#define RANGE3 3024000.0	// 35 days
 #define RANGE4 35640000.0	// 412.5ish days 
 
-#define INTERVAL1 200L     	// 150 -60 (213 is the perfect interval?)
+#define INTERVAL1 200L		// 150 -60 (213 is the perfect interval?)
 #define INTERVAL2 600L		// 10 minutes
 #define INTERVAL3 3600L		// 1 hour
 #define INTERVAL4 43200L	// 12 hours 
 #define CONFIG_GRAPHINTERVALS 1    // 2 -5 Number of Intervals to wait before redrawing the graphs
 
-#define CONFIG_GRAPHCUTOFF 1024*1024    // If total data transfered doesn't reach at least this number we don't graph the ip
+#define CONFIG_GRAPHCUTOFF 1024*1024	// If total data transfered doesn't reach at least this number we don't graph the ip
 
-#define LEAD .05    // % Of time to lead the graph
+#define LEAD .05	// % Of time to lead the graph
 
 #define TRUE 1
 #define FALSE 0
@@ -131,46 +131,46 @@ struct config
 	};
 
 struct SubnetData
-    {
-    uint32_t ip;
-    uint32_t mask;
-    } SubnetTable[SUBNET_NUM];
+	{
+	uint32_t ip;
+	uint32_t mask;
+	} SubnetTable[SUBNET_NUM];
 
 struct Statistics
-    {
+	{
 	unsigned long long packet_count;
-    unsigned long long total;
+	unsigned long long total;
 
-    unsigned long long icmp;
-    unsigned long long udp;
-    unsigned long long tcp;
+	unsigned long long icmp;
+	unsigned long long udp;
+	unsigned long long tcp;
 
 	unsigned long long ftp;
-    unsigned long long http;
+	unsigned long long http;
 	unsigned long long mail;
 	unsigned long long p2p;
-    };
+	};
 
 struct IPData
-    {
-    time_t timestamp;
-    uint32_t ip;	// Host byte order
-    struct Statistics Send;
-    struct Statistics Receive;
-    } IpTable[IP_NUM];
+	{
+	time_t timestamp;
+	uint32_t ip;	// Host byte order
+	struct Statistics Send;
+	struct Statistics Receive;
+	} IpTable[IP_NUM];
 
 struct SummaryData
 	{
 	uint32_t IP;
-	int Graph;  // TRUE or FALSE, Did we write out a graph for this ip
+	int Graph;	// TRUE or FALSE, Did we write out a graph for this ip
 	unsigned long long Total;
 	unsigned long long TotalSent;
 	unsigned long long TotalReceived;
-    unsigned long long ICMP;
-    unsigned long long UDP;
-    unsigned long long TCP;
+	unsigned long long ICMP;
+	unsigned long long UDP;
+	unsigned long long TCP;
 	unsigned long long FTP;
-    unsigned long long HTTP;
+	unsigned long long HTTP;
 	unsigned long long MAIL;	
 	unsigned long long P2P;
 	};
@@ -178,9 +178,9 @@ struct SummaryData
 struct IPDataStore
 	{
 	uint32_t ip;	
-	struct DataStoreBlock *FirstBlock;  // This is structure is allocated at the same time, so it always exists.
+	struct DataStoreBlock *FirstBlock;	// This is structure is allocated at the same time, so it always exists.
 		
-    struct IPDataStore *Next;
+	struct IPDataStore *Next;
 	};
 
 #define IPDATAALLOCCHUNKS 100
@@ -203,9 +203,9 @@ struct Broadcast
 	};
 
 struct extensions {
-    char *name;
-    char *value;
-    struct extensions *next;
+	char *name;
+	char *value;
+	struct extensions *next;
 };
 
 // ****************************************************************************************
@@ -213,10 +213,10 @@ struct extensions {
 // ****************************************************************************************
 
 // ************ A fork that orphans the child
-int             fork2();
+int				fork2();
 
 // ************ The function that gets called with each packet
-void            PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p);
+void			PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p);
 
 // ************ Reads a CDF file from a previous run
 void RecoverDataFromCDF(void);
@@ -231,23 +231,23 @@ char inline 	*HostIp2CharIp(unsigned long ipaddr, char *buffer);
 inline uint32_t IpAddr(unsigned char q1, unsigned char q2, unsigned char q3, unsigned char q4);
 
 // ************ This function adds the packet's size to the proper entries in the data structure
-inline void     Credit(struct Statistics *Stats, const struct ip *ip);
+inline void		Credit(struct Statistics *Stats, const struct ip *ip);
 
 // ************ Finds an IP in our IPTable
 inline struct IPData *FindIp(uint32_t ipaddr);
 
 // ************ Writes our IPTable to Disk or to the Ram cache
-void            CommitData(time_t timestamp);
+void			CommitData(time_t timestamp);
 
 // ************ Creates our Graphs
-void            GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, time_t timestamp);
-void            PrepareXAxis(gdImagePtr im, time_t timestamp);
-void            PrepareYAxis(gdImagePtr im, unsigned long long int YMax);
+void			GraphIp(struct IPDataStore *DataStore, struct SummaryData *SummaryData, time_t timestamp);
+void			PrepareXAxis(gdImagePtr im, time_t timestamp);
+void			PrepareYAxis(gdImagePtr im, unsigned long long int YMax);
 unsigned long long GraphData(gdImagePtr im, gdImagePtr im2, struct IPDataStore *DataStore, time_t timestamp,  struct SummaryData *SummaryData);
 
 
 // ************ Misc
-inline void     DstCredit(uint32_t ipaddr, unsigned int psize);
+inline void		DstCredit(uint32_t ipaddr, unsigned int psize);
 void			MakeIndexPages(int NumGraphs, struct SummaryData *SummaryData[]);
 
 // ************ Pgsql
