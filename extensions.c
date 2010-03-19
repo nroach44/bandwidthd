@@ -10,8 +10,8 @@ static char *execute_extension(char * filename);
 
 struct extensions *execute_extensions(void)
 	{
-    struct dirent **namelist;
-    int Counter, n;
+	struct dirent **namelist;
+	int Counter, n;
 	struct stat statbuffer;
 	char *filename;	
 	struct extensions *results = NULL;
@@ -20,12 +20,12 @@ struct extensions *execute_extensions(void)
 
 	resptr = &results;
 
-    n = scandir(EXTENSION_DIR, &namelist, 0, alphasort);
-    if (n < 0)
+	n = scandir(EXTENSION_DIR, &namelist, 0, alphasort);
+	if (n < 0)
 		syslog(LOG_ERR, "Failed to open %s for executing extensions", EXTENSION_DIR);
-    else 
+	else 
 		{
-    	for(Counter = 0; Counter < n; Counter++) 
+		for(Counter = 0; Counter < n; Counter++) 
 			{
 			filename = malloc(strlen(EXTENSION_DIR)+strlen(namelist[Counter]->d_name)+2);
 			sprintf(filename, "%s/%s", EXTENSION_DIR, namelist[Counter]->d_name);
@@ -44,10 +44,10 @@ struct extensions *execute_extensions(void)
 					}
 				}
 			free(filename);
-            free(namelist[Counter]);
-            }
-        free(namelist);
-        }
+			free(namelist[Counter]);
+			}
+		free(namelist);
+		}
 
 	return(results);
 	}
@@ -66,20 +66,20 @@ static char *execute_extension(char *filename)
 	fd_set rset;
 	fd_set eset;
 
-    if (pipe(ExtPipe))
-        {
-        syslog(LOG_ERR, "Failed to open pipe for extension processing");
-        return(NULL);
-        }
+	if (pipe(ExtPipe))
+		{
+		syslog(LOG_ERR, "Failed to open pipe for extension processing");
+		return(NULL);
+		}
 
 	if (!(extpid = fork()))
 		{
 		close(ExtPipe[0]);
 		dup2(ExtPipe[1], 1);
 
-        execl(filename, filename, config.dev, NULL);
-        syslog(LOG_ERR, "Failed to launch extension %s", filename);
-        _exit(1);
+		execl(filename, filename, config.dev, NULL);
+		syslog(LOG_ERR, "Failed to launch extension %s", filename);
+		_exit(1);
 		}
 
 	close(ExtPipe[1]);

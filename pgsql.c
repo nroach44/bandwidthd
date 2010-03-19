@@ -19,78 +19,78 @@ PGconn *pgsqlCheckTables(PGconn *conn)
 	{
 	PGresult   *res;
 	
-    res = PQexec(conn, "select tablename from pg_tables where tablename='sensors';");
+	res = PQexec(conn, "select tablename from pg_tables where tablename='sensors';");
 
-    if (PQresultStatus(res) != PGRES_TUPLES_OK)
-        {
-        syslog(LOG_ERR, "Postresql Select failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-        PQfinish(conn);
-        return(NULL);
-        }
+	if (PQresultStatus(res) != PGRES_TUPLES_OK)
+		{
+		syslog(LOG_ERR, "Postresql Select failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
+		return(NULL);
+		}
 
-    if (PQntuples(res) != 1)
+	if (PQntuples(res) != 1)
 		{
 		PQclear(res);
-		res = PQexec(conn,  "CREATE TABLE bd_rx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp); create index bd_rx_log_sensor_id_timestamp_idx on bd_rx_log(sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table bd_rx_log failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
+		res = PQexec(conn,	"CREATE TABLE bd_rx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_rx_log_sensor_id_ip_timestamp_idx on bd_rx_log (sensor_id, ip, timestamp); create index bd_rx_log_sensor_id_timestamp_idx on bd_rx_log(sensor_id, timestamp);");
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql create table bd_rx_log failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
+		PQclear(res);
 		
 		res = PQexec(conn, "CREATE TABLE bd_tx_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_tx_log_sensor_id_ip_timestamp_idx on bd_tx_log (sensor_id, ip, timestamp); create index bd_tx_log_sensor_id_timestamp_idx on bd_tx_log(sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table bd_tx_log failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql create table bd_tx_log failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
+		PQclear(res);
 
 		res = PQexec(conn, "CREATE TABLE bd_rx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_rx_total_log_sensor_id_timestamp_ip_idx on bd_rx_total_log (sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table bd_rx_total_log failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql create table bd_rx_total_log failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
+		PQclear(res);
 
 		res = PQexec(conn, "CREATE TABLE bd_tx_total_log (sensor_id int, ip inet, timestamp timestamp with time zone DEFAULT now(), sample_duration int, packet_count int, total int, icmp int, udp int, tcp int, ftp int, http int, mail int, p2p int); create index bd_tx_total_log_sensor_id_timestamp_ip_idx on bd_tx_total_log (sensor_id, timestamp);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table bd_tx_total_log failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql create table bd_tx_total_log failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
+		PQclear(res);
 
 		res = PQexec(conn, "CREATE TABLE sensors ( sensor_id serial PRIMARY KEY, sensor_name varchar, location int, build int default 0, uptime interval, reboots int default 0, interface varchar, description varchar, management_url varchar, last_connection timestamp with time zone );");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table sensors failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql create table sensors failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
+		PQclear(res);
 
 		res = PQexec(conn, "CREATE TABLE links (id1 int, id2 int, plot boolean default TRUE, last_update timestamp with time zone);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-            {
-            syslog(LOG_ERR, "Postresql create table links failed: %s", PQerrorMessage(conn));
-            PQclear(res);
-            PQfinish(conn);
-            return(NULL);
-            }
-        PQclear(res);
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql create table links failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
+		PQclear(res);
 		return(conn);
 		}
 	else
@@ -98,59 +98,59 @@ PGconn *pgsqlCheckTables(PGconn *conn)
 		PQclear(res);
 
 		// Patch database to include mail column if it doesn't alread exist
-	    res = PQexec(conn, "SELECT table_name, column_name from information_schema.columns where table_name = 'bd_rx_log' and column_name = 'mail';");
+		res = PQexec(conn, "SELECT table_name, column_name from information_schema.columns where table_name = 'bd_rx_log' and column_name = 'mail';");
 
-    	if (PQresultStatus(res) != PGRES_TUPLES_OK)
-        	{
-	        syslog(LOG_ERR, "Postresql Select failed: %s", PQerrorMessage(conn));
-    	    PQclear(res);
-        	PQfinish(conn);
-	        return(NULL);
-    	    }
+		if (PQresultStatus(res) != PGRES_TUPLES_OK)
+			{
+			syslog(LOG_ERR, "Postresql Select failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
 
-	    if (PQntuples(res) != 1)
+		if (PQntuples(res) != 1)
 			{
 			PQclear(res);
 
-			res = PQexec(conn,  "alter table bd_rx_log add column mail int;");
-    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        	    {
-            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
-	            PQclear(res);
-    	        PQfinish(conn);
-        	    return(NULL);
-	            }
-    	    PQclear(res);
+			res = PQexec(conn,	"alter table bd_rx_log add column mail int;");
+			if (PQresultStatus(res) != PGRES_COMMAND_OK)
+				{
+				syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+				PQclear(res);
+				PQfinish(conn);
+				return(NULL);
+				}
+			PQclear(res);
 
-			res = PQexec(conn,  "alter table bd_tx_log add column mail int;");
-    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        	    {
-            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
-	            PQclear(res);
-    	        PQfinish(conn);
-        	    return(NULL);
-	            }
-    	    PQclear(res);
+			res = PQexec(conn,	"alter table bd_tx_log add column mail int;");
+			if (PQresultStatus(res) != PGRES_COMMAND_OK)
+				{
+				syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+				PQclear(res);
+				PQfinish(conn);
+				return(NULL);
+				}
+			PQclear(res);
 
-			res = PQexec(conn,  "alter table bd_rx_total_log add column mail int;");
-    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        	    {
-            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
-	            PQclear(res);
-    	        PQfinish(conn);
-        	    return(NULL);
-	            }
-    	    PQclear(res);
+			res = PQexec(conn,	"alter table bd_rx_total_log add column mail int;");
+			if (PQresultStatus(res) != PGRES_COMMAND_OK)
+				{
+				syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+				PQclear(res);
+				PQfinish(conn);
+				return(NULL);
+				}
+			PQclear(res);
 
-			res = PQexec(conn,  "alter table bd_tx_total_log add column mail int;");
-    	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        	    {
-            	syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
-	            PQclear(res);
-    	        PQfinish(conn);
-        	    return(NULL);
-	            }
-    	    PQclear(res);
+			res = PQexec(conn,	"alter table bd_tx_total_log add column mail int;");
+			if (PQresultStatus(res) != PGRES_COMMAND_OK)
+				{
+				syslog(LOG_ERR, "Add column failed: %s", PQerrorMessage(conn));
+				PQclear(res);
+				PQfinish(conn);
+				return(NULL);
+				}
+			PQclear(res);
 			}
 		else
 			{
@@ -167,13 +167,13 @@ PGconn *pgsqlInit(void)
 
 	conn = PQconnectdb(config.db_connect_string);
 
-    /* Check to see that the backend connection was successfully made */
-   	if (PQstatus(conn) != CONNECTION_OK)
-       	{
-       	syslog(LOG_ERR, "Connection to database '%s' failed: %s", config.db_connect_string, PQerrorMessage(conn));
-   	    PQfinish(conn);
-        return(NULL);
-   	    }
+	/* Check to see that the backend connection was successfully made */
+	if (PQstatus(conn) != CONNECTION_OK)
+		{
+		syslog(LOG_ERR, "Connection to database '%s' failed: %s", config.db_connect_string, PQerrorMessage(conn));
+		PQfinish(conn);
+		return(NULL);
+		}
 
 
 
@@ -192,20 +192,20 @@ PGconn *pgsqlDetermineSensorID(PGconn *conn, char *sensor_id, char *sensor_name,
 	strncpy(Values[0], sensor_name, MAX_PARAM_SIZE);
 	strncpy(Values[1], interface, MAX_PARAM_SIZE);
 	res = PQexecParams(conn, "select sensor_id from sensors where sensor_name = $1 and interface = $2;",
-		2,       /* number of params */
-        NULL,    /* let the backend deduce param type */
-   	    paramValues,
-        NULL,    /* don't need param lengths since text */
-       	NULL,    /* default to all text params */
-        0);      /* ask for binary results */
+		2,		 /* number of params */
+		NULL,	 /* let the backend deduce param type */
+		paramValues,
+		NULL,	 /* don't need param lengths since text */
+		NULL,	 /* default to all text params */
+		0);		 /* ask for binary results */
 		
 	if (PQresultStatus(res) != PGRES_TUPLES_OK)
-   		{
-       	syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
-   	    PQclear(res);
-    	PQfinish(conn);
-   		return(NULL);
-        }
+		{
+		syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
+		return(NULL);
+		}
 
 	if (PQntuples(res))
 		{
@@ -222,45 +222,45 @@ PGconn *pgsqlDetermineSensorID(PGconn *conn, char *sensor_id, char *sensor_name,
 
 PGconn *pgsqlCreateSensorID(PGconn *conn, char *sensor_id)
 	{
-    const char *paramValues[3];
-    char Values[3][MAX_PARAM_SIZE];
-    PGresult   *res;
-                                                                                                                             
-    paramValues[0] = Values[0];
-    paramValues[1] = Values[1];
-    paramValues[2] = Values[2];
+	const char *paramValues[3];
+	char Values[3][MAX_PARAM_SIZE];
+	PGresult   *res;
+																															 
+	paramValues[0] = Values[0];
+	paramValues[1] = Values[1];
+	paramValues[2] = Values[2];
 
-    res = PQexec(conn, "select nextval('sensors_sensor_id_seq'::Text);");
-   	if (PQresultStatus(res) != PGRES_TUPLES_OK)
-	   	{
-        syslog(LOG_ERR, "Postresql select failed: %s", PQerrorMessage(conn));
-    	PQclear(res);
-	    PQfinish(conn);
-    	return(NULL);
-	    }
+	res = PQexec(conn, "select nextval('sensors_sensor_id_seq'::Text);");
+	if (PQresultStatus(res) != PGRES_TUPLES_OK)
+		{
+		syslog(LOG_ERR, "Postresql select failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
+		return(NULL);
+		}
 
 	strncpy(sensor_id, PQgetvalue(res, 0, 0), MAX_PARAM_SIZE);
-    PQclear(res);
+	PQclear(res);
 
-    strncpy(Values[0], config.sensor_name, MAX_PARAM_SIZE);
-    strncpy(Values[1], config.dev, MAX_PARAM_SIZE);
+	strncpy(Values[0], config.sensor_name, MAX_PARAM_SIZE);
+	strncpy(Values[1], config.dev, MAX_PARAM_SIZE);
 	strncpy(Values[2], sensor_id, MAX_PARAM_SIZE);
 	// Insert new sensor id
 	res = PQexecParams(conn, "insert into sensors (sensor_name, interface, sensor_id) VALUES ($1, $2, $3);",
-		3,       /* number of parameters */
-   	    NULL,    /* let the backend deduce param type */
-        paramValues,
-   	   	NULL,    /* don't need param lengths since text */
-		NULL,    /* default to all text params */
-       	0);      /* ask for binary results */
+		3,		 /* number of parameters */
+		NULL,	 /* let the backend deduce param type */
+		paramValues,
+		NULL,	 /* don't need param lengths since text */
+		NULL,	 /* default to all text params */
+		0);		 /* ask for binary results */
 
-   	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    	{
-       	syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
-        PQclear(res);
-   	   	PQfinish(conn);
-        return(NULL);
-	    }
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+		{
+		syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
+		return(NULL);
+		}
 	else
 		{
 		PQclear(res);
@@ -272,20 +272,20 @@ PGconn *pgsqlUpdateLinkStatus(PGconn *conn, char *sensor_id)
 	{
 	struct Broadcast *bc;
 	unsigned long diff;
-    const char *paramValues[3];
-    char Values[3][MAX_PARAM_SIZE];
-    PGresult   *res;
-                        
-    paramValues[0] = Values[0];
-    paramValues[1] = Values[1];
-    paramValues[2] = Values[2];
+	const char *paramValues[3];
+	char Values[3][MAX_PARAM_SIZE];
+	PGresult   *res;
+						
+	paramValues[0] = Values[0];
+	paramValues[1] = Values[1];
+	paramValues[2] = Values[2];
 
 	for (bc = Broadcasts; bc; bc = bc->next)
 		{
 		strncpy(Values[0], sensor_id, MAX_PARAM_SIZE);
-	    // Determine numeric sensor ID of other sensor
-    	if (!(conn = pgsqlDetermineSensorID(conn, Values[1], bc->sensor_name, bc->interface)))
-        	return(NULL);		
+		// Determine numeric sensor ID of other sensor
+		if (!(conn = pgsqlDetermineSensorID(conn, Values[1], bc->sensor_name, bc->interface)))
+			return(NULL);		
 		
 		if (!Values[1][0])
 			{
@@ -296,20 +296,20 @@ PGconn *pgsqlUpdateLinkStatus(PGconn *conn, char *sensor_id)
 		diff = time(NULL) - bc->received;
 		snprintf(Values[2], MAX_PARAM_SIZE, "%lu", diff);
 		res = PQexecParams(conn, "update links set last_update = now()-($3*interval '1 second') where (id1 = $1 and id2 = $2) or (id1 = $2 and id2 = $1);",
-				3,       /* number of parameters */
-       		    NULL,    /* let the backend deduce param type */
-        		paramValues,
-  	    		NULL,    /* don't need param lengths since text */
-       			NULL,    /* default to all text params */
-           		0);      /* ask for binary results */
+				3,		 /* number of parameters */
+				NULL,	 /* let the backend deduce param type */
+				paramValues,
+				NULL,	 /* don't need param lengths since text */
+				NULL,	 /* default to all text params */
+				0);		 /* ask for binary results */
 
-	   	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    		{
-       		syslog(LOG_ERR, "Postresql Update of links table failed: %s", PQerrorMessage(conn));
-        	PQclear(res);
-   	   		PQfinish(conn);
-        	return(NULL);
-	    	}
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql Update of links table failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return(NULL);
+			}
 		
 		// There may be duplicate rows
 		if (atol(PQcmdTuples(res)) > 0) 
@@ -324,20 +324,20 @@ PGconn *pgsqlUpdateLinkStatus(PGconn *conn, char *sensor_id)
 			diff = time(NULL) - bc->received;
 			snprintf(Values[2], MAX_PARAM_SIZE, "%lu", diff);
 			res = PQexecParams(conn, "insert into links (id1, id2, last_update) values ($1, $2, now()-($3*interval '1 second'));",
-					3,       /* number of parameters */
-       		    	NULL,    /* let the backend deduce param type */
-        			paramValues,
-  	    			NULL,    /* don't need param lengths since text */
-       				NULL,    /* default to all text params */
-           			0);      /* ask for binary results */
+					3,		 /* number of parameters */
+					NULL,	 /* let the backend deduce param type */
+					paramValues,
+					NULL,	 /* don't need param lengths since text */
+					NULL,	 /* default to all text params */
+					0);		 /* ask for binary results */
 
-		   	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    			{
-       			syslog(LOG_ERR, "Postresql Insert into links table failed: %s", PQerrorMessage(conn));
-        		PQclear(res);
-   	   			PQfinish(conn);
-        		return(NULL);
-	    		}
+			if (PQresultStatus(res) != PGRES_COMMAND_OK)
+				{
+				syslog(LOG_ERR, "Postresql Insert into links table failed: %s", PQerrorMessage(conn));
+				PQclear(res);
+				PQfinish(conn);
+				return(NULL);
+				}
 			PQclear(res);
 			}
 		}
@@ -356,32 +356,32 @@ PGconn *pgsqlUpdateSensorStatus(PGconn *conn, char *sensor_id)
 	paramValues[3] = Values[3];
 	paramValues[4] = Values[4];
 
-    strncpy(Values[0], sensor_id, MAX_PARAM_SIZE);
+	strncpy(Values[0], sensor_id, MAX_PARAM_SIZE);
 	strncpy(Values[1], config.description, MAX_PARAM_SIZE);	
 	strncpy(Values[2], config.management_url, MAX_PARAM_SIZE);	
 	snprintf(Values[3], MAX_PARAM_SIZE, "%u", BUILD);
 	snprintf(Values[4], MAX_PARAM_SIZE, "%lu", time(NULL)-ProgramStart);	
 	res = PQexecParams(conn, "update sensors set description = $2, management_url = $3, last_connection = now(), build = $4, uptime = $5*interval '1 second' where sensor_id = $1;",
-			5,       /* number of parameters */
-       	    NULL,    /* let the backend deduce param type */
-        	paramValues,
-  	    	NULL,    /* don't need param lengths since text */
-       		NULL,    /* default to all text params */
-           	0);      /* ask for binary results */
+			5,		 /* number of parameters */
+			NULL,	 /* let the backend deduce param type */
+			paramValues,
+			NULL,	 /* don't need param lengths since text */
+			NULL,	 /* default to all text params */
+			0);		 /* ask for binary results */
 		
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-   		{
-   		syslog(LOG_ERR, "Postresql UPDATE description and management_url failed: %s", PQerrorMessage(conn));
-    	PQclear(res);
-    	PQfinish(conn);
+		{
+		syslog(LOG_ERR, "Postresql UPDATE description and management_url failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
 		return(NULL);
-       	}
+		}
 	else
 		{
 		PQclear(res);
 		return(conn);
 		}
-  	}
+	}
 
 PGconn *pgsqlIncReboots(PGconn *conn, char *sensor_id)
 	{
@@ -391,28 +391,28 @@ PGconn *pgsqlIncReboots(PGconn *conn, char *sensor_id)
 
 	paramValues[0] = Values[0];
 
-    strncpy(Values[0], sensor_id, MAX_PARAM_SIZE);
+	strncpy(Values[0], sensor_id, MAX_PARAM_SIZE);
 	res = PQexecParams(conn, "update sensors set reboots = reboots+1 where sensor_id = $1;",
-			1,       /* number of parameters */
-       	    NULL,    /* let the backend deduce param type */
-        	paramValues,
-  	    	NULL,    /* don't need param lengths since text */
-       		NULL,    /* default to all text params */
-           	0);      /* ask for binary results */
+			1,		 /* number of parameters */
+			NULL,	 /* let the backend deduce param type */
+			paramValues,
+			NULL,	 /* don't need param lengths since text */
+			NULL,	 /* default to all text params */
+			0);		 /* ask for binary results */
 		
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-   		{
-   		syslog(LOG_ERR, "Postresql UPDATE reboots failed: %s", PQerrorMessage(conn));
-    	PQclear(res);
-    	PQfinish(conn);
+		{
+		syslog(LOG_ERR, "Postresql UPDATE reboots failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
 		return(NULL);
-       	}
+		}
 	else
 		{
 		PQclear(res);
 		return(conn);
 		}
-  	}
+	}
 #endif
 
 static void pgsqllngjmp(int signal)
@@ -429,7 +429,7 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 	struct IPData *IPData;
 	unsigned int Counter;
 	struct Statistics *Stats;
-    PGresult   *res;
+	PGresult   *res;
 	PGconn *conn = NULL;
 	char now[MAX_PARAM_SIZE];
 	// This is higher than Values below for the extensions code
@@ -555,20 +555,20 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 
 	// Determine Now
 	res = PQexecParams(conn, "select now();",
-		0,       /* number of params */
-        NULL,    /* let the backend deduce param type */
-   	    NULL,
-        NULL,    /* don't need param lengths since text */
-       	NULL,    /* default to all text params */
-        0);      /* ask for binary results */
+		0,		 /* number of params */
+		NULL,	 /* let the backend deduce param type */
+		NULL,
+		NULL,	 /* don't need param lengths since text */
+		NULL,	 /* default to all text params */
+		0);		 /* ask for binary results */
 		
 	if (PQresultStatus(res) != PGRES_TUPLES_OK)
-   		{
-       	syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
-   	    PQclear(res);
-    	PQfinish(conn);
-   		_exit(2);
-        }
+		{
+		syslog(LOG_ERR, "Postresql SELECT failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
+		_exit(2);
+		}
 
 	strncpy(now, PQgetvalue(res, 0, 0), MAX_PARAM_SIZE);
 	PQclear(res);
@@ -581,7 +581,7 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 	snprintf(Values[2], MAX_PARAM_SIZE, "%llu", config.interval);
 	for (Counter=0; Counter < IpCount; Counter++)
 		{
-        IPData = &IncData[Counter];
+		IPData = &IncData[Counter];
 
 		if (IPData->ip == 0)
 			{
@@ -595,7 +595,7 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 			sql2 = "INSERT INTO bd_rx_log (sensor_id, timestamp, sample_duration, ip, packet_count, total, icmp, udp, tcp, ftp, http, mail, p2p) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);"; 
 			}
 
-        HostIp2CharIp(IPData->ip, Values[3]);
+		HostIp2CharIp(IPData->ip, Values[3]);
 
 		Stats = &(IPData->Send);
 		if (Stats->total > 512) // Don't log empty sets
@@ -612,21 +612,21 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 			snprintf(Values[12], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
 
 			res = PQexecParams(conn, sql1,
-				13,       
-	            NULL,    /* let the backend deduce param type */
-    	        paramValues,
-        	    NULL,    /* don't need param lengths since text */
-            	NULL,    /* default to all text params */
-	            1);      /* ask for binary results */
+				13,		  
+				NULL,	 /* let the backend deduce param type */
+				paramValues,
+				NULL,	 /* don't need param lengths since text */
+				NULL,	 /* default to all text params */
+				1);		 /* ask for binary results */
 
-    		if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        		{
-	        	syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
-	    	    PQclear(res);
-    	    	PQfinish(conn);
-	    	    conn = NULL;
-        		_exit(2);
-		        }
+			if (PQresultStatus(res) != PGRES_COMMAND_OK)
+				{
+				syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
+				PQclear(res);
+				PQfinish(conn);
+				conn = NULL;
+				_exit(2);
+				}
 			PQclear(res);
 			}
 		Stats = &(IPData->Receive);
@@ -643,21 +643,21 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 			snprintf(Values[12], MAX_PARAM_SIZE, "%llu", (long long unsigned int)((((double)Stats->p2p)/1024.0) + 0.5));
 
 			res = PQexecParams(conn, sql2,
-				13,       
-            	NULL,    /* let the backend deduce param type */
-	            paramValues,
-    	        NULL,    /* don't need param lengths since text */
-        	    NULL,    /* default to all text params */
-            	1);      /* ask for binary results */
+				13,		  
+				NULL,	 /* let the backend deduce param type */
+				paramValues,
+				NULL,	 /* don't need param lengths since text */
+				NULL,	 /* default to all text params */
+				1);		 /* ask for binary results */
 
-	    	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    	    	{
-	    	    syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
-    	    	PQclear(res);
-	        	PQfinish(conn);
-		        conn = NULL;
-        		_exit(2);
-	        	}
+			if (PQresultStatus(res) != PGRES_COMMAND_OK)
+				{
+				syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
+				PQclear(res);
+				PQfinish(conn);
+				conn = NULL;
+				_exit(2);
+				}
 			PQclear(res);
 			}		
 		}
@@ -712,21 +712,21 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 		ptr += sprintf(ptr, ");");
 
 		res = PQexecParams(conn, sql,
-			fields+2,       
-            NULL,    /* let the backend deduce param type */
-	        paramValues,
-    	    NULL,    /* don't need param lengths since text */
-        	NULL,    /* default to all text params */
-            1);      /* ask for binary results */
+			fields+2,		
+			NULL,	 /* let the backend deduce param type */
+			paramValues,
+			NULL,	 /* don't need param lengths since text */
+			NULL,	 /* default to all text params */
+			1);		 /* ask for binary results */
 
-	    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    	   	{
-	        syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
-    	   	PQclear(res);
-	       	PQfinish(conn);
-		    conn = NULL;
-        	_exit(2);
-	       	}
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+			{
+			syslog(LOG_ERR, "Postresql INSERT failed: %s", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			conn = NULL;
+			_exit(2);
+			}
 		PQclear(res);
 		free(sql);
 		}

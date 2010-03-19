@@ -111,7 +111,7 @@ void bd_CollectingData()
 			fprintf(index, "</HEAD>\n<BODY><center><img src=\"logo.gif\" ALT=\"Logo\"><BR>\n");
 			fprintf(index, "<BR>\n - <a href=\"index.html\">Daily</a> -- <a href=\"index2.html\">Weekly</a> -- ");
 			fprintf(index, "<a href=\"index3.html\">Monthly</a> -- <a href=\"index4.html\">Yearly</a><BR>\n");
-			fprintf(index, "</CENTER><BR>bandwidthd has nothing to graph.  This message should be replaced by graphs in a few minutes.  If it's not, please see the section titled \"Known Bugs and Troubleshooting\" in the README");		
+			fprintf(index, "</CENTER><BR>bandwidthd has nothing to graph.  This message should be replaced by graphs in a few minutes.	If it's not, please see the section titled \"Known Bugs and Troubleshooting\" in the README");		
 			fprintf(index, "</BODY></HTML>\n");
 			fclose(index);
 			}
@@ -148,9 +148,9 @@ pid_t WriteOutWebpages(long int timestamp)
 			syslog(LOG_INFO, "Calling profiler startup...");
 			monstartup((u_long) &_start, (u_long) &etext);
 #endif
-          	signal(SIGHUP, SIG_IGN);
+			signal(SIGHUP, SIG_IGN);
 			
-    	    nice(4); // reduce priority so I don't choke out other tasks
+			nice(4); // reduce priority so I don't choke out other tasks
 
 			// Count Number of IP's in datastore
 			for (DataStore = IPDataStore, Counter = 0; DataStore; Counter++, DataStore = DataStore->Next);
@@ -166,7 +166,7 @@ pid_t WriteOutWebpages(long int timestamp)
 					SummaryData[NumGraphs] = (struct SummaryData *) malloc(sizeof(struct SummaryData));
 					GraphIp(DataStore, SummaryData[NumGraphs++], timestamp+LEAD*config.range);
 					}
-			    DataStore = DataStore->Next;
+				DataStore = DataStore->Next;
 				}
 
 			MakeIndexPages(NumGraphs, SummaryData);
@@ -267,9 +267,9 @@ static void handle_interval(int signal)
 	}
 
 int main(int argc, char **argv)
-    {
-    struct bpf_program fcode;
-    u_char *pcap_userdata = 0;
+	{
+	struct bpf_program fcode;
+	u_char *pcap_userdata = 0;
 #ifdef HAVE_PCAP_FINDALLDEVS
 	pcap_if_t *Devices;
 #endif
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
 					break;
 				case 'l':
 					ListDevices = TRUE; 
-			 		break;
+					break;
 				case 'c':
 					if (argv[Counter+1])
 						{
@@ -445,29 +445,29 @@ int main(int argc, char **argv)
 	signal(SIGHUP, signal_handler);
 	signal(SIGTERM, signal_handler);
 
-    if(config.recover_cdf)
-	    RecoverDataFromCDF();
+	if(config.recover_cdf)
+		RecoverDataFromCDF();
 
-    IntervalStart = time(NULL);
+	IntervalStart = time(NULL);
 
 	syslog(LOG_INFO, "Opening %s", config.dev);	
 	pd = pcap_open_live(config.dev, SNAPLEN, config.promisc, 1000, Error);
-    if (pd == NULL) 
+	if (pd == NULL) 
 		{
 		syslog(LOG_ERR, "%s", Error);
 		exit(0);
 		}
 
-    if (pcap_compile(pd, &fcode, config.filter, 1, 0) < 0)
+	if (pcap_compile(pd, &fcode, config.filter, 1, 0) < 0)
 		{
-        pcap_perror(pd, "Error");
+		pcap_perror(pd, "Error");
 		printf("Malformed libpcap filter string in bandwidthd.conf\n");
 		syslog(LOG_ERR, "Malformed libpcap filter string in bandwidthd.conf");
 		exit(1);
 		}
 
-    if (pcap_setfilter(pd, &fcode) < 0)
-        pcap_perror(pd, "Error");
+	if (pcap_setfilter(pd, &fcode) < 0)
+		pcap_perror(pd, "Error");
 
 	switch (DataLink = pcap_datalink(pd))
 		{
@@ -504,7 +504,7 @@ int main(int argc, char **argv)
 		}
 
 	if (ForkBackground)
-		{                                           
+		{											
 		fclose(stdin);
 		fclose(stdout);
 		fclose(stderr);
@@ -524,23 +524,23 @@ int main(int argc, char **argv)
 	while (1)
 		{
 		// Bookeeping
-	    if (IntervalFinished)  // Then write out this intervals data and possibly kick off the grapher
+		if (IntervalFinished)  // Then write out this intervals data and possibly kick off the grapher
 			CloseInterval();
 
 		// Process 1 buffer full of data
-    	if (pcap_dispatch(pd, -1, PacketCallback, pcap_userdata) == -1) 
+		if (pcap_dispatch(pd, -1, PacketCallback, pcap_userdata) == -1) 
 			{
-        	syslog(LOG_ERR, "Bandwidthd: pcap_dispatch: %s",  pcap_geterr(pd));
-        	exit(1);
-        	}
+			syslog(LOG_ERR, "Bandwidthd: pcap_dispatch: %s",  pcap_geterr(pd));
+			exit(1);
+			}
 		}
 
-    pcap_close(pd);
-    exit(0);        
-    }
+	pcap_close(pd);
+	exit(0);		
+	}
    
 void CloseInterval(void)
-    {
+	{
 	time_t current_time;
 
 #ifdef PROFILE
@@ -556,21 +556,21 @@ void CloseInterval(void)
 		ProgramStart = current_time;	
 		}
 
-    GraphIntervalCount++;
-    CommitData(IntervalStart+config.interval);
+	GraphIntervalCount++;
+	CommitData(IntervalStart+config.interval);
 	BroadcastState(pcap_fileno(pd));  
 	ResetTrafficCounters();
 	// Make sure the signal hasn't been overwritten by one of our CommitData modules
 	// pgsql module does overwrite it
-    signal(SIGALRM, handle_interval);
+	signal(SIGALRM, handle_interval);
 	alarm(config.interval);
-    }
+	}
 
 // Write an ethernet packet describing us out the given socket
 void BroadcastState(int fd)
 	{
 	char buf[SNAPLEN];
-	char    enet_broadcast[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	char	enet_broadcast[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	struct ether_header *eptr;
 
 	if (DataLink != DLT_EN10MB)
@@ -583,19 +583,19 @@ void BroadcastState(int fd)
 		}
 
 	bzero(buf, sizeof(buf));
-    eptr = (struct ether_header *) buf;         /* start of 16-byte Ethernet header */
+	eptr = (struct ether_header *) buf;			/* start of 16-byte Ethernet header */
 
-    // Always broadcast
-    memcpy(&buf[0], enet_broadcast, 6);
-    memcpy(&buf[6], enet_broadcast, 6); // Would rather use our own mac address
+	// Always broadcast
+	memcpy(&buf[0], enet_broadcast, 6);
+	memcpy(&buf[6], enet_broadcast, 6); // Would rather use our own mac address
 
 	eptr->ether_type = htons(1537);	// Random packet type we'll use for bandwidthd	
 	
 	memcpy(buf+14, config.sensor_name, strlen(config.sensor_name)+1);
 	memcpy(buf+14+strlen(config.sensor_name)+1, config.dev, strlen(config.dev)+1);
 
-    if (write(fd, buf, SNAPLEN) != SNAPLEN)
-    	syslog(LOG_ERR, "Write error during bandwidthd broadcast");
+	if (write(fd, buf, SNAPLEN) != SNAPLEN)
+		syslog(LOG_ERR, "Write error during bandwidthd broadcast");
 	}
 
 void ParseBroadcast(const u_char *in)
@@ -649,17 +649,17 @@ void ParseBroadcast(const u_char *in)
 	}
 
 void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
-    {
-    unsigned int Counter;
+	{
+	unsigned int Counter;
 
-    u_int caplen = h->caplen;
+	u_int caplen = h->caplen;
 	struct ether_header *eptr;
-    const struct ip *ip;
+	const struct ip *ip;
 
-    uint32_t srcip;
-    uint32_t dstip;
+	uint32_t srcip;
+	uint32_t dstip;
 
-    struct IPData *ptrIPData;
+	struct IPData *ptrIPData;
 
 	int AlreadyTotaled = FALSE;
 	PacketCallbackLock = TRUE;
@@ -668,52 +668,52 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 	if (eptr->ether_type == htons(1537))
 		ParseBroadcast(p);
 
-    caplen -= IP_Offset;  // We're only measuring ip size, so pull off the ethernet header
-    p += IP_Offset; // Move the pointer past the datalink header
+	caplen -= IP_Offset;  // We're only measuring ip size, so pull off the ethernet header
+	p += IP_Offset; // Move the pointer past the datalink header
 
-    ip = (const struct ip *)p; // Point ip at the ip header
+	ip = (const struct ip *)p; // Point ip at the ip header
 
 	if (ip->ip_v != 4) // then not an ip packet so skip it
 		return;
 
-    srcip = ntohl(*(uint32_t *) (&ip->ip_src));
-    dstip = ntohl(*(uint32_t *) (&ip->ip_dst));
+	srcip = ntohl(*(uint32_t *) (&ip->ip_src));
+	dstip = ntohl(*(uint32_t *) (&ip->ip_dst));
 	
-    for (Counter = 0; Counter < SubnetCount; Counter++)
-        {	 
+	for (Counter = 0; Counter < SubnetCount; Counter++)
+		{	 
 		// Packets from a monitored subnet to a monitored subnet will be
 		// credited to both ip's
 
 		// Totals are checked for first to speed up FindIp in the total case
 		// That way the 0 entry is always first in the FindIp table
-        if (SubnetTable[Counter].ip == (srcip & SubnetTable[Counter].mask))
-            {
+		if (SubnetTable[Counter].ip == (srcip & SubnetTable[Counter].mask))
+			{
 			if (!AlreadyTotaled)
 				{
-            	Credit(&(IpTable[0].Send), ip);
+				Credit(&(IpTable[0].Send), ip);
 				AlreadyTotaled = TRUE;
 				}
 
-            ptrIPData = FindIp(srcip);  // Return or create this ip's data structure
+			ptrIPData = FindIp(srcip);	// Return or create this ip's data structure
 			if (ptrIPData)
-	            Credit(&(ptrIPData->Send), ip);
-            }
-    
-        if (SubnetTable[Counter].ip == (dstip & SubnetTable[Counter].mask))
-            {
+				Credit(&(ptrIPData->Send), ip);
+			}
+	
+		if (SubnetTable[Counter].ip == (dstip & SubnetTable[Counter].mask))
+			{
 			if (!AlreadyTotaled)
 				{
-		        Credit(&(IpTable[0].Receive), ip);
+				Credit(&(IpTable[0].Receive), ip);
 				AlreadyTotaled = TRUE;
 				}
 
-            ptrIPData = FindIp(dstip);
-    		if (ptrIPData)
-		        Credit(&(ptrIPData->Receive), ip);
-            }                        
-        }
+			ptrIPData = FindIp(dstip);
+			if (ptrIPData)
+				Credit(&(ptrIPData->Receive), ip);
+			}						 
+		}
 	PacketCallbackLock = FALSE;
-    }
+	}
 
 
 // Eliminates duplicate entries and fully included subnets so packets don't get
@@ -724,8 +724,8 @@ void MonitorSubnet(unsigned int ip, unsigned int mask)
 	int Counter, Counter2;
 	struct in_addr addr, addr2;
 
-    addr.s_addr = ntohl(subnet);
-    addr2.s_addr = ntohl(mask);
+	addr.s_addr = ntohl(subnet);
+	addr2.s_addr = ntohl(mask);
 
 	for (Counter = 0; Counter < SubnetCount; Counter++)
 		{
@@ -767,23 +767,23 @@ void MonitorSubnet(unsigned int ip, unsigned int mask)
 	}
 
 inline void Credit(struct Statistics *Stats, const struct ip *ip)
-    {
-    unsigned long size;
-    const struct tcphdr *tcp;
-    uint16_t port;
+	{
+	unsigned long size;
+	const struct tcphdr *tcp;
+	uint16_t port;
 	int Counter;
 
-    size = ntohs(ip->ip_len);
+	size = ntohs(ip->ip_len);
 
-    Stats->total += size;
+	Stats->total += size;
 	Stats->packet_count++;
-    
-    switch(ip->ip_p)
-        {
-        case 6:     // TCP
-            tcp = (struct tcphdr *)(ip+1);
+	
+	switch(ip->ip_p)
+		{
+		case 6:		// TCP
+			tcp = (struct tcphdr *)(ip+1);
 			tcp = (struct tcphdr *) ( ((char *)tcp) + ((ip->ip_hl-5)*4) ); // Compensate for IP Options
-            Stats->tcp += size;
+			Stats->tcp += size;
 
 			// This is a wierd way to do this, I know, but the old "if/then" structure burned alot more CPU
 			for (port = ntohs(tcp->TCPHDR_DPORT), Counter=2 ; Counter ; port = ntohs(tcp->TCPHDR_SPORT), Counter--)
@@ -804,62 +804,62 @@ inline void Credit(struct Statistics *Stats, const struct ip *ip)
 					case 21:
 						Stats->ftp += size;
 						return;					
-					case 1044: 	// Direct File Express
+					case 1044:	// Direct File Express
 					case 1045:	// ''  <- Dito Marks
 					case 1214:	// Grokster, Kaza, Morpheus
-					case 4661:  // EDonkey 2000
-					case 4662:  // ''
-					case 4665:  // ''
-					case 5190:  // Song Spy
-					case 5500:  // Hotline Connect
-					case 5501:  // ''
-					case 5502:  // ''
-					case 5503:  // ''
-					case 6346:  // Gnutella Engine
-					case 6347:  // ''
-					case 6666:  // Yoink
-					case 6667:  // ''
-					case 7788:  // Budy Share
-					case 8888:  // AudioGnome, OpenNap, Swaptor
-					case 8889:  // AudioGnome, OpenNap
+					case 4661:	// EDonkey 2000
+					case 4662:	// ''
+					case 4665:	// ''
+					case 5190:	// Song Spy
+					case 5500:	// Hotline Connect
+					case 5501:	// ''
+					case 5502:	// ''
+					case 5503:	// ''
+					case 6346:	// Gnutella Engine
+					case 6347:	// ''
+					case 6666:	// Yoink
+					case 6667:	// ''
+					case 7788:	// Budy Share
+					case 8888:	// AudioGnome, OpenNap, Swaptor
+					case 8889:	// AudioGnome, OpenNap
 					case 28864: // hotComm				
 					case 28865: // hotComm
 						Stats->p2p += size;
 						return;	
 					}
 				}
-           	return;
-        case 17:
-            Stats->udp += size;
-            return;
-        case 1: 
-            Stats->icmp += size;
-            return;
-        }
-    }
+			return;
+		case 17:
+			Stats->udp += size;
+			return;
+		case 1: 
+			Stats->icmp += size;
+			return;
+		}
+	}
 
 // TODO:  Throw away old data!
-void DropOldData(long int timestamp) 	// Go through the ram datastore and dump old data
+void DropOldData(long int timestamp)	// Go through the ram datastore and dump old data
 	{
 	struct IPDataStore *DataStore;
 	struct IPDataStore *PrevDataStore;	
 	struct DataStoreBlock *DeletedBlock;
 	
 	PrevDataStore = NULL;
-    DataStore = IPDataStore;
+	DataStore = IPDataStore;
 
 	// Progress through the linked list until we reach the end
 	while(DataStore)  // we have data
 		{
 		// If the First block is out of date, purge it, if it is the only block
 		// purge the node
-        while(DataStore->FirstBlock->LatestTimestamp < timestamp - config.range)
+		while(DataStore->FirstBlock->LatestTimestamp < timestamp - config.range)
 			{
-            if ((!DataStore->FirstBlock->Next) && PrevDataStore) // There is no valid block of data for this ip, so unlink the whole ip
-				{ 												// Don't bother unlinking the ip if it's the first one, that's to much
+			if ((!DataStore->FirstBlock->Next) && PrevDataStore) // There is no valid block of data for this ip, so unlink the whole ip
+				{												// Don't bother unlinking the ip if it's the first one, that's to much
 																// Trouble
 				PrevDataStore->Next = DataStore->Next;	// Unlink the node
-				free(DataStore->FirstBlock->Data);      // Free the memory
+				free(DataStore->FirstBlock->Data);		// Free the memory
 				free(DataStore->FirstBlock);
 				free(DataStore);												
 				DataStore = PrevDataStore->Next;	// Go to the next node
@@ -877,7 +877,7 @@ void DropOldData(long int timestamp) 	// Go through the ram datastore and dump o
 				DataStore->FirstBlock = DataStore->FirstBlock->Next;	// Unlink the block
 				free(DeletedBlock->Data);
 				free(DeletedBlock);
-			    }
+				}
 			}
 
 		PrevDataStore = DataStore;				
@@ -902,7 +902,7 @@ void StoreIPDataInCDF(struct IPData IncData[])
 	
 	snprintf(logfile, MAX_FILENAME, "%s/log.%c.0.cdf", config.log_dir, config.tag);
 
-   	cdf = fopen(logfile, "at");
+	cdf = fopen(logfile, "at");
 
 	for (Counter=0; Counter < IpCount; Counter++)
 		{
@@ -925,7 +925,7 @@ void _StoreIPDataInRam(struct IPData *IPData)
 	if (!IPDataStore) // we need to create the first entry
 		{
 		// Allocate Datastore for this IP
-	    IPDataStore = malloc(sizeof(struct IPDataStore));
+		IPDataStore = malloc(sizeof(struct IPDataStore));
 			
 		IPDataStore->ip = IPData->ip;
 		IPDataStore->Next = NULL;
@@ -937,11 +937,11 @@ void _StoreIPDataInRam(struct IPData *IPData)
 		IPDataStore->FirstBlock->NumEntries = 0;
 		IPDataStore->FirstBlock->Data = calloc(IPDATAALLOCCHUNKS, sizeof(struct IPData));
 		IPDataStore->FirstBlock->Next = NULL;																		
-        if (!IPDataStore->FirstBlock || ! IPDataStore->FirstBlock->Data)
-            {
-            syslog(LOG_ERR, "Could not allocate datastore! Exiting!");
-            exit(1);
-            }
+		if (!IPDataStore->FirstBlock || ! IPDataStore->FirstBlock->Data)
+			{
+			syslog(LOG_ERR, "Could not allocate datastore! Exiting!");
+			exit(1);
+			}
 		}
 
 	DataStore = IPDataStore;
@@ -961,11 +961,11 @@ void _StoreIPDataInRam(struct IPData *IPData)
 					DataStoreBlock->LatestTimestamp = IPData->timestamp;
 					return;
 					}
-        	    else
+				else
 					{
 					if (!DataStoreBlock->Next) // there isn't another block, add one
 						{
-	                    DataStoreBlock->Next = malloc(sizeof(struct DataStoreBlock));
+						DataStoreBlock->Next = malloc(sizeof(struct DataStoreBlock));
 						DataStoreBlock->Next->LatestTimestamp = 0;
 						DataStoreBlock->Next->NumEntries = 0;
 						DataStoreBlock->Next->Data = calloc(IPDATAALLOCCHUNKS, sizeof(struct IPData));
@@ -983,9 +983,9 @@ void _StoreIPDataInRam(struct IPData *IPData)
 			if (!DataStore->Next) // there is no entry for this ip, so lets make one.
 				{
 				// Allocate Datastore for this IP
-    	        DataStore->Next = malloc(sizeof(struct IPDataStore));
+				DataStore->Next = malloc(sizeof(struct IPDataStore));
 				
-			    DataStore->Next->ip = IPData->ip;
+				DataStore->Next->ip = IPData->ip;
 				DataStore->Next->Next = NULL;
 					
 				// Allocate it's first block of storage
@@ -1005,14 +1005,14 @@ void StoreIPDataInRam(struct IPData IncData[])
 	{
 	unsigned int Counter;
 
-    for (Counter=0; Counter < IpCount; Counter++)
+	for (Counter=0; Counter < IpCount; Counter++)
 		_StoreIPDataInRam(&IncData[Counter]);
 	}
 
 void CommitData(time_t timestamp)
-    {
+	{
 	int MayGraph = FALSE;
-    unsigned int Counter;
+	unsigned int Counter;
 	struct stat StatBuf;
 	char logname1[MAX_FILENAME];
 	char logname2[MAX_FILENAME];
@@ -1022,7 +1022,7 @@ void CommitData(time_t timestamp)
 
 	// Set the timestamps
 	for (Counter=0; Counter < IpCount; Counter++)
-        IpTable[Counter].timestamp = timestamp;
+		IpTable[Counter].timestamp = timestamp;
 
 	// Call extensions
 	if (config.extensions)
@@ -1055,16 +1055,16 @@ void CommitData(time_t timestamp)
 			logname2[offset] = '4';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2);
-            logname1[offset] = '2';
-            logname2[offset] = '3';			
+			logname1[offset] = '2';
+			logname2[offset] = '3';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2);
-            logname1[offset] = '1';
-            logname2[offset] = '2';			
+			logname1[offset] = '1';
+			logname2[offset] = '2';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2);
-            logname1[offset] = '0';
-            logname2[offset] = '1';			
+			logname1[offset] = '0';
+			logname2[offset] = '1';			
 			if (!stat(logname1, &StatBuf)) // File exists
 				rename(logname1, logname2); 
 			fclose(fopen(logname1, "at")); // Touch file
@@ -1089,7 +1089,7 @@ void CommitData(time_t timestamp)
 		}
 
 	destroy_extension_data(extension_data);
-    }
+	}
 
 
 int RCDF_Test(char *filename)
@@ -1123,7 +1123,7 @@ int RCDF_Test(char *filename)
 
 void RCDF_PositionStream(FILE *cdf)
 	{
-    time_t timestamp;
+	time_t timestamp;
 	time_t current_timestamp;
 	char ipaddrBuffer[16];
 
@@ -1141,8 +1141,8 @@ void RCDF_PositionStream(FILE *cdf)
 			return;
 			}
 		while (fgetc(cdf) != '\n' && !feof(cdf)); // Read to next line
-		ungetc('\n', cdf);  // Just so the fscanf mask stays identical
-        if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2)
+		ungetc('\n', cdf);	// Just so the fscanf mask stays identical
+		if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2)
 			{
 			syslog(LOG_ERR, "Unknown error while scanning for beginning of data...\n");
 			return;	
@@ -1156,14 +1156,14 @@ void ResetTrafficCounters(void)
 	{
 	// Set to 1 because "totals" are the 0 slot
 	IpCount = 1;
-    IntervalStart=time(NULL);
-    IntervalFinished = FALSE;
+	IntervalStart=time(NULL);
+	IntervalFinished = FALSE;
 	memset(IpTable, 0, sizeof(struct IPData)*IP_NUM);
 	}
 
 void RCDF_Load(FILE *cdf)
 	{
-    time_t timestamp;
+	time_t timestamp;
 	time_t current_timestamp = 0;
 	struct in_addr ipaddr;
 	struct IPData *ip=NULL;
@@ -1171,8 +1171,8 @@ void RCDF_Load(FILE *cdf)
 	unsigned long int Counter = 0;
 	unsigned long int IntervalsRead = 0;
 
-    for(Counter = 0; !feof(cdf) && !ferror(cdf); Counter++)
-	    {
+	for(Counter = 0; !feof(cdf) && !ferror(cdf); Counter++)
+		{
 		if(fscanf(cdf, " %15[0-9.],%lu,", ipaddrBuffer, &timestamp) != 2) 
 			goto End_RecoverDataFromCdf;
 
@@ -1185,17 +1185,17 @@ void RCDF_Load(FILE *cdf)
 			IpCount = 0;
 			current_timestamp = timestamp;
 			IntervalsRead++;
-			}    		
+			}			
 		inet_aton(ipaddrBuffer, &ipaddr);
 		ip = FindIp(ntohl(ipaddr.s_addr));
 		ip->timestamp = timestamp;
 
-        if (fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,",
-            &ip->Send.total, &ip->Send.icmp, &ip->Send.udp,
-            &ip->Send.tcp, &ip->Send.ftp, &ip->Send.http, &ip->Send.mail, &ip->Send.p2p) != 7
-          || fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu",
-            &ip->Receive.total, &ip->Receive.icmp, &ip->Receive.udp,
-            &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.mail, &ip->Receive.p2p) != 7)
+		if (fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,",
+			&ip->Send.total, &ip->Send.icmp, &ip->Send.udp,
+			&ip->Send.tcp, &ip->Send.ftp, &ip->Send.http, &ip->Send.mail, &ip->Send.p2p) != 7
+		  || fscanf(cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu",
+			&ip->Receive.total, &ip->Receive.icmp, &ip->Receive.udp,
+			&ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http, &ip->Receive.mail, &ip->Receive.p2p) != 7)
 			goto End_RecoverDataFromCdf;		
 		}
 
@@ -1203,10 +1203,10 @@ End_RecoverDataFromCdf:
 	StoreIPDataInRam(IpTable);
 	syslog(LOG_INFO, "Finished recovering %lu records", Counter);	
 	DropOldData(time(NULL)); // Dump the extra data
-    if(!feof(cdf))
-       syslog(LOG_ERR, "Failed to parse part of log file. Giving up on the file");
+	if(!feof(cdf))
+	   syslog(LOG_ERR, "Failed to parse part of log file. Giving up on the file");
 	IpCount = 0; // Reset traffic Counters
-    fclose(cdf);
+	fclose(cdf);
 	}
 
 void RecoverDataFromCDF(void)
@@ -1248,57 +1248,57 @@ void RecoverDataFromCDF(void)
 // ****** Returns or allocates an Ip's data structure
 
 inline struct IPData *FindIp(uint32_t ipaddr)
-    {
-    unsigned int Counter;
+	{
+	unsigned int Counter;
 	static time_t last_error = 0;
-    
-    for (Counter=0; Counter < IpCount; Counter++)
-        if (IpTable[Counter].ip == ipaddr)
-            return (&IpTable[Counter]);
-    
-    if (IpCount >= IP_NUM)
-        {
+	
+	for (Counter=0; Counter < IpCount; Counter++)
+		if (IpTable[Counter].ip == ipaddr)
+			return (&IpTable[Counter]);
+	
+	if (IpCount >= IP_NUM)
+		{
 		time_t current_error = time(NULL);
 		if (current_error > last_error + 30)
 			{
 			last_error = current_error;
-	        syslog(LOG_ERR, "Maximum tracked IP's (%d) is too low, some ips will be ignored.  Possible network scan?", IP_NUM);
+			syslog(LOG_ERR, "Maximum tracked IP's (%d) is too low, some ips will be ignored.  Possible network scan?", IP_NUM);
 			}
-       	return(NULL);
-        }
+		return(NULL);
+		}
 	
-    IpTable[IpCount].ip = ipaddr;
-    return (&IpTable[IpCount++]);
-    }
+	IpTable[IpCount].ip = ipaddr;
+	return (&IpTable[IpCount++]);
+	}
 
 size_t ICGrandTotalDataPoints = 0;
 
 char inline *HostIp2CharIp(unsigned long ipaddr, char *buffer)
-    {
+	{
 	struct in_addr in_addr;
 	char *s;
 
 	in_addr.s_addr = htonl(ipaddr);	
-    s = inet_ntoa(in_addr);
+	s = inet_ntoa(in_addr);
 	strncpy(buffer, s, 16);
 	buffer[15] = '\0';
 	return(buffer);
-/*  uint32_t ip = *(uint32_t *)ipaddr;
+/*	uint32_t ip = *(uint32_t *)ipaddr;
 
 	sprintf(buffer, "%d.%d.%d.%d", (ip << 24)  >> 24, (ip << 16) >> 24, (ip << 8) >> 24, (ip << 0) >> 24);
 */
-    }
+	}
 
 
 // Add better error checking
 int fork2()
-    {
-    pid_t pid;
+	{
+	pid_t pid;
 
-    if (!(pid = fork()))
-        {
-        if (!fork())
-        	{
+	if (!(pid = fork()))
+		{
+		if (!fork())
+			{
 #ifdef PROFILE
 				// Got this incantation from a message board.  Don't forget to set
 				// GMON_OUT_PREFIX in the shell
@@ -1306,13 +1306,13 @@ int fork2()
 				syslog(LOG_INFO, "Calling profiler startup...");
 				monstartup((u_long) &_start, (u_long) &etext);
 #endif
-            return(0);
-            }        
+			return(0);
+			}		 
 
-        _exit(0);
-        }
-    
-    waitpid(pid, NULL, 0);
-    return(1);
-    }
+		_exit(0);
+		}
+	
+	waitpid(pid, NULL, 0);
+	return(1);
+	}
 
