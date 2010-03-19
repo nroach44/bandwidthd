@@ -4,7 +4,7 @@ the software, testing and debugging, Blaze at ts@spective.net for his
 excellent logo, Andreas Henriksson for polishing, testing, fixing, and 
 all the guys at havok for distributing clue.
 
-#### LISCENCE #
+#### LICENSE #
 You may use this software under any version of the GPL that is current 
 as of your download.  For exact terms and conditions please see www.gnu.org.  
 
@@ -145,7 +145,7 @@ always specify "ip" in the filter.  For example:
 
 filter "ip and host 64.215.40.1"
 
-#### HOW TO IMPROVE PERFORANCE #
+#### HOW TO IMPROVE PERFORMANCE #
 Bandwidthd's primary bottleneck in static HTML mode is the drawing of graphs for 
 IP addresses.  To improve bandwidthd's performance, therefore, the only thing you 
 can really do is reduce the number of graphs it has to draw in any given run.  
@@ -156,7 +156,7 @@ on with them.
 
 Alternatively, you can choose to graph less often.  Bandwidthd automatically skips 
 a graphing run if the last one is still going when the new one is scheduled to start.  
-If you'd like to graph less often than your server is capeable of, you can edit 
+If you'd like to graph less often than your server is capable of, you can edit 
 skip_intervals in bandwidthd.conf.  A value of 1means to skip every other interval, 
 3 would mean to skip three intervals between each run.  This doesn't disable 
 Bandwidthd's automatic skipping.
@@ -226,7 +226,7 @@ is done by graph.php,  all parameters are passed to it in it's url.  You can cre
 custom urls to pull custom graphs from your own index pages, or use the canned 
 reporting system.
 
-In addition, you should schedule bd_pgsql_purge.sh to run every so often.  I recomend 
+In addition, you should schedule bd_pgsql_purge.sh to run every so often.  I recommend 
 running it weekly.  This script outputs sql statements that aggregate the older 
 data points in your database in order to reduce the amount of data that needs to
 be slogged through in order to generate yearly, monthly, and weekly graphs.
@@ -250,8 +250,8 @@ that means it currently has recorded no data.  The cause is most likely one of t
 6. You have a filter line that is filtering out all the traffic Bandwidthd could be seeing.
 
 Bandwidthd doesn't do a very good job of tracking ftp.  This is because only some ftp 
-server software follows the rfc standard of sourceing all ftp transfers from port 20.  
-Surprisingly, Microsofts ftp daemon is compliant in this regard, whereas most open source 
+server software follows the rfc standard of sourcing all ftp transfers from port 20.  
+Surprisingly, Microsoft's ftp daemon is compliant in this regard, whereas most open source 
 daemons are not.
 
 Bandwidthd forks to perform it's graphing functions.  After this fork finishes it remains 
