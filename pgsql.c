@@ -3,7 +3,6 @@
 
 extern struct config config;
 extern unsigned int IpCount;
-extern struct Broadcast *Broadcasts;
 extern time_t ProgramStart;
 
 jmp_buf pgsqljmp;
@@ -82,15 +81,6 @@ PGconn *pgsqlCheckTables(PGconn *conn)
 			}
 		PQclear(res);
 
-		res = PQexec(conn, "CREATE TABLE links (id1 int, id2 int, plot boolean default TRUE, last_update timestamp with time zone);");
-		if (PQresultStatus(res) != PGRES_COMMAND_OK)
-			{
-			syslog(LOG_ERR, "Postresql create table links failed: %s", PQerrorMessage(conn));
-			PQclear(res);
-			PQfinish(conn);
-			return(NULL);
-			}
-		PQclear(res);
 		return(conn);
 		}
 	else
@@ -174,8 +164,6 @@ PGconn *pgsqlInit(void)
 		PQfinish(conn);
 		return(NULL);
 		}
-
-
 
 	return(conn);
 	}
@@ -266,82 +254,6 @@ PGconn *pgsqlCreateSensorID(PGconn *conn, char *sensor_id)
 		PQclear(res);
 		return(conn);
 		}
-	}
-
-PGconn *pgsqlUpdateLinkStatus(PGconn *conn, char *sensor_id)
-	{
-	struct Broadcast *bc;
-	unsigned long diff;
-	const char *paramValues[3];
-	char Values[3][MAX_PARAM_SIZE];
-	PGresult   *res;
-						
-	paramValues[0] = Values[0];
-	paramValues[1] = Values[1];
-	paramValues[2] = Values[2];
-
-	for (bc = Broadcasts; bc; bc = bc->next)
-		{
-		strncpy(Values[0], sensor_id, MAX_PARAM_SIZE);
-		// Determine numeric sensor ID of other sensor
-		if (!(conn = pgsqlDetermineSensorID(conn, Values[1], bc->sensor_name, bc->interface)))
-			return(NULL);		
-		
-		if (!Values[1][0])
-			{
-			syslog(LOG_ERR, "Sensor '%s - %s' does not exist in database, skiping link update", bc->sensor_name, bc->interface);
-			continue;
-			}
-
-		diff = time(NULL) - bc->received;
-		snprintf(Values[2], MAX_PARAM_SIZE, "%lu", diff);
-		res = PQexecParams(conn, "update links set last_update = now()-($3*interval '1 second') where (id1 = $1 and id2 = $2) or (id1 = $2 and id2 = $1);",
-				3,		 /* number of parameters */
-				NULL,	 /* let the backend deduce param type */
-				paramValues,
-				NULL,	 /* don't need param lengths since text */
-				NULL,	 /* default to all text params */
-				0);		 /* ask for binary results */
-
-		if (PQresultStatus(res) != PGRES_COMMAND_OK)
-			{
-			syslog(LOG_ERR, "Postresql Update of links table failed: %s", PQerrorMessage(conn));
-			PQclear(res);
-			PQfinish(conn);
-			return(NULL);
-			}
-		
-		// There may be duplicate rows
-		if (atol(PQcmdTuples(res)) > 0) 
-			{
-			PQclear(res); // Sucess, allow loop to fall through
-			}
-		else
-			{
-			PQclear(res);
-			
-			// Link doesn't exist so we must add it
-			diff = time(NULL) - bc->received;
-			snprintf(Values[2], MAX_PARAM_SIZE, "%lu", diff);
-			res = PQexecParams(conn, "insert into links (id1, id2, last_update) values ($1, $2, now()-($3*interval '1 second'));",
-					3,		 /* number of parameters */
-					NULL,	 /* let the backend deduce param type */
-					paramValues,
-					NULL,	 /* don't need param lengths since text */
-					NULL,	 /* default to all text params */
-					0);		 /* ask for binary results */
-
-			if (PQresultStatus(res) != PGRES_COMMAND_OK)
-				{
-				syslog(LOG_ERR, "Postresql Insert into links table failed: %s", PQerrorMessage(conn));
-				PQclear(res);
-				PQfinish(conn);
-				return(NULL);
-				}
-			PQclear(res);
-			}
-		}
-	return(conn);
 	}
 
 PGconn *pgsqlUpdateSensorStatus(PGconn *conn, char *sensor_id)
@@ -543,13 +455,6 @@ void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data
 	if (!(conn = pgsqlUpdateSensorStatus(conn, sensor_id)))
 		{
 		syslog(LOG_ERR, "Could not update sensor status");
-		_exit(2);
-		}
-
-	// Update link state
-	if (!(conn = pgsqlUpdateLinkStatus(conn, sensor_id)))
-		{
-		syslog(LOG_ERR, "Count not update link status");
 		_exit(2);
 		}
 

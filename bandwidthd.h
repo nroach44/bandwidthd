@@ -193,15 +193,6 @@ struct DataStoreBlock
 	struct DataStoreBlock *Next;
 	};
 
-struct Broadcast 
-	{
-	char *sensor_name;
-	char *interface;
-	time_t received;
-
-	struct Broadcast *next;
-	};
-
 struct extensions {
 	char *name;
 	char *value;

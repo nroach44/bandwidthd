@@ -39,12 +39,9 @@ int IP_Offset;
 
 struct IPDataStore *IPDataStore = NULL;
 extern int bdconfig_parse(void);
-void BroadcastState(int fd);
 extern FILE *bdconfig_in;
 
 struct config config;
-
-struct Broadcast *Broadcasts = NULL;
 
 pid_t workerchildpids[NR_WORKER_CHILDS];
 
@@ -323,7 +320,7 @@ int main(int argc, char **argv)
 	config.dev = NULL;
 	config.description = "No Description";
 	config.management_url = "https://127.0.0.1";
-	config.filter = "ip or ether proto 1537";
+	config.filter = "ip";
 	//config.filter = "ip";
 	config.skip_intervals = CONFIG_GRAPHINTERVALS;
 	config.graph_cutoff = CONFIG_GRAPHCUTOFF;
@@ -558,94 +555,11 @@ void CloseInterval(void)
 
 	GraphIntervalCount++;
 	CommitData(IntervalStart+config.interval);
-	BroadcastState(pcap_fileno(pd));  
 	ResetTrafficCounters();
 	// Make sure the signal hasn't been overwritten by one of our CommitData modules
 	// pgsql module does overwrite it
 	signal(SIGALRM, handle_interval);
 	alarm(config.interval);
-	}
-
-// Write an ethernet packet describing us out the given socket
-void BroadcastState(int fd)
-	{
-	char buf[SNAPLEN];
-	char	enet_broadcast[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	struct ether_header *eptr;
-
-	if (DataLink != DLT_EN10MB)
-		return;
-
-	if ((14+strlen(config.sensor_name)+strlen(config.dev)) > SNAPLEN)
-		{
-		syslog(LOG_ERR, "Sensor and device name too long for broadcast");
-		return;
-		}
-
-	bzero(buf, sizeof(buf));
-	eptr = (struct ether_header *) buf;			/* start of 16-byte Ethernet header */
-
-	// Always broadcast
-	memcpy(&buf[0], enet_broadcast, 6);
-	memcpy(&buf[6], enet_broadcast, 6); // Would rather use our own mac address
-
-	eptr->ether_type = htons(1537);	// Random packet type we'll use for bandwidthd	
-	
-	memcpy(buf+14, config.sensor_name, strlen(config.sensor_name)+1);
-	memcpy(buf+14+strlen(config.sensor_name)+1, config.dev, strlen(config.dev)+1);
-
-	if (write(fd, buf, SNAPLEN) != SNAPLEN)
-		syslog(LOG_ERR, "Write error during bandwidthd broadcast");
-	}
-
-void ParseBroadcast(const u_char *in)
-	{
-	char *p = (char *)in+14; // Skip ethernet header
-	struct Broadcast *bc;
-	struct Broadcast *bc2;
-	char *sensor_name;
-	char *interface;
-
-	sensor_name = p;
-	interface = p+strlen(p)+1;
-
-	// Sanity check
-	if (strlen(sensor_name) > SNAPLEN || strlen(interface) > SNAPLEN)
-		{
-		syslog(LOG_ERR, "Bandwidthd broadcast packet failed sanity check, discarding");
-		return;
-		}
-
-	if ((!strcmp(sensor_name, config.sensor_name)) && (!strcmp(interface, config.dev)))
-		return; // Our own packet
-
-	for (bc = Broadcasts; bc; bc = bc->next)
-		{
-		if ((!strcmp(sensor_name, bc->sensor_name)) && (!strcmp(interface, bc->interface)))
-			{
-			// Found this link
-			bc->received = time(NULL); 
-			return;
-			}
-		}
-
-	bc2 = malloc(sizeof(struct Broadcast));
-	bc2->sensor_name = strdup(sensor_name);
-	bc2->interface = strdup(interface); 
-	bc2->received = time(NULL);
-	bc2->next = NULL;
-				
-	if (Broadcasts == NULL)
-		{
-		Broadcasts = bc2;
-		return;
-		}
-	else
-		{
-		for (bc = Broadcasts; bc->next; bc = bc->next);
-		bc->next = bc2;
-		return;
-		}
 	}
 
 void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
@@ -665,8 +579,6 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 	PacketCallbackLock = TRUE;
 
 	eptr = (struct ether_header *) p;
-	if (eptr->ether_type == htons(1537))
-		ParseBroadcast(p);
 
 	caplen -= IP_Offset;  // We're only measuring ip size, so pull off the ethernet header
 	p += IP_Offset; // Move the pointer past the datalink header
