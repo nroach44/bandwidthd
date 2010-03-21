@@ -7,7 +7,7 @@ extensiondir = @extensiondir@
 
 CC = @CC@
 LDFLAGS = @LDFLAGS@ @LIBS@
-OBS= bandwidthd.o graph.o conf.tab.o conf.l.o pgsql.o extensions.o
+OBS= bandwidthd.o graph.o conf.tab.o conf.l.o pgsql.o sqlight.o extensions.o
 
 CFLAGS= -Wall @CFLAGS@ @CPPFLAGS@ @DEFS@
 NONWALLCFLAGS= @CFLAGS@ @CPPFLAGS@ @DEFS@

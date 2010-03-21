@@ -889,6 +889,8 @@ void StoreIPDataInDatabase(struct IPData IncData[], struct extensions *extension
 	{
 	if (config.output_database == DB_PGSQL)
 		pgsqlStoreIPData(IncData, extension_data);
+	else if(config.output_database == DB_SQLITE)
+		sqliteStoreIPData(IncData, extension_data);	
 	}
 
 void StoreIPDataInCDF(struct IPData IncData[])

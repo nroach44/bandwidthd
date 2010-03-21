@@ -103,8 +103,8 @@ typedef u_int16_t uint16_t;
 #define MAX_FILENAME 1024
 
 #define DB_PGSQL 1
-// No mysql support yet
-#define DB_MYSQL 2
+#define DB_MYSQL 2 // No mysql support yet
+#define DB_SQLITE 3
 
 struct config
 	{
@@ -252,6 +252,9 @@ void			MakeIndexPages(int NumGraphs, struct SummaryData *SummaryData[]);
 
 // ************ Pgsql
 void pgsqlStoreIPData(struct IPData IncData[], struct extensions *);
+
+// ************ SQLite
+void sqliteStoreIPData(struct IPData IncData[], struct extensions *extension_data);
 
 // ************ Extensions
 struct extensions *execute_extensions(void);

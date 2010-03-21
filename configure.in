@@ -60,6 +60,8 @@ AC_CHECK_FILE(/usr/local/pgsql/include, CPPFLAGS="$CPPFLAGS -I/usr/local/pgsql/i
 AC_CHECK_LIB(pq, PQconnectdb,
 	[AC_CHECK_LIB(pq,PQexecParams, ,AC_MSG_WARN([libpq exists but is too old... bandwidthd requires support for PQexecParams]))])
 
+AC_CHECK_LIB(sqlite3, sqlite3_open, ,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
+
 # Checks for header files.
 AC_HEADER_DIRENT
 

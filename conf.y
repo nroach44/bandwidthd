@@ -34,6 +34,7 @@ int bdconfig_wrap()
 %token TOKJUNK TOKSUBNET TOKDEV TOKSLASH TOKSKIPINTERVALS TOKGRAPHCUTOFF TOKDESCRIPTION
 %token TOKPROMISC TOKOUTPUTCDF TOKRECOVERCDF TOKGRAPH TOKNEWLINE TOKFILTER TOKMANAGEMENTURL
 %token TOKMETAREFRESH TOKPGSQLCONNECTSTRING TOKSENSORID TOKHTDOCSDIR TOKLOGDIR TOKEXTENSIONS
+%token TOKSQLITEFILENAME
 %union
 {
     int number;
@@ -86,7 +87,9 @@ command:
 	|
 	description
 	|
-	management_url;
+	management_url
+	|
+	sqlite_filename
 	;
 
 subnet:
@@ -257,6 +260,14 @@ pgsql_connect_string:
 	config.output_database = DB_PGSQL;
     }
     ;
+
+sqlite_filename:
+	TOKSQLITEFILENAME string
+	{
+	config.db_connect_string = $2;
+	config.output_database = DB_SQLITE;
+	}
+	;
 
 sensor_name:
     TOKSENSORID string

@@ -1,4 +1,5 @@
 Make file tweaks
+Add Support for SQLight database
 Adhere more strictly to GNU coding standards for directories
 Optional htdocs and log file locations specified at configure time
 Optional bandwidthd.conf entries to specify htdocs and log file locations
