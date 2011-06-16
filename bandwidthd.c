@@ -486,14 +486,14 @@ int main(int argc, char **argv)
 #endif
 #ifdef DLT_RAW
 		case DLT_RAW:
-			printf("Untested Datalink Type %d\nPlease report to hinkle@derbyworks.net if bandwidthd works for you\non this interface\n", DataLink);
+			printf("Untested Datalink Type %d\nPlease report to drachs@gmail.com if bandwidthd works for you\non this interface\n", DataLink);
 			printf("Packet Encoding:\n\tRaw\n");
 			syslog(LOG_INFO, "Untested packet encoding: Raw");
 			IP_Offset = 0;
 			break;
 #endif
 		case DLT_IEEE802:
-			printf("Untested Datalink Type %d\nPlease report to hinkle@derbyworks.net if bandwidthd works for you\non this interface\n", DataLink);
+			printf("Untested Datalink Type %d\nPlease report to drachs@gmail.com if bandwidthd works for you\non this interface\n", DataLink);
 			printf("Packet Encoding:\nToken Ring\n");
 			syslog(LOG_INFO, "Untested packet encoding: Token Ring");
 			IP_Offset = 22;
