@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "conf.tab.h"
+#include "parser.h"
 
 %}
 
@@ -10,11 +10,11 @@
 [ \t]+      			/* Ignore */;
 \n						{ return TOKNEWLINE; }
 #.*\n        			{ return TOKNEWLINE; }
-([0-9]{1,3}"."){3,3}([0-9]{1,3}) { bdconfig_lval.string=strdup(yytext); return IPADDR; }
-[-0-9]+					{ bdconfig_lval.number=atoi(yytext); return NUMBER; }
-\".*\"					{ bdconfig_lval.string=strdup(yytext); return STRING; }
+([0-9]{1,3}"."){3,3}([0-9]{1,3}) { yylval.string=strdup(yytext); return IPADDR; }
+[-0-9]+					{ yylval.number=atoi(yytext); return NUMBER; }
+\".*\"					{ yylval.string=strdup(yytext); return STRING; }
 \/						{ return TOKSLASH; }
-true|false              { bdconfig_lval.number=!strcmp(yytext,"true"); return STATE; }
+true|false              { yylval.number=!strcmp(yytext,"true"); return STATE; }
 subnet					{ return TOKSUBNET; }
 dev						{ return TOKDEV; }
 skip_intervals			{ return TOKSKIPINTERVALS; }

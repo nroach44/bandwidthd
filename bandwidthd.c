@@ -38,8 +38,8 @@ int DataLink;
 int IP_Offset;
 
 struct IPDataStore *IPDataStore = NULL;
-extern int bdconfig_parse(void);
-extern FILE *bdconfig_in;
+int yyparse (void);
+extern FILE *yyin;
 
 struct config config;
 
@@ -363,14 +363,14 @@ int main(int argc, char **argv)
 						}
 		}
 
-	bdconfig_in = fopen(bd_conf, "rt");
-	if (!bdconfig_in)
+	yyin = fopen(bd_conf, "rt");
+	if (!yyin)
 		{
 		syslog(LOG_ERR, "Cannot open bandwidthd.conf");
 		printf("Cannot open ./etc/bandwidthd.conf\n");
 		exit(1);
 		}
-	bdconfig_parse();
+	yyparse();
 
 	// Log list of monitored subnets
 	for (Counter = 0; Counter < SubnetCount; Counter++)

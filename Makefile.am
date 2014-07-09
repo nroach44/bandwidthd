@@ -1,6 +1,5 @@
-BUILT_SOURCES = conf.l
-
+BUILT_SOURCES = parser.h bandwidthd.h
+AM_YFLAGS = -d
 bin_PROGRAMS = bandwidthd
-AM_YFLAGS = -pbdconfig_ -d
-bandwidthd_SOURCES = bandwidthd.c graph.c extensions.c sqlight.c
+bandwidthd_SOURCES = bandwidthd.c graph.c extensions.c sqlight.c parser.y lexer.l
 bandwidthd_LDADD = $(LIBOBJS)
