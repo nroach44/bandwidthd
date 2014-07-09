@@ -4,7 +4,7 @@ extern struct config config;
 extern unsigned int IpCount;
 extern time_t ProgramStart;
 
-#ifdef HAVE_LIBSQLITE3
+#ifdef WITH_LIBSQLITE3
 
 #include <sqlite3.h>
 
@@ -236,7 +236,7 @@ sqlite3* sqliteIncReboots(sqlite3* conn, int sensor_id)
 
 void sqliteStoreIPData(struct IPData IncData[], struct extensions *extension_data)
 	{
-#ifdef HAVE_LIBSQLITE3
+#ifdef WITH_LIBSQLITE3
 	static int sensor_id = -1;
 	static pid_t child = 0;
 

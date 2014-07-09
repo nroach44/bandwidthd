@@ -30,14 +30,6 @@ LDFLAGS="$LDFLAGS -L/usr/local/lib"
 
 CPPFLAGS="$CPPFLAGS -I/usr/local/include"
 
-#Check for Darwin sw directory
-AC_CHECK_FILE(/sw/lib, LDFLAGS="$LDFLAGS -L/sw/lib")
-AC_CHECK_FILE(/sw/include, CPPFLAGS="$CPPFLAGS -I/sw/include")
-
-#Check for NetBSD usr/pkg directory
-AC_CHECK_FILE(/usr/pkg/lib, LDFLAGS="$LDFLAGS -L/usr/pkg/lib")
-AC_CHECK_FILE(/usr/pkg/include, CPPFLAGS="$CPPFLAGS -I/usr/pkg/include")
-
 # Required for solaris
 AC_CHECK_LIB(socket, connect)
 AC_CHECK_LIB(nsl, gethostbyname)
@@ -55,13 +47,8 @@ AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd requires but cannot f
 AC_CHECK_LIB(pcap, pcap_open_live, ,
 	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])])
 
-# Optional Library
-AC_CHECK_FILE(/usr/local/pgsql/lib, LDFLAGS="$LDFLAGS -L/usr/local/pgsql/lib")
-AC_CHECK_FILE(/usr/local/pgsql/include, CPPFLAGS="$CPPFLAGS -I/usr/local/pgsql/include")
-AC_CHECK_LIB(pq, PQconnectdb,
-	[AC_CHECK_LIB(pq,PQexecParams, ,AC_MSG_WARN([libpq exists but is too old... bandwidthd requires support for PQexecParams]))])
-
 AC_CHECK_LIB(sqlite3, sqlite3_open, ,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
+
 
 # Checks for header files.
 AC_HEADER_DIRENT

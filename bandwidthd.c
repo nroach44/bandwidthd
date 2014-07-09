@@ -799,10 +799,11 @@ void DropOldData(long int timestamp)	// Go through the ram datastore and dump ol
 
 void StoreIPDataInDatabase(struct IPData IncData[], struct extensions *extension_data)
 	{
-	if (config.output_database == DB_PGSQL)
-		pgsqlStoreIPData(IncData, extension_data);
-	else if(config.output_database == DB_SQLITE)
-		sqliteStoreIPData(IncData, extension_data);	
+	sqliteStoreIPData(IncData, extension_data);
+	//if (config.output_database == DB_PGSQL)
+	//	pgsqlStoreIPData(IncData, extension_data);
+	//else if(config.output_database == DB_SQLITE)
+			
 	}
 
 void StoreIPDataInCDF(struct IPData IncData[])

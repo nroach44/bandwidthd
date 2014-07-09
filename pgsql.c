@@ -7,7 +7,7 @@ extern time_t ProgramStart;
 
 jmp_buf pgsqljmp;
 
-#ifdef HAVE_LIBPQ
+#ifdef WITH_LIBPQ
 
 #include "postgresql/libpq-fe.h"
 
@@ -334,7 +334,7 @@ static void pgsqllngjmp(int signal)
 
 void pgsqlStoreIPData(struct IPData IncData[], struct extensions *extension_data)
 	{
-#ifdef HAVE_LIBPQ
+#ifdef WITH_LIBPQ
 	static char sensor_id[MAX_PARAM_SIZE] = { '\0' };
 	static pid_t child = 0;
 

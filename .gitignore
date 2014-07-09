@@ -6,3 +6,10 @@ configure
 Makefile
 aclocal.m4
 Makefile.in
+.deps/
+autom4te.cache/
+conf.c
+config.h
+config.h.in
+config.status
+stamp-h1
