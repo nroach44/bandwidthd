@@ -678,7 +678,7 @@ void MonitorSubnet(unsigned int ip, unsigned int mask)
 	SubnetCount++;
 	}
 
-inline void Credit(struct Statistics *Stats, const struct ip *ip)
+void Credit(struct Statistics *Stats, const struct ip *ip)
 	{
 	unsigned long size;
 	const struct tcphdr *tcp;
@@ -1162,7 +1162,7 @@ void RecoverDataFromCDF(void)
 // ****** FindIp **********
 // ****** Returns or allocates an Ip's data structure
 
-inline struct IPData *FindIp(uint32_t ipaddr)
+struct IPData *FindIp(uint32_t ipaddr)
 	{
 	unsigned int Counter;
 	static time_t last_error = 0;
@@ -1188,7 +1188,7 @@ inline struct IPData *FindIp(uint32_t ipaddr)
 
 size_t ICGrandTotalDataPoints = 0;
 
-char inline *HostIp2CharIp(unsigned long ipaddr, char *buffer)
+char *HostIp2CharIp(unsigned long ipaddr, char *buffer)
 	{
 	struct in_addr in_addr;
 	char *s;
