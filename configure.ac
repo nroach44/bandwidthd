@@ -1,6 +1,6 @@
-# Process this file with autoconf to produce a configure script.
 AC_INIT(bandwidthd, [2.0.2])
-AM_INIT_AUTOMAKE
+# Process this file with autoconf to produce a configure script.
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CANONICAL_HOST
 
 AC_CONFIG_SRCDIR([bandwidthd.c])
@@ -113,12 +113,12 @@ AC_DEFINE_UNQUOTED(TCPHDR_DPORT,$TCPHDR_DPORT,[dest port field name in tcphdr])
 
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_HEADER_STDC
-AC_FUNC_MKTIME
-AC_TYPE_SIGNAL
-AC_FUNC_STAT
-AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
+#AC_FUNC_MALLOC
+#AC_HEADER_STDC
+#AC_FUNC_MKTIME
+#AC_TYPE_SIGNAL
+#AC_FUNC_STAT
+#AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
 
 
 # Set directory names
@@ -136,4 +136,5 @@ AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
 AC_DEFINE_DIR(LOG_DIR, log_dir, [Name of log directory])
 AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
 AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

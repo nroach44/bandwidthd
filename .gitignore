@@ -4,3 +4,5 @@
 *.log
 configure
 Makefile
+aclocal.m4
+Makefile.in
