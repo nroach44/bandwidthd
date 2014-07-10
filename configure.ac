@@ -3,7 +3,7 @@ AC_INIT(bandwidthd, [2.0.2])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CANONICAL_HOST
 
-AC_CONFIG_SRCDIR([bandwidthd.c])
+AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
 
 MAJOR_VERSION=2
@@ -83,16 +83,16 @@ AC_TYPE_SIZE_T
 AC_STRUCT_TM
 
 TCPHDR_SPORT="undefined"
-AC_CHECK_MEMBER(struct tcphdr.source,TCPHDR_SPORT="source",,[#include "bandwidthd.h"])
-AC_CHECK_MEMBER(struct tcphdr.th_sport,TCPHDR_SPORT="th_sport",,[#include "bandwidthd.h"])
+AC_CHECK_MEMBER(struct tcphdr.source,TCPHDR_SPORT="source",,[#include "src/bandwidthd.h"])
+AC_CHECK_MEMBER(struct tcphdr.th_sport,TCPHDR_SPORT="th_sport",,[#include "src/bandwidthd.h"])
 if test "$TCPHDR_SPORT" = "undefined" ; then
 	AC_MSG_ERROR([Could not determine souce port field name for tcphdr structure])
 fi
 AC_DEFINE_UNQUOTED(TCPHDR_SPORT,$TCPHDR_SPORT,[source port field name in tcphdr])
 
 TCPHDR_DPORT="undefined"
-AC_CHECK_MEMBER(struct tcphdr.dest,TCPHDR_DPORT="dest",,[#include "bandwidthd.h"])
-AC_CHECK_MEMBER(struct tcphdr.th_dport,TCPHDR_DPORT="th_dport",,[#include "bandwidthd.h"])
+AC_CHECK_MEMBER(struct tcphdr.dest,TCPHDR_DPORT="dest",,[#include "src/bandwidthd.h"])
+AC_CHECK_MEMBER(struct tcphdr.th_dport,TCPHDR_DPORT="th_dport",,[#include "src/bandwidthd.h"])
 if test "$TCPHDR_DPORT" = "undefined" ; then
 	AC_MSG_ERROR([Could not determine dest port field name for tcphdr structure])
 fi
@@ -123,5 +123,8 @@ AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
 AC_DEFINE_DIR(LOG_DIR, log_dir, [Name of log directory])
 AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
 AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  src/Makefile
+])
 AC_OUTPUT
