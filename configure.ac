@@ -1,16 +1,10 @@
-AC_INIT(bandwidthd, [2.0.2])
+AC_INIT(bandwidthd, 2.0.1-autotools)
 # Process this file with autoconf to produce a configure script.
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CANONICAL_HOST
 
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
-
-MAJOR_VERSION=2
-MINOR_VERSION=0
-RELEASE_VERSION=0
-EXTRA_VERSION=""
-VERSION="$MAJOR_VERSION.$MINOR_VERSION.$RELEASE_VERSION$EXTRA_VERSION"
 
 # Checks for programs.
 AC_PROG_YACC
