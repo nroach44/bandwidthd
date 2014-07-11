@@ -119,6 +119,7 @@ AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
 AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
 AC_CONFIG_FILES([
   Makefile
+  data/Makefile
   src/Makefile
 ])
 AC_OUTPUT
