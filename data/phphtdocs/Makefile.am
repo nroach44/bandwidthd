@@ -1,5 +1,5 @@
 phphtdocsdir = $(docdir)/phphtdocs
-phphtdocs_DATA = \
+dist_phphtdocs_DATA = \
 	bandwidthd.css \
 	bd_pgsql_purge.sh \
 	config.conf \

@@ -124,6 +124,9 @@ AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
 AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
 AC_DEFINE_DIR(LOG_DIR, log_dir, [Name of log directory])
 AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
+
+AC_SUBST([htdocs_dir],[${htdocs_dir}])
+AC_SUBST([extension_dir],[${extension_dir}])
 AC_CONFIG_FILES([
 	Makefile
 	data/Makefile

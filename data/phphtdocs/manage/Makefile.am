@@ -1,5 +1,5 @@
 phphtdocsmanagedir = $(docdir)/phphtdocs/manage
-phphtdocsmanage_DATA = \
+dist_phphtdocsmanage_DATA = \
 	bandwidthd.css \
 	legend.gif \
 	logo.gif \

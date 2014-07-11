@@ -1,5 +1,5 @@
-extensionsdir = $(extension_dir)
-extensions_DATA = \
+extensionsdir = @extension_dir@
+dist_extensions_DATA = \
 	errors \
 	loadavg \
 	signal \
