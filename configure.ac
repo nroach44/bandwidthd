@@ -103,23 +103,34 @@ AC_DEFINE_UNQUOTED(TCPHDR_DPORT,$TCPHDR_DPORT,[dest port field name in tcphdr])
 
 
 # Set directory names
+
+# We won't ask for confdir because by default autoconf covers it
+config_file="${sysconfdir}/bandwidthd.conf"
+
 AC_ARG_WITH([htdocs-dir], AC_HELP_STRING([--with-htdocs-dir=DIR], [Sets default htdocs directory.  Default is LOCALSTATEDIR/bandwidthd/htdocs]),
 	htdocs_dir=${with_htdocs_dir},
 	htdocs_dir="${localstatedir}/bandwidthd/htdocs")
+
 AC_ARG_WITH([log-dir], AC_HELP_STRING([--with-log-dir=DIR], [Sets default cdf log directory.  Default is LOCALSTATEDIR/bandwidthd]),
 	log_dir=${with_log_dir},
 	log_dir="${localstatedir}/bandwidthd")
+
 AC_ARG_WITH([extension-dir], AC_HELP_STRING([--with-extension-dir=DIR], [Sets default extension directory.  Default is LOCALSTATEDIR/bandwidthd/extensions]),
 	extension_dir=${with_extension_dir},
 	extension_dir="${localstatedir}/bandwidthd/extensions")
-config_file="${sysconfdir}/bandwidthd.conf"
+config_file="config_dir/bandwidthd.conf"
+
+AC_DEFINE_DIR(CONFIG_DIR, ${sysconfdir}, [Location of bandwidthd.conf])
 AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
-AC_DEFINE_DIR(LOG_DIR, log_dir, [Name of log directory])
 AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
+AC_DEFINE_DIR(LOG_DIR, log_dir, [Name of log directory])
 AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
 AC_CONFIG_FILES([
-  Makefile
-  data/Makefile
-  src/Makefile
+	Makefile
+	data/Makefile
+	data/extensions/Makefile
+	data/phphtdocs/Makefile
+	data/phphtdocs/manage/Makefile
+	src/Makefile
 ])
 AC_OUTPUT
