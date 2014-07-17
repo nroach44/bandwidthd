@@ -127,6 +127,7 @@ AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
 
 AC_SUBST([htdocs_dir],[${htdocs_dir}])
 AC_SUBST([extension_dir],[${extension_dir}])
+AC_OUTPUT(data/bandwidthd.conf)
 AC_CONFIG_FILES([
 	Makefile
 	data/Makefile
