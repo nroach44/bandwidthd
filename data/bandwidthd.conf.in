@@ -28,10 +28,12 @@ subnet 172.16.0.0/12
 
 #logdir: Set the cdf log output directory
 # This version was compiled with @log_dir@
+# This folder needs to exist beforehand.
 #log_dir "/usr/local/var/bandwidthd"
 
 #htdocs_dir:Set the static html output directory
 # This was compiled with @htdocs_dir@
+# This folder also needs to exist beforehand.
 #htdocs_dir "/usr/local/var/bandwidthd/htdocs"
 
 #output_cdf: Save cdf format logs to log_dir
