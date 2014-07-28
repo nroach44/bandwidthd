@@ -1,0 +1,38 @@
+#!/bin/bash
+# Nathaniel Roach
+
+bandwidthdpid=`cat /var/run/bandwidthd.pid
+
+configfile=@CONFIG_DIR@/bandwidthd.conf
+
+checkconfig(){
+	if -
+}
+
+checkfolders(){
+
+}
+
+startd(){
+
+}
+
+stopd(){
+
+}
+
+
+case "$1" in
+	start)
+		echo "Starting Bandwithd traffic monitor..."
+		/usr/bandwidthd/bandwidthd
+		;;
+	stop)
+		kill $bandwidthdpid
+	restart)
+		
+	*)
+		exit 0
+esac
+
+exit 0
