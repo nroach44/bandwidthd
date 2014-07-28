@@ -126,7 +126,7 @@ AC_ARG_WITH([extension-dir], AC_HELP_STRING([--with-extension-dir=DIR], [Sets de
 	extension_dir=${with_extension_dir},
 	extension_dir="${localstatedir}/bandwidthd/extensions")
 
-AC_ARG_WITH([postgresql-logging], AC_HELP_STRING([--with-postgresql-logging=false], [Disables support for logging to postgresql servers. Defaults to true. Forcing this to true without the appropriate headers will result in compilation errors.]),
+AC_ARG_WITH([postgresql-logging], AC_HELP_STRING([--with-postgresql-logging=false], [Disables support for logging to postgresql servers. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
 	postgres=${with_postgresql_logging}
 )
 
