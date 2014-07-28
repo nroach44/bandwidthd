@@ -1,5 +1,7 @@
 ####################################################
 # Bandwidthd.conf
+# Options commented out are for demonstration
+# of syntax.
 
 ###
 ## Capture Settings
@@ -12,10 +14,10 @@
 #dev "eth0"
 
 #promiscuous: Capture data not destined for the
-# interface.
+# interface. Default: true
 #promiscuous true
 
-#subnet: What traffice to measure. Traffic that 
+#subnet: What traffic to measure. Traffic that 
 # matches none of these subnets will be ignored.
 # Syntax is either IP Subnet Mask or CIDR
 subnet 10.0.0.0 255.0.0.0
@@ -24,7 +26,7 @@ subnet 172.16.0.0/12
 
 #filter: the libpcap format filter to capture
 # Please always include "ip" in the string to 
-# avoid strange problems
+# avoid strange problems. Default: "ip"
 #filter "ip"
 
 ###
@@ -39,21 +41,23 @@ subnet 172.16.0.0/12
 #sqlite_filename "/var/bandwidthd.db"
 
 #logdir: Set the cdf log output directory
-# Compiled with: @log_dir@
+# Compiled with default: @log_dir@
 # This folder needs to exist beforehand.
 #log_dir "/usr/local/var/bandwidthd"
 
 #output_cdf: Save cdf format logs to log_dir
+# Default: false
 #output_cdf true
 
 #recover_cdf: Read the logs into memory on
 # startup. If using PGSql only enable this
 # for the FIRST run, as bandwidthd does not
 # mark what has been logged to the postgres server.
+# Default: false
 #recover_cdf true
 
 #htdocs_dir:Set the static html output directory
-# Compiled with: @htdocs_dir@
+# Compiled with default: @htdocs_dir@
 # This folder also needs to exist beforehand.
 #htdocs_dir "/usr/local/var/bandwidthd/htdocs"
 
@@ -63,6 +67,7 @@ subnet 172.16.0.0/12
 #meta_refresh 150
 
 #graph: If enabled bandwidthd will draw usage graphs.
+# Default: true
 #graph true
 
 #skip_intervals: How many sets of 2.5 minutes
@@ -83,6 +88,7 @@ subnet 172.16.0.0/12
 #sensor_id: What data from this instance shows
 # as it's origin on the php portal/interface.
 # Not needed when not using pgsql.
+# Default: "unset"
 #sensor_id "buildroot"
 
 
