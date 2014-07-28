@@ -131,7 +131,8 @@ AC_ARG_WITH([postgresql-logging], AC_HELP_STRING([--with-postgresql-logging=fals
 )
 
 if test "$postgres" = "true" ; then
-	CFLAGS="$CFLAGS -D _postgres"
+	CFLAGS="$CFLAGS -D _postgres -D WITH_LIBPQ -I/usr/include "
+	LDFLAGS="$LDFLAGS -lpq"
 else
 	postgres=false
 fi
