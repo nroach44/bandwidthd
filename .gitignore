@@ -24,3 +24,4 @@ parser.c
 parser.h
 stamp-h1
 ylwrap
+data/bandwidthd.conf
