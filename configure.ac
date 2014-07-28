@@ -29,6 +29,13 @@ AC_CHECK_LIB(socket, connect)
 AC_CHECK_LIB(nsl, gethostbyname)
 AC_CHECK_LIB(resolv, inet_aton)
 
+# Check for postgresql
+AC_CHECK_LIB(pq, PQconnectdb,
+	[AC_CHECK_LIB(pq,PQexecParams, postgres=true,
+		AC_MSG_WARN([libpq does not support PQexecParams - will compile without postgresql support]))], 
+	[AC_MSG_WARN([Cannot find postresgl headers - will compile without support])
+])
+
 # Required for openbsd png library
 AC_CHECK_LIB(m, pow)
 
@@ -119,12 +126,21 @@ AC_ARG_WITH([extension-dir], AC_HELP_STRING([--with-extension-dir=DIR], [Sets de
 	extension_dir=${with_extension_dir},
 	extension_dir="${localstatedir}/bandwidthd/extensions")
 
+AC_ARG_WITH([postgresql-logging], AC_HELP_STRING([--with-postgresql-logging=false], [Disables support for logging to postgresql servers. Defaults to true. Forcing this to true without the appropriate headers will result in compilation errors.]),
+	postgres=${with_postgresql_logging}
+)
+
+if test "$postgres" = "true" ; then
+	CFLAGS="$CFLAGS -D _postgres"
+fi
+
 AC_DEFINE_DIR(CONFIG_DIR, ${sysconfdir}, [Location of bandwidthd.conf])
 AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
 AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
 AC_DEFINE_DIR(LOG_DIR, log_dir, [Name of log directory])
 AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
 
+AM_CONDITIONAL([POSTGRES], [test x$postgres = xtrue])
 AC_SUBST([htdocs_dir],[${htdocs_dir}])
 AC_SUBST([extension_dir],[${extension_dir}])
 AC_OUTPUT(data/bandwidthd.conf)
