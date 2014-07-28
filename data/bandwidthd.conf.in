@@ -35,7 +35,7 @@ subnet 172.16.0.0/12
 # to store traffic data in.
 # DO NOT uncomment if not compiled with or
 # using sqlite.
-# Compiled with sqlite: @sqilte_status@
+# Compiled with sqlite: @sqlite_status@
 #sqlite_filename "/var/bandwidthd.db"
 
 #logdir: Set the cdf log output directory
@@ -77,7 +77,7 @@ subnet 172.16.0.0/12
 # pgsql connection.
 # DO NOT uncomment if not compiled with or using
 # pgsql.
-# Compiled with postgresql: @postgressql_status@
+# Compiled with postgresql: @postgresql_status@
 #pgsql_connect_string "user = username dbname = database host = servername password = hunter2"
 
 #sensor_id: What data from this instance shows

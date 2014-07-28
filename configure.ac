@@ -48,7 +48,7 @@ AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd requires but cannot f
 AC_CHECK_LIB(pcap, pcap_open_live, ,
 	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])])
 
-AC_CHECK_LIB(sqlite3, sqlite3_open, ,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
+AC_CHECK_LIB(sqlite3, sqlite3_open, sqlite=true,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
 
 
 # Checks for header files.
@@ -132,6 +132,12 @@ AC_ARG_WITH([postgresql-logging], AC_HELP_STRING([--with-postgresql-logging=fals
 
 if test "$postgres" = "true" ; then
 	CFLAGS="$CFLAGS -D _postgres"
+else
+	postgres=false
+fi
+
+if test "$sqlite" != "true" ; then
+	sqlite=false
 fi
 
 AC_DEFINE_DIR(CONFIG_DIR, ${sysconfdir}, [Location of bandwidthd.conf])
@@ -144,9 +150,10 @@ AM_CONDITIONAL([POSTGRES], [test x$postgres = xtrue])
 AC_SUBST([htdocs_dir],[${htdocs_dir}])
 AC_SUBST([extension_dir],[${extension_dir}])
 AC_SUBST([log_dir],[${log_dir}])
-AC_OUTPUT([
+AC_SUBST([sqlite_status],[${sqlite}])
+AC_SUBST([postgresql_status],[${postgres}])
+AC_OUTPUT(
 data/bandwidthd.conf
-data/bandwidthd.init.sh
 )
 AC_CONFIG_FILES([
 	Makefile
@@ -157,3 +164,4 @@ AC_CONFIG_FILES([
 	src/Makefile
 ])
 AC_OUTPUT
+
