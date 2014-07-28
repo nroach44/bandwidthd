@@ -1,15 +1,9 @@
 ####################################################
 # Bandwidthd.conf
-# 
-# Commented out options are here to provide
-# documentation and represent defaults
 
-#subnet: What traffice to measure. Traffic that 
-# matches none of these subnets will be ignored.
-# Syntax is either IP Subnet Mask or CIDR
-subnet 10.0.0.0 255.0.0.0
-subnet 192.168.0.0/16
-subnet 172.16.0.0/12
+###
+## Capture Settings
+###
 
 #dev: Which interface to listen to
 # Bandwidthd listens on the first device it detects
@@ -21,27 +15,47 @@ subnet 172.16.0.0/12
 # interface.
 #promiscuous true
 
+#subnet: What traffice to measure. Traffic that 
+# matches none of these subnets will be ignored.
+# Syntax is either IP Subnet Mask or CIDR
+subnet 10.0.0.0 255.0.0.0
+subnet 192.168.0.0/16
+subnet 172.16.0.0/12
+
 #filter: the libpcap format filter to capture
 # Please always include "ip" in the string to 
 # avoid strange problems
 #filter "ip"
 
+###
+## Data storage Settings
+###
+
+#sqlite_filename: Path to location of sqlite db
+# to store traffic data in.
+# DO NOT uncomment if not compiled with or
+# using sqlite.
+# Compiled with sqlite: @sqilte_status@
+#sqlite_filename "/var/bandwidthd.db"
+
 #logdir: Set the cdf log output directory
-# This version was compiled with @log_dir@
+# Compiled with: @log_dir@
 # This folder needs to exist beforehand.
 #log_dir "/usr/local/var/bandwidthd"
-
-#htdocs_dir:Set the static html output directory
-# This was compiled with @htdocs_dir@
-# This folder also needs to exist beforehand.
-#htdocs_dir "/usr/local/var/bandwidthd/htdocs"
 
 #output_cdf: Save cdf format logs to log_dir
 #output_cdf true
 
 #recover_cdf: Read the logs into memory on
-# startup.
+# startup. If using PGSql only enable this
+# for the FIRST run, as bandwidthd does not
+# mark what has been logged to the postgres server.
 #recover_cdf true
+
+#htdocs_dir:Set the static html output directory
+# Compiled with: @htdocs_dir@
+# This folder also needs to exist beforehand.
+#htdocs_dir "/usr/local/var/bandwidthd/htdocs"
 
 #meta_refresh: How long the html pages would
 # wait until requesting the browser to reload
@@ -59,13 +73,17 @@ subnet 172.16.0.0/12
 # IP must transfer before it should be graphed.
 #graph_cutoff 1024
 
-#PGSql support - Fill in a pgsql connection string in order to user
-#PGSql as a backend
-#do not uncomment this line if you're not using pgsql
-#pgsql_connect_string "dbname = bandwidthd"
+#pgsql_connect_string: The config data for the
+# pgsql connection.
+# DO NOT uncomment if not compiled with or using
+# pgsql.
+# Compiled with postgresql: @postgressql_status@
+#pgsql_connect_string "user = username dbname = database host = servername password = hunter2"
 
-#SQLite support - path to a sqlite database
-#do not uncomment this line if you're not using sqlite
-#sqlite_filename "/var/bandwidthd.db"
+#sensor_id: What data from this instance shows
+# as it's origin on the php portal/interface.
+# Not needed when not using pgsql.
+#sensor_id "buildroot"
+
 
 

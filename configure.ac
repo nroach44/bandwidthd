@@ -143,7 +143,11 @@ AC_DEFINE_DIR(EXTENSION_DIR, extension_dir, [Name of the extensions directory])
 AM_CONDITIONAL([POSTGRES], [test x$postgres = xtrue])
 AC_SUBST([htdocs_dir],[${htdocs_dir}])
 AC_SUBST([extension_dir],[${extension_dir}])
-AC_OUTPUT(data/bandwidthd.conf)
+AC_SUBST([log_dir],[${log_dir}])
+AC_OUTPUT([
+data/bandwidthd.conf
+data/bandwidthd.init.sh
+)
 AC_CONFIG_FILES([
 	Makefile
 	data/Makefile
