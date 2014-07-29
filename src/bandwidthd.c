@@ -852,12 +852,11 @@ StoreIPDataInDatabase (struct IPData IncData[],
 		       struct extensions *extension_data)
 {
 
-#ifdef _postgres
-  if (config.output_database == DB_PGSQL)
-      pgsqlStoreIPData(IncData, extension_data);
-  else if(config.output_database == DB_SQLITE)
-#endif
-  sqliteStoreIPData (IncData, extension_data);
+
+	if (config.output_database == DB_PGSQL)
+		pgsqlStoreIPData(IncData, extension_data);
+	else if(config.output_database == DB_SQLITE)
+		sqliteStoreIPData (IncData, extension_data);
 
 }
 

@@ -130,16 +130,25 @@ AC_ARG_WITH([postgresql-logging], AC_HELP_STRING([--with-postgresql-logging=fals
 	postgres=${with_postgresql_logging}
 )
 
+AC_ARG_WITH([sqlite-storage], AC_HELP_STRING([--with-sqlite-storage=false], [Disables support for storing data in a sqlite database. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
+	sqlite=${with_sqlite_storage}
+)
+
 if test "$postgres" = "true" ; then
-	CFLAGS="$CFLAGS -D _postgres -D WITH_LIBPQ -I/usr/include "
+	CFLAGS="$CFLAGS -D WITH_LIBPQ"
 	LDFLAGS="$LDFLAGS -lpq"
 else
 	postgres=false
 fi
 
-if test "$sqlite" != "true" ; then
+if test "$sqlite" = "true" ; then
+	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3"
+	LDFLAGS="$LDFLAGS -lsqlite3"
+else
 	sqlite=false
 fi
+
+WITH_LIBSQLITE3
 
 AC_DEFINE_DIR(CONFIG_DIR, ${sysconfdir}, [Location of bandwidthd.conf])
 AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
