@@ -148,8 +148,6 @@ else
 	sqlite=false
 fi
 
-WITH_LIBSQLITE3
-
 AC_DEFINE_DIR(CONFIG_DIR, ${sysconfdir}, [Location of bandwidthd.conf])
 AC_DEFINE_DIR(CONFIG_FILE, config_file, [Name of bandwidthd.conf])
 AC_DEFINE_DIR(HTDOCS_DIR, htdocs_dir, [Name of htdocs directory])
