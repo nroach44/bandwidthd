@@ -12,7 +12,6 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LEX
 
-
 # May be required for libgd on bsd
 AC_PATH_X
 if test -n "$x_libraries" && test "x$x_libraries" != xNONE ; then
@@ -29,13 +28,6 @@ AC_CHECK_LIB(socket, connect)
 AC_CHECK_LIB(nsl, gethostbyname)
 AC_CHECK_LIB(resolv, inet_aton)
 
-# Check for postgresql
-AC_CHECK_LIB(pq, PQconnectdb,
-	[AC_CHECK_LIB(pq,PQexecParams, postgres=true,
-		AC_MSG_WARN([libpq does not support PQexecParams - will compile without postgresql support]))], 
-	[AC_MSG_WARN([Cannot find postresgl headers - will compile without support])
-])
-
 # Required for openbsd png library
 AC_CHECK_LIB(m, pow)
 
@@ -48,8 +40,7 @@ AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd requires but cannot f
 AC_CHECK_LIB(pcap, pcap_open_live, ,
 	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])])
 
-AC_CHECK_LIB(sqlite3, sqlite3_open, sqlite=true,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
-
+#AC_CHECK_LIB(sqlite3, sqlite3_open, sqlite=true,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -74,6 +65,9 @@ AC_CHECK_HEADERS([arpa/nameser.h])
 AC_CHECK_HEADERS([resolv.h],,,
 	[#include <netinet/in.h>
 	#include <arpa/nameser.h>])
+
+PKG_CHECK_MODULES([LIBPQ], libpq, postgres=true, postgres=false)
+PKG_CHECK_MODULES([LIBSQLITE3], sqlite3, sqlite=true, sqlite=false)
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -135,8 +129,8 @@ AC_ARG_WITH([sqlite-storage], AC_HELP_STRING([--with-sqlite-storage=false], [Dis
 )
 
 if test "$postgres" = "true" ; then
-	CFLAGS="$CFLAGS -D WITH_LIBPQ"
-	LDFLAGS="$LDFLAGS -lpq"
+	CFLAGS="$CFLAGS -D WITH_LIBPQ $LIBPQ_CFLAGS"
+	LDFLAGS="$LDFLAGS $LIBPQ_LIBS"
 else
 	postgres=false
 fi

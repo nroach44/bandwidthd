@@ -9,7 +9,7 @@ jmp_buf pgsqljmp;
 
 #ifdef WITH_LIBPQ
 
-#include <postgresql/libpq-fe.h>
+#include <libpq-fe.h>
 
 #define MAX_PARAM_SIZE 200
 
