@@ -136,8 +136,8 @@ else
 fi
 
 if test "$sqlite" = "true" ; then
-	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3"
-	LDFLAGS="$LDFLAGS -lsqlite3"
+	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3 $LIBSQLITE3_CFLAGS"
+	LDFLAGS="$LDFLAGS $LIBSQLITE3_LIBS"
 else
 	sqlite=false
 fi
