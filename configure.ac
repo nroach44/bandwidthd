@@ -108,23 +108,23 @@ AC_DEFINE_UNQUOTED(TCPHDR_DPORT,$TCPHDR_DPORT,[dest port field name in tcphdr])
 # We won't ask for confdir because by default autoconf covers it
 config_file="${sysconfdir}/bandwidthd.conf"
 
-AC_ARG_WITH([htdocs-dir], AC_HELP_STRING([--with-htdocs-dir=DIR], [Sets default htdocs directory.  Default is LOCALSTATEDIR/bandwidthd/htdocs]),
+AC_ARG_WITH([htdocs-dir], AS_HELP_STRING([--with-htdocs-dir=DIR], [Sets default htdocs directory.  Default is LOCALSTATEDIR/bandwidthd/htdocs]),
 	htdocs_dir=${with_htdocs_dir},
 	htdocs_dir="${localstatedir}/bandwidthd/htdocs")
 
-AC_ARG_WITH([log-dir], AC_HELP_STRING([--with-log-dir=DIR], [Sets default cdf log directory.  Default is LOCALSTATEDIR/bandwidthd]),
+AC_ARG_WITH([log-dir], AS_HELP_STRING([--with-log-dir=DIR], [Sets default cdf log directory.  Default is LOCALSTATEDIR/bandwidthd]),
 	log_dir=${with_log_dir},
 	log_dir="${localstatedir}/bandwidthd")
 
-AC_ARG_WITH([extension-dir], AC_HELP_STRING([--with-extension-dir=DIR], [Sets default extension directory.  Default is LOCALSTATEDIR/bandwidthd/extensions]),
+AC_ARG_WITH([extension-dir], AS_HELP_STRING([--with-extension-dir=DIR], [Sets default extension directory.  Default is LOCALSTATEDIR/bandwidthd/extensions]),
 	extension_dir=${with_extension_dir},
 	extension_dir="${localstatedir}/bandwidthd/extensions")
 
-AC_ARG_WITH([postgresql-logging], AC_HELP_STRING([--with-postgresql-logging=false], [Disables support for logging to postgresql servers. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
+AC_ARG_WITH([postgresql-logging], AS_HELP_STRING([--with-postgresql-logging=false], [Disables support for logging to postgresql servers. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
 	postgres=${with_postgresql_logging}
 )
 
-AC_ARG_WITH([sqlite-storage], AC_HELP_STRING([--with-sqlite-storage=false], [Disables support for storing data in a sqlite database. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
+AC_ARG_WITH([sqlite-storage], AS_HELP_STRING([--with-sqlite-storage=false], [Disables support for storing data in a sqlite database. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
 	sqlite=${with_sqlite_storage}
 )
 
