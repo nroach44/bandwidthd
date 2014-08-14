@@ -18,11 +18,6 @@ if test -n "$x_libraries" && test "x$x_libraries" != xNONE ; then
 	LDFLAGS="$LDFLAGS -L$x_libraries"
 fi
 
-# May be equired for BSD
-LDFLAGS="$LDFLAGS -L/usr/local/lib"
-
-CPPFLAGS="$CPPFLAGS -I/usr/local/include"
-
 # Required for solaris
 AC_CHECK_LIB(socket, connect)
 AC_CHECK_LIB(nsl, gethostbyname)
