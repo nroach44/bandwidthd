@@ -30,10 +30,13 @@ AC_CHECK_LIB(m, pow)
 AC_CHECK_LIB(iconv, libiconv_open)
 
 # Required Libraries
-AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd requires but cannot libpng])])
-AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libgd])])
+AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR(Bandwidthd needs libzlib to be installed)) #Needed by libpng, doing it here to be sure
+AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd needs libpng to be installed])])
+AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd needs libgd to be installed])])
+
+AC_CHECK_LIB(usb-1.0, libusb_init, ,[AC_MSG_ERROR{[Bandwidthd uses libpcap, which needs libusb-1.0 to be installed ]}])
 AC_CHECK_LIB(pcap, pcap_open_live, ,
-	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd requires but cannot find libpcap])])])
+	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd needs libpcap to be installed])])])
 
 #AC_CHECK_LIB(sqlite3, sqlite3_open, sqlite=true,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
 
