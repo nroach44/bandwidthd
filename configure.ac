@@ -6,11 +6,9 @@ AC_CANONICAL_HOST
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
 
-# Checks for programs.
-AC_PROG_YACC
-AC_PROG_CC
-AC_PROG_INSTALL
-AC_PROG_LEX
+### Needed for $X stuff
+# Seems to be needed for certain systems.
+LIBS="-lpthread $LIBS"
 
 # May be required for libgd on bsd
 AC_PATH_X
@@ -29,16 +27,67 @@ AC_CHECK_LIB(m, pow)
 # Required for gd under netbsd
 AC_CHECK_LIB(iconv, libiconv_open)
 
-# Required Libraries
-AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR(Bandwidthd needs libzlib to be installed)) #Needed by libpng, doing it here to be sure
+#Headers missing on cygwin
+AC_CHECK_HEADERS([arpa/nameser.h])
+AC_CHECK_HEADERS([resolv.h],,,
+	[#include <netinet/in.h>
+	#include <arpa/nameser.h>])
+
+### Required stuff
+# Checks for programs.
+AC_PROG_YACC
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LEX
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_STRUCT_TM
+
+# Checks for library functions. This block is a relic from the original config script,
+# They seem to be completely unneeded checks but the ones that work on a system that
+# builds the poject fine are enabled, the AC_FUNC checks need files that were not
+# included with the source.
+#AC_FUNC_MALLOC
+AC_HEADER_STDC
+#AC_FUNC_MKTIME
+AC_TYPE_SIGNAL
+#AC_FUNC_STAT
+
+TCPHDR_SPORT="undefined"
+AC_CHECK_MEMBER(struct tcphdr.source,TCPHDR_SPORT="source",,[#include <netinet/tcp.h>])
+AC_CHECK_MEMBER(struct tcphdr.th_sport,TCPHDR_SPORT="th_sport",,[#include <netinet/tcp.h>])
+if test "$TCPHDR_SPORT" = "undefined" ; then
+	AC_MSG_ERROR([Could not determine source port field name for tcphdr structure])
+fi
+AC_DEFINE_UNQUOTED(TCPHDR_SPORT,$TCPHDR_SPORT,[source port field name in tcphdr])
+
+TCPHDR_DPORT="undefined"
+AC_CHECK_MEMBER(struct tcphdr.dest,TCPHDR_DPORT="dest",,[#include <netinet/tcp.h>])
+AC_CHECK_MEMBER(struct tcphdr.th_dport,TCPHDR_DPORT="th_dport",,[#include <netinet/tcp.h>])
+if test "$TCPHDR_DPORT" = "undefined" ; then
+	AC_MSG_ERROR([Could not determine dest port field name for tcphdr structure])
+fi
+AC_DEFINE_UNQUOTED(TCPHDR_DPORT,$TCPHDR_DPORT,[dest port field name in tcphdr])
+
+# Testing for libpng without having libzlib will cause the test to fail on some systems
+AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR([Bandwidthd needs libzlib to be installed]))
 AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd needs libpng to be installed])])
 AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd needs libgd to be installed])])
 
-AC_CHECK_LIB(usb-1.0, libusb_init, ,[AC_MSG_ERROR{[Bandwidthd uses libpcap, which needs libusb-1.0 to be installed ]}])
+#libpcap needs libusb-1.0 if it is installed
+AC_CHECK_LIB(usb-1.0, libusb_init, ,[AC_MSG_WARN([libusb-1.0 not found, building or configuration errors may result])])
 AC_CHECK_LIB(pcap, pcap_open_live, ,
 	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd needs libpcap to be installed])])])
 
-#AC_CHECK_LIB(sqlite3, sqlite3_open, sqlite=true,AC_MSG_WARN([sqlite3 is recommended for storage of data but cannot be found]))
+AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
+
+# Checking for optional stuff
+PKG_CHECK_MODULES([LIBPQ], libpq, has_postgres=true, has_postgres=false)
+PKG_CHECK_MODULES([LIBSQLITE3], sqlite3, has_sqlite=true, has_sqlite=false)
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -57,50 +106,6 @@ AC_CHECK_HEADERS([pcap.h],,
 AC_CHECK_HEADERS([arpa/inet.h errno.h netdb.h netinet/in.h stddef.h stdlib.h string.h sys/socket.h sys/time.h sys/wait.h syslog.h unistd.h],,
 	[AC_MSG_ERROR([Bandwidthd cannot find some header files])])
 
-
-#Headers missing on cygwin
-AC_CHECK_HEADERS([arpa/nameser.h])
-AC_CHECK_HEADERS([resolv.h],,,
-	[#include <netinet/in.h>
-	#include <arpa/nameser.h>])
-
-PKG_CHECK_MODULES([LIBPQ], libpq, postgres=true, postgres=false)
-PKG_CHECK_MODULES([LIBSQLITE3], sqlite3, sqlite=true, sqlite=false)
-
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_STRUCT_TM
-
-TCPHDR_SPORT="undefined"
-AC_CHECK_MEMBER(struct tcphdr.source,TCPHDR_SPORT="source",,[#include <netinet/tcp.h>])
-AC_CHECK_MEMBER(struct tcphdr.th_sport,TCPHDR_SPORT="th_sport",,[#include <netinet/tcp.h>])
-if test "$TCPHDR_SPORT" = "undefined" ; then
-	AC_MSG_ERROR([Could not determine source port field name for tcphdr structure])
-fi
-AC_DEFINE_UNQUOTED(TCPHDR_SPORT,$TCPHDR_SPORT,[source port field name in tcphdr])
-
-TCPHDR_DPORT="undefined"
-AC_CHECK_MEMBER(struct tcphdr.dest,TCPHDR_DPORT="dest",,[#include <netinet/tcp.h>])
-AC_CHECK_MEMBER(struct tcphdr.th_dport,TCPHDR_DPORT="th_dport",,[#include <netinet/tcp.h>])
-if test "$TCPHDR_DPORT" = "undefined" ; then
-	AC_MSG_ERROR([Could not determine dest port field name for tcphdr structure])
-fi
-AC_DEFINE_UNQUOTED(TCPHDR_DPORT,$TCPHDR_DPORT,[dest port field name in tcphdr])
-
-
-# Checks for library functions.
-#AC_FUNC_MALLOC
-#AC_HEADER_STDC
-#AC_FUNC_MKTIME
-#AC_TYPE_SIGNAL
-#AC_FUNC_STAT
-#AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
-
-
 # Set directory names
 
 # We won't ask for confdir because by default autoconf covers it
@@ -118,25 +123,31 @@ AC_ARG_WITH([extension-dir], AS_HELP_STRING([--with-extension-dir=DIR], [Sets de
 	extension_dir=${with_extension_dir},
 	extension_dir="${localstatedir}/bandwidthd/extensions")
 
-AC_ARG_WITH([postgresql-logging], AS_HELP_STRING([--with-postgresql-logging=false], [Disables support for logging to postgresql servers. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
-	postgres=${with_postgresql_logging}
-)
+AC_ARG_WITH([postgresql-logging], AS_HELP_STRING([--with-postgresql-logging=false], [(true/false) Disables support for logging to postgresql servers. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
+	[])
 
-AC_ARG_WITH([sqlite-storage], AS_HELP_STRING([--with-sqlite-storage=false], [Disables support for storing data in a sqlite database. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
-	sqlite=${with_sqlite_storage}
-)
+AC_ARG_WITH([sqlite-storage], AS_HELP_STRING([--with-sqlite-storage=false], [(true/false) Disables support for storing data in a sqlite database. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
+	sqlite=${with_sqlite_storage})
 
-if test "$postgres" = "true" ; then
-	CFLAGS="$CFLAGS -D WITH_LIBPQ $LIBPQ_CFLAGS"
-	LDFLAGS="$LDFLAGS $LIBPQ_LIBS"
+if test "$has_postgres" = "true" ; then
+	if test "$with_postgresql_logging" != "false"; 
+		then 	CFLAGS="$CFLAGS -D WITH_LIBPQ $LIBPQ_CFLAGS"
+			LDFLAGS="$LDFLAGS $LIBPQ_LIBS"
+		else AC_MSG_WARN([Building without postgresql target support. (Disabled by argument)])
+	fi
 else
+	AC_MSG_WARN([Building without postgresql target support. (Install libpq-dev to enable this)])
 	postgres=false
 fi
 
-if test "$sqlite" = "true" ; then
-	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3 $LIBSQLITE3_CFLAGS"
-	LDFLAGS="$LDFLAGS $LIBSQLITE3_LIBS"
+if test "$has_sqlite" = "true" ; then
+	if test "$with_sqlite_storage" != "false"; 
+		then 	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3 $LIBSQLITE3_CFLAGS"
+			LDFLAGS="$LDFLAGS $LIBSQLITE3_LIBS"
+		else AC_MSG_WARN([Building without sqlite log storage support. (Disabled by argument)])
+	fi
 else
+	AC_MSG_WARN([Building without sqlite log storage support. (Install libsqlite3-dev to enable this)])
 	sqlite=false
 fi
 
