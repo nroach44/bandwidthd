@@ -11,7 +11,7 @@ AC_CONFIG_HEADER([config.h])
 LIBS="-lpthread $LIBS"
 
 # May be required for libgd on bsd
-AC_PATH_X
+#AC_PATH_X
 if test -n "$x_libraries" && test "x$x_libraries" != xNONE ; then
 	LDFLAGS="$LDFLAGS -L$x_libraries"
 fi
