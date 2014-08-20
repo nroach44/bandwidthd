@@ -11,10 +11,11 @@ AC_CONFIG_HEADER([config.h])
 LIBS="-lpthread $LIBS"
 
 # May be required for libgd on bsd
+# Disabled because it checks for X.org on linux systems
 #AC_PATH_X
-if test -n "$x_libraries" && test "x$x_libraries" != xNONE ; then
-	LDFLAGS="$LDFLAGS -L$x_libraries"
-fi
+#if test -n "$x_libraries" && test "x$x_libraries" != xNONE ; then
+#	LDFLAGS="$LDFLAGS -L$x_libraries"
+#fi
 
 # Required for solaris
 AC_CHECK_LIB(socket, connect)
@@ -127,28 +128,30 @@ AC_ARG_WITH([postgresql-logging], AS_HELP_STRING([--with-postgresql-logging=fals
 	[])
 
 AC_ARG_WITH([sqlite-storage], AS_HELP_STRING([--with-sqlite-storage=false], [(true/false) Disables support for storing data in a sqlite database. Defaults to true if the headers are found. Forcing this to true without the appropriate headers will result in compilation errors.]),
-	sqlite=${with_sqlite_storage})
+	[])
 
+postgres=false
 if test "$has_postgres" = "true" ; then
 	if test "$with_postgresql_logging" != "false"; 
 		then 	CFLAGS="$CFLAGS -D WITH_LIBPQ $LIBPQ_CFLAGS"
 			LDFLAGS="$LDFLAGS $LIBPQ_LIBS"
+			postgres=true
 		else AC_MSG_WARN([Building without postgresql target support. (Disabled by argument)])
 	fi
 else
 	AC_MSG_WARN([Building without postgresql target support. (Install libpq-dev to enable this)])
-	postgres=false
 fi
 
+sqlite=false
 if test "$has_sqlite" = "true" ; then
 	if test "$with_sqlite_storage" != "false"; 
 		then 	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3 $LIBSQLITE3_CFLAGS"
 			LDFLAGS="$LDFLAGS $LIBSQLITE3_LIBS"
+			sqlite=true
 		else AC_MSG_WARN([Building without sqlite log storage support. (Disabled by argument)])
 	fi
 else
 	AC_MSG_WARN([Building without sqlite log storage support. (Install libsqlite3-dev to enable this)])
-	sqlite=false
 fi
 
 AC_DEFINE_DIR(CONFIG_DIR, ${sysconfdir}, [Location of bandwidthd.conf])
@@ -163,16 +166,13 @@ AC_SUBST([extension_dir],[${extension_dir}])
 AC_SUBST([log_dir],[${log_dir}])
 AC_SUBST([sqlite_status],[${sqlite}])
 AC_SUBST([postgresql_status],[${postgres}])
-AC_OUTPUT(
-data/bandwidthd.conf
-)
 AC_CONFIG_FILES([
 	Makefile
 	data/Makefile
+	data/bandwidthd.conf
 	data/extensions/Makefile
 	data/phphtdocs/Makefile
 	data/phphtdocs/manage/Makefile
 	src/Makefile
 ])
 AC_OUTPUT
-
