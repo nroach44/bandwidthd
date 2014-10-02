@@ -7,8 +7,6 @@ AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
 
 ### Needed for $X stuff
-# Seems to be needed for certain systems.
-LIBS="-lpthread $LIBS"
 
 # May be required for libgd on bsd
 # Disabled because it checks for X.org on linux systems
@@ -80,6 +78,7 @@ AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd needs libpng to be i
 AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd needs libgd to be installed])])
 
 #libpcap needs libusb-1.0 if it is installed
+AC_CHECK_LIB(pthread, pthread_create, ,[AC_MSG_WARN([pthreads not found, build or configuration errors may result])])
 AC_CHECK_LIB(usb-1.0, libusb_init, ,[AC_MSG_WARN([libusb-1.0 not found, building or configuration errors may result])])
 AC_CHECK_LIB(pcap, pcap_open_live, ,
 	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd needs libpcap to be installed])])])
