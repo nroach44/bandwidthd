@@ -80,10 +80,17 @@ AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd needs libgd to be ins
 #libpcap needs libusb-1.0 if it is installed
 #AC_CHECK_LIB(pthread, pthread_create, ,[AC_MSG_WARN([pthreads not found, build or configuration errors may result])])
 #AC_CHECK_LIB(usb-1.0, libusb_init, ,[AC_MSG_WARN([libusb-1.0 not found, building or configuration errors may result])])
+
+AC_ARG_WITH([pcap-config], AS_HELP_STRING([--with-pcap-config=PATH], [Sets the full path to pcap-config. Searches PATH by default.]),
+	LIBS="$LIBS $(${with_pcap_config} --static --additional-libs)",
+	LIBS="$LIBS $(pcap-config --static --additional-libs)"
+)
+
+AC_MSG_WARN([$LIBS])
+
 AC_CHECK_LIB(pcap, pcap_open_live, ,
 	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd needs libpcap to be installed])])])
 
-LIBS="$LIBS $(pcap-config --libs)"
 
 AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
 
