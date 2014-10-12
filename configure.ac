@@ -72,22 +72,24 @@ if test "$TCPHDR_DPORT" = "undefined" ; then
 fi
 AC_DEFINE_UNQUOTED(TCPHDR_DPORT,$TCPHDR_DPORT,[dest port field name in tcphdr])
 
-# Testing for libpng without having libzlib will cause the test to fail on some systems
-AC_CHECK_LIB(z, zlibVersion, , AC_MSG_ERROR([Bandwidthd needs libzlib to be installed]))
-AC_CHECK_LIB(png, png_read_info, ,[AC_MSG_ERROR([Bandwidthd needs libpng to be installed])])
+PKG_CHECK_MODULES([libpng], libpng)
+LIBS="$LIBS $libpng_LIBS"
+
 AC_CHECK_LIB(gd, gdImageCreate, ,[AC_MSG_ERROR([Bandwidthd needs libgd to be installed])])
 
 #libpcap needs libusb-1.0 if it is installed
-AC_CHECK_LIB(pthread, pthread_create, ,[AC_MSG_WARN([pthreads not found, build or configuration errors may result])])
-AC_CHECK_LIB(usb-1.0, libusb_init, ,[AC_MSG_WARN([libusb-1.0 not found, building or configuration errors may result])])
+#AC_CHECK_LIB(pthread, pthread_create, ,[AC_MSG_WARN([pthreads not found, build or configuration errors may result])])
+#AC_CHECK_LIB(usb-1.0, libusb_init, ,[AC_MSG_WARN([libusb-1.0 not found, building or configuration errors may result])])
 AC_CHECK_LIB(pcap, pcap_open_live, ,
 	[AC_CHECK_LIB(wpcap, pcap_open_live, ,[AC_MSG_ERROR([Bandwidthd needs libpcap to be installed])])])
+
+LIBS="$LIBS $(pcap-config --libs)"
 
 AC_CHECK_FUNCS([alarm gethostbyaddr inet_ntoa memset strdup strftime pcap_findalldevs])
 
 # Checking for optional stuff
-PKG_CHECK_MODULES([LIBPQ], libpq, has_postgres=true, has_postgres=false)
-PKG_CHECK_MODULES([LIBSQLITE3], sqlite3, has_sqlite=true, has_sqlite=false)
+PKG_CHECK_MODULES([libpq], libpq, has_postgres=true, has_postgres=false)
+PKG_CHECK_MODULES([libsqlite3], sqlite3, has_sqlite=true, has_sqlite=false)
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -131,9 +133,9 @@ AC_ARG_WITH([sqlite-storage], AS_HELP_STRING([--with-sqlite-storage=false], [(tr
 
 postgres=false
 if test "$has_postgres" = "true" ; then
-	if test "$with_postgresql_logging" != "false"; 
-		then 	CFLAGS="$CFLAGS -D WITH_LIBPQ $LIBPQ_CFLAGS"
-			LDFLAGS="$LDFLAGS $LIBPQ_LIBS"
+	if test "$with_postgresql_logging" != "false";
+		then 	CFLAGS="$CFLAGS -D WITH_LIBPQ $libpq_CFLAGS"
+			LIBS="$LIBS $libpq_LIBS"
 			postgres=true
 		else AC_MSG_WARN([Building without postgresql target support. (Disabled by argument)])
 	fi
@@ -143,9 +145,9 @@ fi
 
 sqlite=false
 if test "$has_sqlite" = "true" ; then
-	if test "$with_sqlite_storage" != "false"; 
-		then 	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3 $LIBSQLITE3_CFLAGS"
-			LDFLAGS="$LDFLAGS $LIBSQLITE3_LIBS"
+	if test "$with_sqlite_storage" != "false";
+		then 	CFLAGS="$CFLAGS -D WITH_LIBSQLITE3 $libsqlite3_CFLAGS"
+			LIBS="$LIBS $libsqlite3_LIBS"
 			sqlite=true
 		else AC_MSG_WARN([Building without sqlite log storage support. (Disabled by argument)])
 	fi
