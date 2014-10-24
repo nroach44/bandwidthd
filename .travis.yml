@@ -9,11 +9,15 @@ script:
   - autoreconf -fvi
   - ./configure --with-sqlite-storage=false --with-postgresql-logging=false
   - make
+  - make clean
   - sudo apt-get install libsqlite3-dev
   - ./configure --with-sqlite-storage=true --with-postgresql-logging=false
   - make
+  - make clean
   - sudo apt-get install libpq-dev
   - ./configure --with-sqlite-storage=true --with-postgresql-logging=true
   - make
+  - make clean
   - sudo apt-get remove libsqlite3-dev
   - ./configure --with-sqlite-storage=false --with-postgresql-logging=true
+  - make
