@@ -1,0 +1,19 @@
+
+language: cpp
+cache: apt
+compiler:
+  - gcc
+before_install:
+  - sudo apt-get install build-essential libgd-dev libpng12-dev libpcap-dev
+script:
+  - autoreconf -fvi
+  - ./configure --with-sqlite-storage=false --with-postgresql-logging=false
+  - make
+  - sudo apt-get install libsqlite3-dev
+  - ./configure --with-sqlite-storage=true --with-postgresql-logging=false
+  - make
+  - sudo apt-get install libpq-dev
+  - ./configure --with-sqlite-storage=true --with-postgresql-logging=true
+  - make
+  - sudo apt-get remove libsqlite3-dev
+  - ./configure --with-sqlite-storage=false --with-postgresql-logging=true
