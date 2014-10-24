@@ -4,7 +4,7 @@ cache: apt
 compiler:
   - gcc
 before_install:
-  - sudo apt-get install build-essential libgd-dev libpng12-dev libpcap-dev
+  - sudo apt-get install build-essential libgd2-xpm-dev libpng12-dev libpcap-dev
 script:
   - autoreconf -fvi
   - ./configure --with-sqlite-storage=false --with-postgresql-logging=false
