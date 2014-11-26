@@ -1,4 +1,4 @@
-<?
+<?php
 include("include.php");
 include("header.php");
 
@@ -31,7 +31,7 @@ $db = ConnectDb();
 <table width=100% cellspacing=0 cellpadding=5 border=1>
 <tr>
 <td>
-<?
+<?php
 $sql = "SELECT sensor_name, interface, sensor_id from sensors order by sensor_name, interface;";
 $result = @pg_query($sql);
 if (!$result)
@@ -42,7 +42,7 @@ if (!$result)
 ?>
 <SELECT name="sensor_id">
 <OPTION value="none">--Select A Sensor--
-<?
+<?php
 while ($r = pg_fetch_array($result))
     echo "<option value=\"".$r['sensor_id']."\" ".($sensor_id==$r['sensor_id']?"SELECTED":"").">".$r['sensor_name']." - ".$r['interface']."\n";
 ?>
@@ -72,7 +72,7 @@ while ($r = pg_fetch_array($result))
 <input type=submit value="Go">
 </table>
 </FORM>
-<?
+<?php
 // Set defaults
 if (!isset($interval))
 	$interval = DFLT_INTERVAL;

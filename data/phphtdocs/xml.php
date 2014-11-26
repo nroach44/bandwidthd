@@ -1,4 +1,4 @@
-<?
+<?php
 include("include.php");
 header("Content-Type: text/xml");
 

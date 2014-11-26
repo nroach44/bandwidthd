@@ -1,4 +1,4 @@
-<?
+<?php
 include("../include.php");
 
 $db = ConnectDb();
@@ -27,7 +27,7 @@ include("manage_header.php");
 <FORM name=slices method=post action=<?=$PHP_SELF?>>
 <TABLE width=100% cellpadding=0 cellspacing=0>
 <TR><TH class=row-header-left>&nbsp<TH class=row-header-middle>Sensor Name<TH class=row-header-middle>Interface<TH class=row-header-middle>Direction<TH class=row-header-middle>Angle<TH class=row-header-right>Radius
-<?
+<?php
 // NOTE: This result set is used several times below
 $res = pg_query("select id, sensor_name, interface, slices.sensor_id, direction, angle, radius from slices, sensors where slices.sensor_id = sensors.sensor_id order by sensor_name;");
 if (!$res)

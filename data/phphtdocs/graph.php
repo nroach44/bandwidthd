@@ -1,4 +1,4 @@
-<?
+<?php
 require("include.php");
 
 // Returns x location of any given timestamp

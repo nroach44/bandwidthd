@@ -1,4 +1,4 @@
-<?
+<?php
 include("../include.php");
 
 $db = ConnectDb();
@@ -62,7 +62,7 @@ include("manage_header.php");
 <TABLE width=800 cellpadding=0 cellspacing=0>
 <FORM name=UpdateLocations method=post action=<?=$PHP_SELF?>>
 <TR><TH class=row-header-left>Name<TH class=row-header-middle>Color<TH class=row-header-middle>Longitude<TH class=row-header-right>Latitude
-<?
+<?php
 // NOTE: Used several times below
 $groups = pg_query("SELECT * from groups");
 // NOTE: This result set is used several times below
@@ -89,7 +89,7 @@ while ($r = @pg_fetch_array($locations))
 </FORM>
 <TR><TD><FORM name=AddLocation method=post action=<?=$PHP_SELF?>>
 <INPUT name=name>
-<?
+<?php
 echo("<TD align=center><select name=group_id>");
 pg_result_seek($groups, 0);
 while ($g = @pg_fetch_array($groups))
@@ -107,7 +107,7 @@ echo("</select>");
 <TABLE width=100% cellpadding=0 cellspacing=0>
 <TR><TH class=row-header-left>First Tower<TH class=row-header-middle>Second Tower<TH class=row-header-middle>First Router
 <TH class=row-header-middle>Second Router<TH class=row-header-right>Last Update
-<?
+<?php
 // NOTE: This result set is used several times below
 $links = pg_query("
 SELECT loc_a.name as loc_a_name, loc_b.name as loc_b_name, sens_a.sensor_id as sens_a_id, sens_a.sensor_name as sens_a_name, 
@@ -137,7 +137,7 @@ while ($r = @pg_fetch_array($links))
 <FORM name=HideLinks method=post action=<?=$PHP_SELF?>>
 <TABLE width=100% cellpadding=0 cellspacing=0>
 <TR><TH class=row-header-left>Sensor Name<TH class=row-header-middle>Interface<TH class=row-header-middle>Far Location<TH class=row-header-right>Far Router
-<?
+<?php
 // NOTE: This result set is used several times below
 $res = pg_query("select sensor_name, interface, sensors.sensor_id from links_ignorelist, sensors where links_ignorelist.sensor_id = sensors.sensor_id;");
 if (!$res)

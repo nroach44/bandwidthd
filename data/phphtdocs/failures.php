@@ -1,4 +1,4 @@
-<?
+<?php
 include("include.php");
 
 $db = ConnectDb();
@@ -17,11 +17,11 @@ if ($HTTP_GET_VARS['reset_links'] != "")
 <link href="bandwidthd.css" rel="stylesheet" type="text/css">
 </HEAD>
 <BODY>
-<?
+<?php
 include("header.php");
 ?>
 <h3>Failed Routers</h3>
-<?
+<?php
 $res = pg_query("
 SELECT sensor_name, management_url, name as loc_name, date_trunc('seconds', min(now()-last_connection))- interval '4 minutes' as missing 
 FROM sensors, locations 
@@ -49,7 +49,7 @@ else
 <TABLE width=100% cellpadding=0 cellspacing=0>
 <TR><TH class=row-header-left>First Tower<TH class=row-header-middle>Second Tower<TH class=row-header-middle>First Router
 <TH class=row-header-middle>Second Router<TH class=row-header-right>Last Update
-<?
+<?php
 $links = pg_query("
 SELECT loc_a.name as loc_a_name, loc_b.name as loc_b_name, sens_a.sensor_id as sens_a_id, sens_a.sensor_name as sens_a_name,
     sens_a.interface as sens_a_interface, sens_b.sensor_id as sens_b_id, sens_b.sensor_name as sens_b_name,
@@ -75,7 +75,7 @@ while ($r = @pg_fetch_array($links))
 </table>
 <h3>Low Rates</h3>
 </CENTER>
-<?
+<?php
 /*$res = pg_query("SELECT sensor_name, interface, management_url, signal, wireless from sensors, extension_log 
 	WHERE sensors.sensor_id = extension_log.sensor_id and wireless like '%Frequency:5.%'	
 		and wireless not like '%Bit Rate:0kb/s%' order by signal

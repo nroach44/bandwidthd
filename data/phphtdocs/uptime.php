@@ -4,14 +4,14 @@
 <link href="bandwidthd.css" rel="stylesheet" type="text/css">
 </HEAD>
 <BODY>
-<?
+<?php
 include("include.php");
 include("header.php");
 
 $db = ConnectDb();
 ?>
 <h3>Uptime Report</h3>
-<?
+<?php
 // NOTE: This result set is used several times below
 //"select * from extension_log where sensor_id = ".$interface['sensor_id']." order by timestamp desc limit 1;"
 

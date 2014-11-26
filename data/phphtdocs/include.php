@@ -1,4 +1,4 @@
-<?
+<?php
 // Emulate register_globals off
 if (ini_get('register_globals')) {
    $superglobals = array($_SERVER, $_ENV,

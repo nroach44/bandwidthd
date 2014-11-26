@@ -1,7 +1,7 @@
 <HEAD>
 <TITLE>Location Statistics</TITLE>
 </HEAD>
-<?
+<?php
 include("include.php");
 include("header.php");
 ?></CENTER>
@@ -9,7 +9,7 @@ include("header.php");
 <link href="bandwidthd.css" rel="stylesheet" type="text/css">
 </head>
 <center><img src=legend.gif></center>
-<?
+<?php
 $db = ConnectDb();
 
 $location_id = $HTTP_GET_VARS['location_id'];

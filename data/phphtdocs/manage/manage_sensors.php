@@ -1,4 +1,4 @@
-<?
+<?php
 include("../include.php");
 
 $db = ConnectDb();
@@ -68,7 +68,7 @@ if ($HTTP_GET_VARS['del_sensor'] != "")
 <a name=sensors><h3>Un-assigned sensors</h3>
 
 <TABLE width=100% cellpadding=0 cellspacing=0>
-<?
+<?php
 $locations = pg_query("SELECT * from locations");
 $sql = "SELECT distinct sensor_name, max(sensor_id) as sensor_id, max(last_connection) as last_connection from sensors where location is null group by sensor_name order by sensor_name ";
 $result = pg_query($sql);
@@ -76,7 +76,7 @@ if (!$result)
     echo "<center>No un-assigned sensors in database...</center>";
 ?>
 <TR><TH class=row-header-left>&nbsp<TH class=row-header-middle>Sensor Name<TH class=row-header-middle>Assign Location<TH class=row-header-right>Last Checkin
-<?
+<?php
 while ($r = @pg_fetch_array($result))
 	{
     echo("<TR><TD><a href=$PHP_SELF?del_sensor=".$r['sensor_name']."><img border=0 src=x.gif></a><TD>".$r['sensor_name']."<TD align=center><select name=\"SensorLocation".$r['sensor_id']."\">");
@@ -96,14 +96,14 @@ while ($r = @pg_fetch_array($result))
 <h3>Assigned sensors</h3>
 
 <TABLE width=100% cellpadding=0 cellspacing=0>
-<?
+<?php
 $sql = "SELECT distinct sensor_name, location, max(sensor_id) as sensor_id, max(last_connection) as last_connection from sensors where location is not null group by sensor_name, location order by sensor_name ";
 $result = pg_query($sql);
 if (!$result)
     echo "<center>No un-assigned sensors in database...</center>";
 ?>
 <TR><TH class=row-header-left>&nbsp<TH class=row-header-middle>Sensor Name<TH class=row-header-middle>Assign Location<TH class=row-header-right>Last Checkin
-<?
+<?php
 while ($r = @pg_fetch_array($result))
 	{
     echo "<TR><TD><a href=$PHP_SELF?del_sensor=".$r['sensor_name']."><img border=0 src=x.gif></a><TD>".$r['sensor_name']."<TD align=center><select name=\"SensorLocation".$r['sensor_id']."\">";

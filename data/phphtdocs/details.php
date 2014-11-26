@@ -1,4 +1,4 @@
-<?
+<?php
 include("include.php");
 include("header.php");
 

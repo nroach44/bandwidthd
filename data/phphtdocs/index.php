@@ -1,4 +1,4 @@
-<?
+<?php
 include("include.php");
 
 if (isset($_GET['group_id']))
@@ -98,7 +98,7 @@ function createTower(point, text, icon)
 
 var polylines = new Array();
 
-<?
+<?php
 if (isset($group_id))
 	$xml_url = "xml.php?group_id=$group_id";
 else
@@ -195,7 +195,7 @@ function OnLoad()
 	LoadLines();
 
 // Displays Towers
-<?
+<?php
 $sql = "SELECT locations.*, groups.color from locations, groups where locations.group_id = groups.group_id";
 if (isset($group_id))
 	$sql .= " and locations.group_id = $group_id";
@@ -265,7 +265,7 @@ if (isset($_GET['search']))
 <body onload="OnLoad()">
 <FORM name=search method=get action=<?=$_SERVER['PHP_SELF']?>>
 
-<?
+<?php
 $locations = pg_query("SELECT count(name) as num from locations");
 $r = @pg_fetch_array($locations);
 echo("Monitoring: ".$r['num']." Towers");
@@ -289,7 +289,7 @@ echo(" ".$r['num']." Links");
 <a href=# onclick="window.open('uptime.php', 'uptime')" class=text-button>Uptime Report</a>
 <a href=# onclick="window.open('manage/manage.php', 'manage')" class=text-button>Management</a>
 <a href=<?=$_SERVER['PHP_SELF']?> class=text-button>All Towers</a>
-<?
+<?php
 $locations = pg_query("SELECT * from groups");
                                                                                                                                                
 while ($r = @pg_fetch_array($locations))
