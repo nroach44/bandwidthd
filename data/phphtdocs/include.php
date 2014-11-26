@@ -1,4 +1,4 @@
-<?php
+<?
 // Emulate register_globals off
 if (ini_get('register_globals')) {
    $superglobals = array($_SERVER, $_ENV,
@@ -60,7 +60,7 @@ function fmtb($kbytes)
 		$Suffix = 'T';
 		}
 
-	return(sprintf("<td align=right><tt>%.1f%s</td>", $Output, $Suffix));
+	return(sprintf("<td align=right><tt>%.1f%s</tt></td>", $Output, $Suffix));
 	}
 
 $starttime = time();

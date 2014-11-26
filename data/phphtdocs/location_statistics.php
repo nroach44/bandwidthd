@@ -1,15 +1,10 @@
-<HEAD>
-<TITLE>Location Statistics</TITLE>
-</HEAD>
-<?php
+<?
 include("include.php");
+$subtitle = "Location Statistics";
 include("header.php");
-?></CENTER>
-<HEAD>
-<link href="bandwidthd.css" rel="stylesheet" type="text/css">
-</head>
-<center><img src=legend.gif></center>
-<?php
+?>
+<center><img src="legend.gif"></center>
+<?
 $db = ConnectDb();
 
 $location_id = $HTTP_GET_VARS['location_id'];
@@ -94,3 +89,7 @@ while ($sensor = @pg_fetch_array($sensors))
 <BR>
 <BR>
 <BR>
+
+<?php
+include("footer.php");
+?>
