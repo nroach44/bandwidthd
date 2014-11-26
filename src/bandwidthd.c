@@ -1185,11 +1185,11 @@ RCDF_Load (FILE * cdf)
       if (fscanf (cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,",
 		  &ip->Send.total, &ip->Send.icmp, &ip->Send.udp,
 		  &ip->Send.tcp, &ip->Send.ftp, &ip->Send.http,
-		  &ip->Send.mail, &ip->Send.p2p) != 7
+		  &ip->Send.mail, &ip->Send.p2p) != 8
 	  || fscanf (cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu",
 		     &ip->Receive.total, &ip->Receive.icmp, &ip->Receive.udp,
 		     &ip->Receive.tcp, &ip->Receive.ftp, &ip->Receive.http,
-		     &ip->Receive.mail, &ip->Receive.p2p) != 7)
+		     &ip->Receive.mail, &ip->Receive.p2p) != 8)
 	goto End_RecoverDataFromCdf;
     }
 
