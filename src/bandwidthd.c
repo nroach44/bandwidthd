@@ -881,7 +881,7 @@ StoreIPDataInCDF (struct IPData IncData[])
       HostIp2CharIp (IPData->ip, IPBuffer);
       fprintf (cdf, "%s,%lu,", IPBuffer, IPData->timestamp);
       Stats = &(IPData->Send);
-      fprintf (cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu", Stats->total,
+      fprintf (cdf, "%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,", Stats->total,
 	       Stats->icmp, Stats->udp, Stats->tcp, Stats->ftp, Stats->http,
 	       Stats->mail, Stats->p2p);
       Stats = &(IPData->Receive);
