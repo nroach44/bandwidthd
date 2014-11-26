@@ -399,7 +399,7 @@ main (int argc, char **argv)
   // Log list of monitored subnets
   for (Counter = 0; Counter < SubnetCount; Counter++)
     {
-      char subnet[16], mask[16]
+      char subnet[16], mask[16];
       addr.s_addr = ntohl (SubnetTable[Counter].ip);
       addr2.s_addr = ntohl (SubnetTable[Counter].mask);
       strncpy(subnet, inet_ntoa(addr), 16);
