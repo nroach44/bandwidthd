@@ -1,5 +1,7 @@
+#!/bin/sh
+#
 echo "SET sort_mem TO 45000;"
-echo -e "bd_rx_log \n bd_tx_log \n bd_rx_total_log \n bd_tx_total_log" | while read TABLE; 
+for TABLE in bd_rx_log bd_tx_log bd_rx_total_log bd_tx_total_log
 do
 cat << EOF
 BEGIN;
