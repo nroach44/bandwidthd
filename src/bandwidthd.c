@@ -399,10 +399,12 @@ main (int argc, char **argv)
   // Log list of monitored subnets
   for (Counter = 0; Counter < SubnetCount; Counter++)
     {
+      char subnet[16], mask[16]
       addr.s_addr = ntohl (SubnetTable[Counter].ip);
       addr2.s_addr = ntohl (SubnetTable[Counter].mask);
-      syslog (LOG_INFO, "Monitoring subnet %s with netmask %s",
-	      inet_ntoa (addr), inet_ntoa (addr2));
+      strncpy(subnet, inet_ntoa(addr), 16);
+      strncpy(mask, inet_ntoa(addr2), 16);
+      syslog(LOG_INFO, "Monitoring subnet %s with netmask %s", subnet, mask);
     }
 
 #ifdef HAVE_PCAP_FINDALLDEVS
