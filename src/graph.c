@@ -346,7 +346,7 @@ MakeIndexPages (int NumIps, struct SummaryData *SummaryData[])
   // PASS 1:      Write out the table
 
   fprintf (file,
-	   "<TR bgcolor=lightblue><TD>Ip and Name<TD align=center>Total<TD align=center>Total Sent<TD align=center>Total Received<TD align=center>FTP<TD align=center>HTTP<TD align=center>MAIL<TD align=center>P2P<TD align=center>TCP<TD align=center>UDP<TD align=center>ICMP\n");
+	"<TR bgcolor=lightblue><TD>Ip and Name<TD align=center>Total<TD align=center>Total Sent<TD align=center>Total Received<TD align=center>FTP<TD align=center>HTTP<TD align=center>MAIL<TD align=center>P2P<TD align=center>TCP<TD align=center>UDP<TD align=center>ICMP\n");
   for (Counter = 0; Counter < 21 && Counter < NumIps; Counter++)
     PrintTableLine (file, SummaryData[Counter], Counter);
 
