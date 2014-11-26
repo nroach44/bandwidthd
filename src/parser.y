@@ -19,8 +19,8 @@ int LineNo = 1;
 
 void yyerror(const char *str)
     {
-    fprintf(stderr, "Syntax Error \"%s\" on line %d\n", str, LineNo);
-	syslog(LOG_ERR, "Syntax Error \"%s\" on line %d", str, LineNo);
+    fprintf(stderr, "Syntax Error \"%s\" on line %d in bandwidthd.conf\n", str, LineNo);
+	syslog(LOG_ERR, "Syntax Error \"%s\" on line %d in bandwidthd.conf", str, LineNo);
 	exit(1);
     }
 
