@@ -3,8 +3,6 @@
 *.old
 *~
 *.deps/
-*.orig
-*.rej
 /autom4te.cache/
 Makefile
 Makefile.in

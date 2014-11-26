@@ -60,7 +60,7 @@ function fmtb($kbytes)
 		$Suffix = 'T';
 		}
 
-	return(sprintf("<td align=right><tt>%.1f%s</tt></td>", $Output, $Suffix));
+	return(sprintf("<td align=right><tt>%.1f%s</td>", $Output, $Suffix));
 	}
 
 $starttime = time();

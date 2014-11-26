@@ -1,6 +1,11 @@
+<HTML>
+<HEAD>
+<TITLE>Signal Level Report</TITLE>
+<link href="bandwidthd.css" rel="stylesheet" type="text/css">
+</HEAD>
+<BODY>
 <?php
 include("include.php");
-$subtitle = "Signal Level Report";
 include("header.php");
 
 $db = ConnectDb();
@@ -44,5 +49,5 @@ else
     	}
 	echo "</TABLE>";
 	}
-include("footer.php");
 ?>
+</BODY>
