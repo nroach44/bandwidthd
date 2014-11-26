@@ -1,6 +1,11 @@
+<HTML>
+<HEAD>
+<TITLE>Uptime Report</TITLE>
+<link href="bandwidthd.css" rel="stylesheet" type="text/css">
+</HEAD>
+<BODY>
 <?php
 include("include.php");
-$subtitle = "Uptime Report";
 include("header.php");
 
 $db = ConnectDb();
@@ -32,5 +37,5 @@ else
     	}
 	echo "</TABLE>";
 	}
-include("footer.php");
 ?>
+</BODY>

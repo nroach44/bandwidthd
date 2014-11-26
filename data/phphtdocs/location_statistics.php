@@ -4,8 +4,11 @@
 <?php
 include("include.php");
 include("header.php");
-?>
-<center><img src="legend.gif"></center>
+?></CENTER>
+<HEAD>
+<link href="bandwidthd.css" rel="stylesheet" type="text/css">
+</head>
+<center><img src=legend.gif></center>
 <?php
 $db = ConnectDb();
 
@@ -91,6 +94,3 @@ while ($sensor = @pg_fetch_array($sensors))
 <BR>
 <BR>
 <BR>
-<?php
-include("footer.php");
-?>
