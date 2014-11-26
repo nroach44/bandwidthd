@@ -59,17 +59,17 @@ $db = ConnectDb();
 
 // Get parameters
 
-if (isset($_GET['width']))
+if (isset($_GET['width']) && is_numeric($_GET['width']))
     $width = $_GET['width'];
 else
 	$width = DFLT_WIDTH;
 
-if (isset($_GET['height']))
+if (isset($_GET['height']) && is_numeric($_GET['height']))
     $height = $_GET['height'];
 else
 	$height = DFLT_HEIGHT;
 
-if (isset($_GET['interval']))
+if (isset($_GET['interval']) && is_numeric($_GET['interval']))
     $interval = $_GET['interval'];
 else
 	$interval = DFLT_INTERVAL;
@@ -79,24 +79,32 @@ if (isset($_GET['ip']))
     $ip = $_GET['ip'];
 	#optionall call using underscore instead of slash to seperate subnet from bits
 	$ip = str_replace("_", "/", $ip);
+    $ip = pg_escape_string($ip);
 	}
 else
 	exit(1);
 
-if (isset($_GET['sensor_id']))
+if (isset($_GET['sensor_id']) && is_numeric($_GET['sensor_id']))
 	$sensor_id = $_GET['sensor_id'];
 else
 	exit(1);
 
-if (isset($_GET['timestamp']))
+if (isset($_GET['timestamp']) && is_numeric($_GET['timestamp']))
     $timestamp = $_GET['timestamp'];
 else
 	$timestamp = time() - $interval + (0.05*$interval);
 
-if (isset($_GET['table']))
-    $table = $_GET['table'];
-else
-	$table = "bd_rx_log";
+switch ($_GET['table']) {
+    case 'bd_rx_total_log':
+    case 'bd_tx_total_log':
+    case 'bd_rx_log':
+    case 'bd_tx_log':
+        $table = $_GET['table'];
+    break;
+	default: /* invalid value in table argument! */
+        exit(1);
+    break;
+}
 
 if (isset($_GET['yscale']))
     $yscale = $_GET['yscale'];

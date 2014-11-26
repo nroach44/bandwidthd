@@ -1,0 +1,29 @@
+--- phphtdocs/location_statistics.php
++++ phphtdocs/location_statistics.php
+@@ -1,14 +1,9 @@
+-<HEAD>
+-<TITLE>Location Statistics</TITLE>
+-</HEAD>
+ <?
+ include("include.php");
++$subtitle = "Location Statistics";
+ include("header.php");
+-?></CENTER>
+-<HEAD>
+-<link href="bandwidthd.css" rel="stylesheet" type="text/css">
+-</head>
+-<center><img src=legend.gif></center>
++?>
++<center><img src="legend.gif"></center>
+ <?
+ $db = ConnectDb();
+ 
+@@ -93,4 +88,8 @@
+ <BR>
+ <BR>
+ <BR>
+-<BR>+<BR>
++
++<?php
++include("footer.php");
++?>

@@ -1,0 +1,28 @@
+--- phphtdocs/failures.php
++++ phphtdocs/failures.php
+@@ -13,15 +15,7 @@
+ 	header("Location: $PHP_SELF");
+ 	}
+ ?>
+-<HTML>
+-<HEAD>
+-<TITLE>Failure Report</TITLE>
+-<link href="bandwidthd.css" rel="stylesheet" type="text/css">
+-</HEAD>
+-<BODY>
+-<?
+-include("header.php");
+-?>
++
+ <h3>Failed Routers</h3>
+ <?
+ $res = pg_query("
+@@ -107,5 +101,8 @@
+     	}
+ 	echo "</TABLE>";
+ 	}
++
++include("footer.php");
+ ?>
+-</BODY>+
++

@@ -1,7 +1,5 @@
 <?php
 include("include.php");
-$subtitle = "Failure Report";
-include("header.php");
 
 $db = ConnectDb();
 
@@ -12,6 +10,15 @@ if ($HTTP_GET_VARS['reset_links'] != "")
 	pg_query("delete from links where last_update < now()-interval '10 minutes';");
 	header("Location: $PHP_SELF");
 	}
+?>
+<HTML>
+<HEAD>
+<TITLE>Failure Report</TITLE>
+<link href="bandwidthd.css" rel="stylesheet" type="text/css">
+</HEAD>
+<BODY>
+<?php
+include("header.php");
 ?>
 <h3>Failed Routers</h3>
 <?php
@@ -98,6 +105,5 @@ else
     	}
 	echo "</TABLE>";
 	}
-include("footer.php");
 ?>
 </BODY>

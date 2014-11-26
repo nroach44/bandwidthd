@@ -1,0 +1,16 @@
+--- phphtdocs/config.conf
++++ phphtdocs/config.conf
+@@ -1,4 +1,4 @@
+-<?
++<?php
+ define("DFLT_WIDTH", 1100);
+ define("DFLT_HEIGHT", 325);
+ define("DFLT_INTERVAL", INT_DAILY);
+@@ -7,5 +7,6 @@
+ define("ZOOM_LAT", "40.72982797782921");
+ define("ZOOM_LEVEL", "8");
+ 
+-$db_connect_string = "host = 216.24.112.16 user = swarm dbname = swarm"
+-?>+include("/etc/bandwidthd/debian-db.php");
++$db_connect_string = "host='$dbserver' port='$dbport' dbname='$dbname' user='$dbuser' password='$dbpass'";
++?>

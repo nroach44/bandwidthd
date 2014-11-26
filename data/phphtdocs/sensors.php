@@ -4,31 +4,31 @@ include("header.php");
 
 // Get variables from url
 
-if (isset($_GET['sensor_id']) && $_GET['sensor_id'] != "none")
+if (isset($_GET['sensor_id']) && is_numeric($_GET['sensor_id']))
     $sensor_id = $_GET['sensor_id'];
 
-if (isset($_GET['interval']) && $_GET['interval'] != "none")
+if (isset($_GET['interval']) && is_numeric($_GET['interval']))
     $interval = $_GET['interval'];
 
-if (isset($_GET['timestamp']) && $_GET['timestamp'] != "none")
+if (isset($_GET['timestamp']) && is_numeric($_GET['timestamp']))
     $timestamp = $_GET['timestamp'];
 
-if (isset($_GET['subnet']) && $_GET['subnet'] != "none")
-    $subnet = $_GET['subnet'];
+if (isset($_GET['subnet']) && $_GET['subnet'] != "none" && $_GET['subnet'] != "" )
+    $subnet = pg_escape_string($_GET['subnet']);
 
-if (isset($_GET['limit']) && $_GET['limit'] != "none")
+if (isset($_GET['limit']) && ($_GET['limit'] == "all" || is_numeric($_GET['limit'])))
 	$limit = $_GET['limit'];
 
+$graphs = false;
 if (isset($_GET['graphs']))
-	$graphs = $_GET['graphs'];
+	$graphs = true;
 
 $db = ConnectDb();
 ?>
-<HEAD>
-<link href="bandwidthd.css" rel="stylesheet" type="text/css">
-</head>
-<FORM name="navigation" method=get action=<?=$PHP_SELF?>>
-<table width=100% cellspacing=0 cellpadding=5 border=1>
+
+<FORM name="navigation" method=get action="<?=$_SERVER['PHP_SELF']?>">
+
+<table width="100%" cellspacing=0 cellpadding=5 border=1>
 <tr>
 <td>
 <?php
@@ -37,39 +37,58 @@ $result = @pg_query($sql);
 if (!$result)
 	{
 	echo "<center>Collecting data...</center>";
-	exit;
+	include('footer.php');
+	exit();
 	}
 ?>
 <SELECT name="sensor_id">
-<OPTION value="none">--Select A Sensor--
+<OPTION value="none">--Select A Sensor--</OPTION>
 <?php
-while ($r = pg_fetch_array($result))
-    echo "<option value=\"".$r['sensor_id']."\" ".($sensor_id==$r['sensor_id']?"SELECTED":"").">".$r['sensor_name']." - ".$r['interface']."\n";
+while ($r = pg_fetch_array($result)) {
+    echo '<OPTION value="' . $r['sensor_id'] .'" '
+        . ($sensor_id==$r['sensor_id']?"SELECTED":"") . '>'
+        . $r['sensor_name'] . ' - ' . $r['interface'] . "</OPTION>\n";
+}
 ?>
 </SELECT>
-<td><SELECT name="interval">
-<OPTION value="none">--Select An Interval--
-<OPTION value=<?=INT_DAILY?> <?=$interval==INT_DAILY?"SELECTED":""?>>Daily
-<OPTION value=<?=INT_WEEKLY?> <?=$interval==INT_WEEKLY?"SELECTED":""?>>Weekly
-<OPTION value=<?=INT_MONTHLY?> <?=$interval==INT_MONTHLY?"SELECTED":""?>>Monthly
-<OPTION value=<?=INT_YEARLY?> <?=$interval==INT_YEARLY?"SELECTED":""?>>Yearly
-<OPTION value=<?=24*60*60?> <?=$interval==24*60*60?"SELECTED":""?>>24hrs
-<OPTION value=<?=30*24*60*60?> <?=$interval==30*24*60*60?"SELECTED":""?>>30days
+
+</td>
+<td>
+
+<SELECT name="interval">
+<OPTION value="none">--Select An Interval--</OPTION>
+<OPTION value=<?=INT_DAILY?> <?=$interval==INT_DAILY?"SELECTED":""?>>Daily</OPTION>
+<OPTION value=<?=INT_WEEKLY?> <?=$interval==INT_WEEKLY?"SELECTED":""?>>Weekly</OPTION>
+<OPTION value=<?=INT_MONTHLY?> <?=$interval==INT_MONTHLY?"SELECTED":""?>>Monthly</OPTION>
+<OPTION value=<?=INT_YEARLY?> <?=$interval==INT_YEARLY?"SELECTED":""?>>Yearly</OPTION>
+<OPTION value=<?=24*60*60?> <?=$interval==24*60*60?"SELECTED":""?>>24hrs</OPTION>
+<OPTION value=<?=30*24*60*60?> <?=$interval==30*24*60*60?"SELECTED":""?>>30days</OPTION>
+</select>
+</td>
+<td>
+
+<SELECT name="limit">
+<OPTION value="none">--How Many Results--</OPTION>
+<OPTION value=20 <?=$limit==20?"SELECTED":""?>>20</OPTION>
+<OPTION value=50 <?=$limit==50?"SELECTED":""?>>50</OPTION>
+<OPTION value=100 <?=$limit==100?"SELECTED":""?>>100</OPTION>
+<OPTION value=all <?=$limit=="all"?"SELECTED":""?>>All</OPTION>
 </select>
 
-<td><SELECT name="limit">
-<OPTION value="none">--How Many Results--
-<OPTION value=20 <?=$limit==20?"SELECTED":""?>>20
-<OPTION value=50 <?=$limit==50?"SELECTED":""?>>50
-<OPTION value=100 <?=$limit==100?"SELECTED":""?>>100
-<OPTION value=all <?=$limit=="all"?"SELECTED":""?>>All
-</select>
+</td>
+<td>
 
-<? if ($graphs != "") $GraphsChecked = "Checked"; else $GraphsChecked = ""; ?>
-<td><input type="checkbox" name="graphs" <?=$GraphsChecked?>>Display Graphs</a>
+<?php if ($graphs) $GraphsChecked = "CHECKED"; else $GraphsChecked = ""; ?>
+<input type="checkbox" name="graphs" <?=$GraphsChecked?>>Display Graphs
+</td>
+<td>
 
-<td>Subnet Filter:<input name=subnet value="<?=isset($subnet)?$subnet:"0.0.0.0/0"?>"> 
+Subnet Filter:<input name=subnet value="<?=isset($subnet)?$subnet:"0.0.0.0/0"?>"> 
 <input type=submit value="Go">
+
+</td>
+</tr>
+
 </table>
 </FORM>
 <?php
@@ -84,10 +103,12 @@ if (!isset($limit))
 	$limit = 20;
 
 // Validation
-if (!isset($sensor_id))
-	exit(0);
+if (!isset($sensor_id)) {
+	include('footer.php');
+	exit();
+}
 
-$sql = "SELECT sensor_name, interface, sensor_id from sensors where sensor_id = $sensor_id;";
+$sql = "SELECT sensor_name, interface, sensor_id FROM sensors WHERE sensor_id = '$sensor_id';";
 $result = @pg_query($sql);
 $r = pg_fetch_array($result);
 $sensor_name = $r['sensor_name'];
@@ -156,18 +177,30 @@ pg_query("set sort_mem to default;");
 if ($limit == "all")
 	$limit = pg_num_rows($result);
 
-echo "<a name=top><table width=100% border=1 cellspacing=0><tr><td>Ip<td>Name<td>Total<td>Sent<td>Received<td>tcp<td>udp<td>icmp<td>http<td>mail<td>p2p<td>ftp";
+?>
+
+<a name="top"></a>
+<table width="100%" border=1 cellspacing=0>
+<tr>
+<th>Ip</th><th>Name</th>
+<th>Total</th><th>Sent</th><th>Received</th>
+<th>tcp</th><th>udp</th><th>icmp</th>
+<th>http</th><th>mail</th><th>p2p</th><th>ftp</th>
+</tr>
+
+<?php
 
 if (!isset($subnet)) // Set this now for total graphs
 	$subnet = "0.0.0.0/0";
 
 // Output Total Line
-if ($graphs == "")
-	$url = "<a href=# onclick=\"window.open('details.php?sensor_id=$sensor_id&ip=$subnet','_blank', 'scrollbars=yes,width=930,height=768,resizable=yes,left=20,top=20')\">";
-else
-	$url = "<a href=#Total>";
+if (!$graphs)
+	$url = "<a href=\"#\" onclick=\"window.open('details.php?sensor_id=$sensor_id&amp;ip=$subnet','_blank', 'scrollbars=yes,width=930,height=768,resizable=yes,left=20,top=20')\">";
 
-echo "\n<TR><TD>".$url."Total</a><TD>$subnet";
+else
+	$url = '<a href="#Total">';
+
+echo "<TR><TD>".$url."Total</a></TD><TD>$subnet</TD>";
 foreach (array("total", "sent", "received", "tcp", "udp", "icmp", "http", "mail", "p2p", "ftp") as $key)
 	{
 	for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
@@ -183,22 +216,22 @@ echo "\n";
 for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++)
 	{
 	$r = pg_fetch_array($result, $Counter);
-	if ($graphs == "")
-		$url = "<a href=# onclick=\"window.open('details.php?sensor_id=$sensor_id&ip=".$r['ip']."','_blank', 'scrollbars=yes,width=930,height=768,resizable=yes,left=20,top=20')\">";
+	if (!$graphs)
+		$url = "<a href=\"#\" onclick=\"window.open('details.php?sensor_id=$sensor_id&amp;ip=".$r['ip']."','_blank', 'scrollbars=yes,width=930,height=768,resizable=yes,left=20,top=20')\">";
 	else
-		$url = "<a href=#".$r['ip'].">";
-	echo "<tr><td>".$url;
-	echo $r['ip']."<td>".gethostbyaddr($r['ip']);
-	echo "</a>";
+		$url = '<a href="#' . $r['ip'] . '">';
+	echo "<tr><td>" . $url . $r['ip'] . "</a></td><td>" . gethostbyaddr($r['ip']) . "</td>";
 	echo fmtb($r['total']).fmtb($r['sent']).fmtb($r['received']).
 		fmtb($r['tcp']).fmtb($r['udp']).fmtb($r['icmp']).fmtb($r['http']).fmtb($r['mail']).
-		fmtb($r['p2p']).fmtb($r['ftp'])."\n";
+		fmtb($r['p2p']).fmtb($r['ftp'])."</tr>\n";
 	}
-echo "</table></center>";
+echo "</table>";
 
 // Stop here
-if ($graphs == "")
+if (!$graphs) {
+	include('footer.php');
 	exit();
+}
 
 // Output Total Graph
 for($Counter=0, $Total = 0; $Counter < pg_num_rows($result); $Counter++)
@@ -215,34 +248,34 @@ else
 
 $sn = str_replace("/", "_", $subnet);
 
-echo "<a name=Total><h3><a href=details.php?sensor_id=$sensor_id&ip=$subnet>";
-echo "Total - Total of $subnet</h3>";
-echo "</a>";
-echo "Send:<br><img src=graph.php?ip=$sn&interval=$interval&sensor_id=".$sensor_id."&table=$total_table><br>";
-echo "<img src=legend.gif><br>\n";
+echo "<h3><a name=\"Total\"></a><a href=\"details.php?sensor_id=$sensor_id&amp;ip=$subnet\">";
+echo "Total - Total of $subnet</a></h3>";
+echo "Send:<br><img src=\"graph.php?ip=$sn&amp;interval=$interval&amp;sensor_id=".$sensor_id."&amp;table=$total_table\"><br>";
+echo '<img src="legend.gif"><br>' . "\n";
 if ($subnet == "0.0.0.0/0")
 	$total_table = "bd_rx_total_log";
 else
 	$total_table = "bd_rx_log";
-echo "Receive:<br><img src=graph.php?ip=$sn&interval=$interval&sensor_id=".$sensor_id."&table=$total_table><br>";
-echo "<img src=legend.gif><br>\n";
-echo "<a href=#top>[Return to Top]</a>";
+echo "Receive:<br><img src=\"graph.php?ip=$sn&amp;interval=$interval&amp;sensor_id=".$sensor_id."&amp;table=$total_table\"><br>";
+echo '<img src="legend.gif"><br>' . "\n";
+echo '<a href="#top">[Return to Top]</a>';
 
 // Output Other Graphs
 for($Counter=0; $Counter < pg_num_rows($result) && $Counter < $limit; $Counter++) 
 	{
 	$r = pg_fetch_array($result, $Counter);
-	echo "<a name=".$r['ip']."><h3><a href=details.php?sensor_id=$sensor_id&ip=".$r['ip'].">";
+		echo "<h3><a name=".$r['ip']."></a><a href=\"details.php?sensor_id=$sensor_id&amp;ip=".$r['ip']."\">";
 	if ($r['ip'] == "0.0.0.0")
-		echo "Total - Total of all subnets</h3>";
+		echo "Total - Total of all subnets";
 	else
-		echo $r['ip']." - ".gethostbyaddr($r['ip'])."</h3>";
-	echo "</a>";
-	echo "Send:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_id=".$sensor_id."&table=bd_tx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
-	echo "<img src=legend.gif><br>\n";
-	echo "Receive:<br><img src=graph.php?ip=".$r['ip']."&interval=$interval&sensor_id=".$sensor_id."&table=bd_rx_log&yscale=".(max($r['txscale'], $r['rxscale']))."><br>";
-	echo "<img src=legend.gif><br>\n";
-	echo "<a href=#top>[Return to Top]</a>";
+		echo $r['ip']." - ".gethostbyaddr($r['ip']);
+	echo "</a></h3>";
+	echo "Send:<br><img src=\"graph.php?ip=".$r['ip']."&amp;interval=$interval&amp;sensor_id=".$sensor_id."&amp;table=bd_tx_log&amp;yscale=".(max($r['txscale'], $r['rxscale']))."\"><br>";
+	echo '<img src="legend.gif"><br>' . "\n";
+	echo "Receive:<br><img src=\"graph.php?ip=".$r['ip']."&amp;interval=$interval&amp;sensor_id=".$sensor_id."&amp;table=bd_rx_log&amp;yscale=".(max($r['txscale'], $r['rxscale']))."\"><br>";
+	echo '<img src="legend.gif"><br>' . "\n";
+	echo '<a href="#top">[Return to Top]</a>';
 	}
 
 include('footer.php');
+?>
