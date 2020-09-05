@@ -134,7 +134,7 @@ struct SubnetData
 {
   uint32_t ip;
   uint32_t mask;
-} SubnetTable[SUBNET_NUM];
+};
 
 struct Statistics
 {
@@ -157,7 +157,7 @@ struct IPData
   uint32_t ip;			// Host byte order
   struct Statistics Send;
   struct Statistics Receive;
-} IpTable[IP_NUM];
+};
 
 struct SummaryData
 {

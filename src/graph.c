@@ -18,6 +18,7 @@
 #include <resolv.h>
 #endif
 
+extern struct SubnetData SubnetTable[SUBNET_NUM];
 extern unsigned int SubnetCount;
 extern struct config config;
 
