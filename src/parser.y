@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include "bandwidthd.h"
 
+extern int yylex (void);
 extern unsigned int SubnetCount;
 extern struct SubnetData SubnetTable[];
 extern struct config config;
